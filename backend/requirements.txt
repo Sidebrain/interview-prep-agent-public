@@ -4,3 +4,4 @@ uvicorn
 black
 tqdm
 anthropic
+firebase-admin
