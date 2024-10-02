@@ -3,7 +3,8 @@
 import { onAuthStateChanged, User } from "firebase/auth";
 import { createContext, ReactNode, useEffect, useState } from "react";
 import auth from "../lib/firebase/firebaseClient";
-import { getServerSideuser, signOut, updateAuthCookie } from "../auth/action";
+import { getServerSideuser, updateAuthCookie } from "../auth/action";
+import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 
 type AuthContextType = {
   user: User | null;
@@ -18,6 +19,7 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { signOut } = useFirebaseAuth();
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
