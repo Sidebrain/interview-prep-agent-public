@@ -13,6 +13,8 @@ import auth from "@/app/lib/firebase/firebaseClient";
 import { updateAuthCookie, verifyToken } from "@/app/auth/action";
 import { cookies } from "next/headers";
 import { useFirebaseAuth } from "@/app/hooks/useFirebaseAuth";
+import { Icons } from "./icons";
+import { Icon } from "lucide-react";
 
 type AuthButtonsProps = {
   signIn: (provider: ProviderType) => Promise<void>;
@@ -21,7 +23,7 @@ type AuthButtonsProps = {
 
 const AuthButtons = () => {
   const user = useContext(AuthContext);
-  const { signIn, signOut } = useFirebaseAuth();
+  const { signIn, signOut, isLoading } = useFirebaseAuth();
 
   const handleSignIn = async (provider: ProviderType) => {
     try {
@@ -40,12 +42,22 @@ const AuthButtons = () => {
   };
 
   return (
-    <div className="flex gap-4 rounded-md bg-gray-100 p-4">
-      <Button onClick={() => handleSignIn("google")}>
-        Sign In With Google
+    <div className="flex gap-4 rounded-md p-4 justify-center">
+      <Button
+        type="button"
+        variant={"outline"}
+        disabled={isLoading}
+        onClick={() => handleSignIn("google")}
+      >
+        {isLoading ? (
+          <Icons.spinner className="mr-2 h-4 w-4" />
+        ) : (
+          <Icons.google className="mr-2 h-4 w-4" />
+        )}
+        Google
       </Button>
-      <Button onClick={() => handleSignIn("github")}>
-        Sign In With Github
+      <Button variant={"outline"} onClick={() => handleSignIn("github")}>
+        <Icons.gitHub className="mr-2 h-4 w-4" /> Github
       </Button>
       {user.user && <Button onClick={() => handleSignOut()}>Sign Out</Button>}
     </div>

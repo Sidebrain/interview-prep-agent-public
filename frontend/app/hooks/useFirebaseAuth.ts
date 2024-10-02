@@ -2,13 +2,24 @@ import { ProviderType } from "@/types/auth";
 import {
   GithubAuthProvider,
   GoogleAuthProvider,
+  onAuthStateChanged,
   signInWithPopup,
+  User,
 } from "firebase/auth";
-import { updateAuthCookie, verifyToken } from "../auth/action";
+import {
+  getServerSideuser,
+  updateAuthCookie,
+  verifyToken,
+} from "../auth/action";
 import auth from "../lib/firebase/firebaseClient";
+import { useEffect, useState } from "react";
 
 export const useFirebaseAuth = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
+
   const signIn = async (provider: ProviderType) => {
+    setIsLoading(true);
     const authProvider =
       provider === "google"
         ? new GoogleAuthProvider()
@@ -27,18 +38,55 @@ export const useFirebaseAuth = () => {
     } catch (error) {
       console.error("Error during singing in: ", error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
+    setIsLoading(true);
     try {
       await auth.signOut();
       await updateAuthCookie(null);
     } catch (error) {
       console.error("Error during signing out: ", error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return { signIn, signOut };
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // get fresh idtoken
+          const token = await firebaseUser.getIdToken();
+          // update the auth cookie on server
+          await updateAuthCookie(token);
+          // verify the token on server
+          const serverUser = await getServerSideuser();
+          if (serverUser) {
+            setUser(firebaseUser);
+            console.log("firebase user: ", firebaseUser);
+            console.log("server user: ", serverUser);
+          } else {
+            await signOut();
+            setUser(null);
+          }
+        } catch (error) {
+          console.error("Error verifying user: ", error);
+          await signOut();
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+        await updateAuthCookie(null);
+      }
+      setIsLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  return { user, isLoading, signIn, signOut };
 };
