@@ -46,6 +46,8 @@ export const useFirebaseAuth = () => {
   const signOut = async () => {
     setIsLoading(true);
     try {
+      // Uncomment the below line to simulate a slow network
+      // await new Promise((resolve) => setTimeout(resolve, 5000));
       await auth.signOut();
       await updateAuthCookie(null);
     } catch (error) {

@@ -4,22 +4,8 @@ import { Button } from "./ui/button";
 import { useContext } from "react";
 import { AuthContext } from "@/app/context/AuthContext";
 import { ProviderType } from "@/types/auth";
-import {
-  GithubAuthProvider,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from "firebase/auth";
-import auth from "@/app/lib/firebase/firebaseClient";
-import { updateAuthCookie, verifyToken } from "@/app/auth/action";
-import { cookies } from "next/headers";
 import { useFirebaseAuth } from "@/app/hooks/useFirebaseAuth";
 import { Icons } from "./icons";
-import { Icon } from "lucide-react";
-
-type AuthButtonsProps = {
-  signIn: (provider: ProviderType) => Promise<void>;
-  signOut: () => Promise<void>;
-};
 
 const AuthButtons = () => {
   const user = useContext(AuthContext);
