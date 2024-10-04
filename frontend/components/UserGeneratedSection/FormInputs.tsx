@@ -10,7 +10,6 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useForm } from "react-hook-form";
 import { Textarea } from "../ui/textarea";
@@ -40,7 +39,7 @@ const FormInputs = () => {
             <FormItem>
               <FormLabel>Role</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Textarea {...field} />
               </FormControl>
               <FormDescription>What is the role?</FormDescription>
               <FormMessage />
@@ -55,7 +54,7 @@ const FormInputs = () => {
             <FormItem>
               <FormLabel>Company Name</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Textarea {...field} />
               </FormControl>
               <FormDescription>
                 What is the name of the company?
@@ -72,7 +71,7 @@ const FormInputs = () => {
             <FormItem>
               <FormLabel>Team Name</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Textarea {...field} />
               </FormControl>
               <FormDescription>
                 What is the name of the team you are recruiting for?
