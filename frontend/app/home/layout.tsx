@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 import { Icons } from "@/components/icons";
+import clientLogger from "../lib/clientLogger";
 
 export default function Header({
   children,
@@ -12,7 +13,7 @@ export default function Header({
     try {
       await signOut();
     } catch (error) {
-      console.error("Error during signing out: ", error);
+      clientLogger.error("Error during signing out: ", error);
     }
   };
   return (

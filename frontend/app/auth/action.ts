@@ -3,9 +3,10 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import serverLogger from "../lib/serverLogger";
 
 const verifyToken = async (token: string) => {
-  console.log("Backend URL", process.env.BACKEND_URL);
+  serverLogger.debug("Backend URL", process.env.BACKEND_URL);
   // creating a request object
   const request = {
     method: "GET",
@@ -13,7 +14,7 @@ const verifyToken = async (token: string) => {
       Authorization: `Bearer ${token}`,
     },
   };
-  // making the actual request
+// making the actual request
   const response = await fetch(
     process.env.BACKEND_URL + "/auth/verify_token",
     request
@@ -35,7 +36,7 @@ const getServerSideuser = async () => {
   try {
     return await verifyToken(token);
   } catch (error) {
-    console.error("Error getting server side user: ", error);
+    serverLogger.error("Error getting server side user: ", error);
     return null;
   }
 };

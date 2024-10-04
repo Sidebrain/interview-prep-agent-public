@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import serverLogger from "./app/lib/serverLogger";
 
 const middleware = (request: NextRequest) => {
   const authToken = request.cookies.get("auth_token");
 
   if (!authToken) {
-    console.log("No auth token found");
+    serverLogger.debug("No auth token found");
     return NextResponse.redirect(new URL("/auth", request.url));
   }
   return NextResponse.next();

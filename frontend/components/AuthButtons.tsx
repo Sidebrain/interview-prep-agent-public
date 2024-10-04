@@ -6,6 +6,7 @@ import { AuthContext } from "@/app/context/AuthContext";
 import { ProviderType } from "@/types/auth";
 import { useFirebaseAuth } from "@/app/hooks/useFirebaseAuth";
 import { Icons } from "./icons";
+import clientLogger from "@/app/lib/clientLogger";
 
 const AuthButtons = () => {
   const user = useContext(AuthContext);
@@ -15,7 +16,7 @@ const AuthButtons = () => {
     try {
       signIn(provider);
     } catch (error) {
-      console.error("Error during signing in: ", error);
+      clientLogger.error("Error during signing in: ", error);
     }
   };
 
@@ -23,7 +24,7 @@ const AuthButtons = () => {
     try {
       await signOut();
     } catch (error) {
-      console.error("Error during signing out: ", error);
+      clientLogger.error("Error during signing out: ", error);
     }
   };
 
