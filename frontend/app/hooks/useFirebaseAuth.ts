@@ -14,10 +14,12 @@ import {
 import auth from "../lib/firebase/firebaseClient";
 import { useEffect, useState } from "react";
 import clientLogger from "../lib/clientLogger";
+import { useRouter } from "next/navigation";
 
 export const useFirebaseAuth = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
 
   const signIn = async (provider: ProviderType) => {
     setIsLoading(true);
@@ -35,6 +37,7 @@ export const useFirebaseAuth = () => {
       const decodedToken = await verifyToken(token);
       await updateAuthCookie(token);
       clientLogger.debug("decoded token: ", decodedToken);
+
       return decodedToken;
     } catch (error) {
       clientLogger.error("Error during singing in: ", error);
@@ -73,6 +76,7 @@ export const useFirebaseAuth = () => {
             setUser(firebaseUser);
             clientLogger.debug("firebase user: ", firebaseUser);
             clientLogger.debug("server user: ", serverUser);
+            router.push("/home");
           } else {
             await signOut();
             setUser(null);

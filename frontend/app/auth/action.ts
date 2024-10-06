@@ -14,9 +14,9 @@ const verifyToken = async (token: string) => {
       Authorization: `Bearer ${token}`,
     },
   };
-// making the actual request
+  // making the actual request
   const response = await fetch(
-    process.env.BACKEND_URL + "/auth/verify_token",
+    process.env.BACKEND_URL + "/api/v1/auth/verify_token",
     request
   );
 
