@@ -2,17 +2,25 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
+import useWebSocket from "@/app/hooks/useWebsocket";
+import clientLogger from "@/app/lib/clientLogger";
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
     { id: 1, text: "Hello!", sender: "user" },
     { id: 2, text: "Hi there!", sender: "bot" },
   ]);
+  const { connectionStatus, readyState, sendMessage } = useWebSocket({
+    url: process.env.NEXT_PUBLIC_WS_URL as string,
+  });
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [maxTextareaHeight, setMaxTextareaHeight] = useState<number>(150);
+
+  clientLogger.debug("ws connection");
+  clientLogger.debug(connectionStatus, readyState, sendMessage);
 
   // bring the last message into the view
   const scrollToBottom = () => {

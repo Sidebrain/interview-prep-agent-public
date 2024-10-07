@@ -1,14 +1,15 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 import { Icons } from "@/components/icons";
 import clientLogger from "../lib/clientLogger";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Header({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const { signOut, isLoading } = useFirebaseAuth();
+  const { signOut, isLoading } = useContext(AuthContext);
   const handleSignOut = async () => {
     try {
       await signOut();

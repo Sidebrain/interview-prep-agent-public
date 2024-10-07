@@ -1,23 +1,27 @@
 "use client";
 
-import { User } from "firebase/auth";
-import { createContext, ReactNode, useState } from "react";
+import { createContext, ReactNode } from "react";
 import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
-
-type AuthContextType = {
-  user: User | null;
-  loading: boolean;
-};
+import { AuthContextType } from "@/types/auth";
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
-  loading: true,
+  isLoading: true,
+  signIn: () => {},
+  signOut: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { user, isLoading } = useFirebaseAuth();
+  const { user, isLoading, signIn, signOut } = useFirebaseAuth();
   return (
-    <AuthContext.Provider value={{ user: user, loading: isLoading }}>
+    <AuthContext.Provider
+      value={{
+        user: user,
+        isLoading: isLoading,
+        signIn: signIn,
+        signOut: signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

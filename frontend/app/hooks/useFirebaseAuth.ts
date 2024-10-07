@@ -29,15 +29,15 @@ export const useFirebaseAuth = () => {
         : new GithubAuthProvider();
 
     try {
-      const { user, providerId } = await signInWithPopup(auth, authProvider);
-      clientLogger.debug("provider: ", provider, user, providerId);
+      const { user } = await signInWithPopup(auth, authProvider);
+      // clientLogger.debug("provider: ", provider, user, providerId);
 
       // get the id token, decode it from the server endpoint and set it as a cookie
       const token = await user.getIdToken();
       const decodedToken = await verifyToken(token);
       await updateAuthCookie(token);
       clientLogger.debug("decoded token: ", decodedToken);
-
+      router.push("/home");
       return decodedToken;
     } catch (error) {
       clientLogger.error("Error during singing in: ", error);
@@ -63,7 +63,9 @@ export const useFirebaseAuth = () => {
   };
 
   useEffect(() => {
+    clientLogger.debug("useFirebase triggered");
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      clientLogger.debug("onAuthStateChanged triggered");
       if (firebaseUser) {
         try {
           // get fresh idtoken
@@ -74,9 +76,11 @@ export const useFirebaseAuth = () => {
           const serverUser = await getServerSideuser();
           if (serverUser) {
             setUser(firebaseUser);
-            clientLogger.debug("firebase user: ", firebaseUser);
-            clientLogger.debug("server user: ", serverUser);
-            router.push("/home");
+            clientLogger.debug(
+              "firebase user found"
+              // , firebaseUser
+            );
+            // clientLogger.debug("server user: ", serverUser);
           } else {
             await signOut();
             setUser(null);

@@ -3,15 +3,13 @@
 import { useContext } from "react";
 import { AuthContext } from "@/app/context/AuthContext";
 import { ProviderType } from "@/types/auth";
-import { useFirebaseAuth } from "@/app/hooks/useFirebaseAuth";
 import clientLogger from "@/app/lib/clientLogger";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/icons";
 // import { useRouter } from "next/navigation";
 
 const AuthButtons = () => {
-  const user = useContext(AuthContext);
-  const { signIn, signOut, isLoading } = useFirebaseAuth();
+  const { signIn, signOut, isLoading, user } = useContext(AuthContext);
   // const router = useRouter();
 
   const handleSignIn = async (provider: ProviderType) => {
@@ -49,7 +47,7 @@ const AuthButtons = () => {
       <Button variant={"outline"} onClick={() => handleSignIn("github")}>
         <Icons.gitHub className="mr-2 h-4 w-4" /> Github
       </Button>
-      {user.user && <Button onClick={() => handleSignOut()}>Sign Out</Button>}
+      {user && <Button onClick={() => handleSignOut()}>Sign Out</Button>}
     </div>
   );
 };
