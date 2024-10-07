@@ -1,0 +1,9 @@
+fastapi
+openai
+uvicorn
+black
+tqdm
+anthropic
+firebase-admin
+python-dotenv
+websockets
