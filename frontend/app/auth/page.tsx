@@ -1,7 +1,5 @@
 "use client";
 
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import AuthButtons from "./AuthButtons";
@@ -63,7 +61,6 @@ const AuthPage = () => {
                 Choose one of the below options to continue
               </p>
             </div>
-            {/* <UserAuthForm /> */}
             <AuthButtons />
             <p className="px-8 text-center text-sm text-muted-foreground">
               By clicking continue, you agree to our{" "}
@@ -85,7 +82,6 @@ const AuthPage = () => {
           </div>
         </div>
       </div>
-      {/* <AuthButtons /> */}
     </>
   );
 };

@@ -27,7 +27,6 @@ const useWebSocket = ({
   const connect = useCallback(() => {
     // websocket already exists
     clientLogger.debug("useWebSocket triggered");
-    console.log("useWebSocket triggered");
     if (ws.current) {
       clientLogger.debug("Websocket already initialized");
       return;
