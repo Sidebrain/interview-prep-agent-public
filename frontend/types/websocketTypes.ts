@@ -12,15 +12,19 @@ export type WebSocketHookResult = {
   sendMessage: (
     data: string | ArrayBufferLike | Blob | ArrayBufferView
   ) => void;
-  lastMessage: WebSocketEventMap["message"] | null;
+  // lastMessage: WebSocketEventMap["message"] | null;
+  lastMessage: WebSocketMessage | null;
   readyState: number;
   connectionStatus: string;
+  msgList: WebSocketMessage[];
 };
 
-const WebsocketMessageZodType = z.object({
+export const WebsocketMessageZodType = z.object({
   id: z.number(),
-  text: z.string(),
-  sender: z.union([z.literal("user"), z.literal("bot")]),
+  type: z.enum(["chunk", "complete", "error", "heartbeat"]),
+  content: z.string().nullable(),
+  sender: z.enum(["user", "bot"]),
+  index: z.number().default(0),
 });
 
 export type WebSocketMessage = z.infer<typeof WebsocketMessageZodType>;

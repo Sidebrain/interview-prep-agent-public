@@ -2,6 +2,8 @@
 import {
   WebSocketHookOptions,
   WebSocketHookResult,
+  WebSocketMessage,
+  WebsocketMessageZodType,
 } from "@/types/websocketTypes";
 import { useEffect, useRef, useState, useCallback } from "react";
 import clientLogger from "../lib/clientLogger";
@@ -13,9 +15,10 @@ const useWebSocket = ({
   reconnectAttempts = 5,
   heartbeatInterval = 30000,
 }: WebSocketHookOptions): WebSocketHookResult => {
-  const [lastMessage, setLastMessage] = useState<
-    WebSocketEventMap["message"] | null
-  >(null);
+  const [lastMessage, setLastMessage] =
+    useState<// WebSocketEventMap["message"] | null
+    WebSocketMessage | null>(null);
+  const [msgList, setMsgList] = useState<WebSocketMessage[]>([]);
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
   const [connectionStatus, setConnectionStatus] =
     useState<string>("Disconnected");
@@ -71,12 +74,25 @@ const useWebSocket = ({
 
     // what happens when message is received
     ws.current.onmessage = (event: WebSocketEventMap["message"]) => {
-      clientLogger.debug("WebSocket message received:", event.data);
-      setLastMessage(event);
+      // clientLogger.debug("WebSocket message received:", event.data);
+      try {
+        const data = JSON.parse(event.data);
+        const message = WebsocketMessageZodType.parse(data);
+        // clientLogger.debug("Parsed message: ", message);
 
-      if (event.data === "pong") {
-        // Heartbeat response received
-        clientLogger.debug("Heartbeat response received");
+        if (message.type === "heartbeat") {
+          // Heartbeat response received
+          clientLogger.debug("Heartbeat response received");
+          return;
+        }
+        // clientLogger.debug("Setting last message: ", message);
+        if (message.type === "chunk" || message.type === "complete") {
+          setLastMessage(message);
+          setMsgList((prev) => [...prev, message]);
+        }
+      } catch (error) {
+        clientLogger.error("Error parsing message: ", error);
+        clientLogger.error("Message data: ", event.data);
       }
     };
   }, []);
@@ -128,7 +144,7 @@ const useWebSocket = ({
     };
   }, [connect, disconnect, stopHeartbeat]);
 
-  return { sendMessage, lastMessage, readyState, connectionStatus };
+  return { sendMessage, lastMessage, readyState, connectionStatus, msgList };
 };
 
 export default useWebSocket;

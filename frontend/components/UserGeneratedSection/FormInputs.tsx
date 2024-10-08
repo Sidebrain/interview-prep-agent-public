@@ -13,6 +13,7 @@ import {
 import { Button } from "../ui/button";
 import { useForm } from "react-hook-form";
 import { Textarea } from "../ui/textarea";
+import clientLogger from "@/app/lib/clientLogger";
 
 const FormInputs = () => {
   const form = useForm<InputFields>({
@@ -26,7 +27,7 @@ const FormInputs = () => {
   });
 
   function onSubmit(formValues: InputFields): void {
-    console.log(formValues);
+    clientLogger.debug(formValues);
   }
 
   return (
