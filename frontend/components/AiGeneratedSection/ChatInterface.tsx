@@ -18,11 +18,7 @@ const ChatInterfaceHeader = () => {
 };
 
 const ChatInterface = () => {
-  const [messages, setMessages] = useState<WebSocketMessage[]>([
-    { id: 1, content: "Hello!", type: "complete", sender: "bot", index: 0 },
-    { id: 2, content: "Hi there!", type: "complete", sender: "user", index: 0 },
-  ]);
-  const { connectionStatus, readyState, sendMessage, lastMessage, msgList } =
+  const { connectionStatus, readyState, sendMessage, msgList, dispatch } =
     useWebSocket({
       url: process.env.NEXT_PUBLIC_WS_URL as string,
     });
@@ -39,7 +35,7 @@ const ChatInterface = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(scrollToBottom, [msgList]);
 
   // identify the max textarea height
   useEffect(() => {
@@ -63,38 +59,38 @@ const ChatInterface = () => {
     }
   }
 
-  useEffect(() => {
-    if (lastMessage) {
-      // updateMessageState(lastMessage);
-      updateMessageState(lastMessage);
-    }
-  }, [lastMessage]);
+  // useEffect(() => {
+  //   if (lastMessage) {
+  //     // updateMessageState(lastMessage);
+  //     updateMessageState(lastMessage);
+  //   }
+  // }, [lastMessage]);
 
-  function updateMessageState(newMessage: WebSocketMessage) {
-    setMessages((prevMessages) => {
-      if (newMessage.index < 10) clientLogger.debug(newMessage);
-      const lastMessage = prevMessages[prevMessages.length - 1];
+  // function updateMessageState(newMessage: WebSocketMessage) {
+  //   setMessages((prevMessages) => {
+  //     if (newMessage.index < 10) clientLogger.debug(newMessage);
+  //     const lastMessage = prevMessages[prevMessages.length - 1];
 
-      if (newMessage.type === "chunk" || newMessage.type === "complete") {
-        if (lastMessage && lastMessage.id === newMessage.id) {
-          clientLogger.debug(newMessage.index);
-          // Update existing message
-          const updatedMessages = [...prevMessages];
-          updatedMessages[updatedMessages.length - 1] = {
-            ...lastMessage,
-            content: (lastMessage.content || "") + (newMessage.content || ""),
-            type: newMessage.type,
-          };
-          return updatedMessages;
-        } else {
-          // Add new message
-          return [...prevMessages, newMessage];
-        }
-      }
+  //     if (newMessage.type === "chunk" || newMessage.type === "complete") {
+  //       if (lastMessage && lastMessage.id === newMessage.id) {
+  //         clientLogger.debug(newMessage.index);
+  //         // Update existing message
+  //         const updatedMessages = [...prevMessages];
+  //         updatedMessages[updatedMessages.length - 1] = {
+  //           ...lastMessage,
+  //           content: (lastMessage.content || "") + (newMessage.content || ""),
+  //           type: newMessage.type,
+  //         };
+  //         return updatedMessages;
+  //       } else {
+  //         // Add new message
+  //         return [...prevMessages, newMessage];
+  //       }
+  //     }
 
-      return prevMessages;
-    });
-  }
+  //     return prevMessages;
+  //   });
+  // }
   // function updateMessageState() {
   //   if (!lastMessage) return;
   //   const newMessage = WebsocketMessageZodType.parse(lastMessage);
@@ -147,15 +143,15 @@ const ChatInterface = () => {
     e.preventDefault();
     if (inputValue.trim()) {
       sendMessage(inputValue);
-      setMessages((prevMsg) => [
-        ...prevMsg,
-        {
+      dispatch({
+        type: "ADD_MESSAGE",
+        payload: {
           id: Date.now(),
           content: inputValue,
           type: "complete",
           sender: "user",
-        },
-      ]);
+        } as WebSocketMessage,
+      });
     }
     setInputValue("");
   }
@@ -164,7 +160,7 @@ const ChatInterface = () => {
     <div className="flex flex-col h-full w-full" ref={containerRef}>
       <ChatInterfaceHeader />
       <div className="flex-grow overflow-auto p-4">
-        {messages.map((message) => (
+        {msgList.map((message) => (
           <div
             key={message.id}
             className={`mb-4 whitespace-pre-wrap 

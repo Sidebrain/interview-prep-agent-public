@@ -5,8 +5,9 @@ import {
   WebSocketMessage,
   WebsocketMessageZodType,
 } from "@/types/websocketTypes";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useReducer } from "react";
 import clientLogger from "../lib/clientLogger";
+import messageReducer from "../lib/messageReducer";
 
 const useWebSocket = ({
   url,
@@ -15,10 +16,14 @@ const useWebSocket = ({
   reconnectAttempts = 5,
   heartbeatInterval = 30000,
 }: WebSocketHookOptions): WebSocketHookResult => {
-  const [lastMessage, setLastMessage] =
-    useState<// WebSocketEventMap["message"] | null
-    WebSocketMessage | null>(null);
-  const [msgList, setMsgList] = useState<WebSocketMessage[]>([]);
+  // const [lastMessage, setLastMessage] =
+  //   useState<// WebSocketEventMap["message"] | null
+  //   WebSocketMessage | null>(null);
+  // const [msgList, setMsgList] = useState<WebSocketMessage[]>([]);
+  const [msgList, dispatch] = useReducer(messageReducer, [
+    { id: 1, content: "Hello!", type: "complete", sender: "bot", index: 0 },
+    { id: 2, content: "Hi there!", type: "complete", sender: "user", index: 0 },
+  ]);
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
   const [connectionStatus, setConnectionStatus] =
     useState<string>("Disconnected");
@@ -86,9 +91,10 @@ const useWebSocket = ({
           return;
         }
         // clientLogger.debug("Setting last message: ", message);
-        if (message.type === "chunk" || message.type === "complete") {
-          setLastMessage(message);
-          setMsgList((prev) => [...prev, message]);
+        if (message.type === "chunk") {
+          dispatch({ type: "ADD_CHUNK", payload: message });
+        } else if (message.type === "complete") {
+          dispatch({ type: "COMPLETE", payload: message });
         }
       } catch (error) {
         clientLogger.error("Error parsing message: ", error);
@@ -144,7 +150,7 @@ const useWebSocket = ({
     };
   }, [connect, disconnect, stopHeartbeat]);
 
-  return { sendMessage, lastMessage, readyState, connectionStatus, msgList };
+  return { sendMessage, msgList, readyState, connectionStatus, dispatch };
 };
 
 export default useWebSocket;

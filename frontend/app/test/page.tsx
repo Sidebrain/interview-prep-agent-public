@@ -1,12 +1,7 @@
 "use client";
-import SimpleChatInterface from "@/components/AiGeneratedSection/SimpleChatInterface";
 
 const TestPage = () => {
-  return (
-    <div>
-      <SimpleChatInterface />
-    </div>
-  );
+  return <div>TestPage</div>;
 };
 
 export default TestPage;

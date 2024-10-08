@@ -8,15 +8,19 @@ export type WebSocketHookOptions = {
   heartbeatInterval?: number;
 };
 
+export type MessageReduceAction =
+  | { type: "ADD_CHUNK"; payload: WebSocketMessage }
+  | { type: "COMPLETE"; payload: WebSocketMessage }
+  | { type: "ADD_MESSAGE"; payload: WebSocketMessage };
+
 export type WebSocketHookResult = {
   sendMessage: (
     data: string | ArrayBufferLike | Blob | ArrayBufferView
   ) => void;
-  // lastMessage: WebSocketEventMap["message"] | null;
-  lastMessage: WebSocketMessage | null;
   readyState: number;
   connectionStatus: string;
   msgList: WebSocketMessage[];
+  dispatch: React.Dispatch<MessageReduceAction>;
 };
 
 export const WebsocketMessageZodType = z.object({
