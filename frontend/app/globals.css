@@ -76,3 +76,49 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.markdown-content {
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.code-block-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+
+.markdown-content p {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content h* {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.markdown-content pre {
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.markdown-content li {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content code {
+  /* background-color: #FF8A8A; */
+  padding: 0.2rem 0.2rem;
+  border-radius: 0.2rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}

@@ -1,13 +1,13 @@
 "use client";
-import React, { useState, useRef, useEffect, use } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import ReactMarkdown, { Components } from "react-markdown";
+import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+
 import useWebSocket from "@/app/hooks/useWebsocket";
-import clientLogger from "@/app/lib/clientLogger";
 import UserInputInterface from "./UserInputInterface";
-import {
-  WebSocketMessage,
-  WebsocketMessageZodType,
-} from "@/types/websocketTypes";
-import { debounce } from "lodash";
+import { WebSocketMessage } from "@/types/websocketTypes";
+import clientLogger from "@/app/lib/clientLogger";
 
 const ChatInterfaceHeader = () => {
   return (
@@ -59,86 +59,6 @@ const ChatInterface = () => {
     }
   }
 
-  // useEffect(() => {
-  //   if (lastMessage) {
-  //     // updateMessageState(lastMessage);
-  //     updateMessageState(lastMessage);
-  //   }
-  // }, [lastMessage]);
-
-  // function updateMessageState(newMessage: WebSocketMessage) {
-  //   setMessages((prevMessages) => {
-  //     if (newMessage.index < 10) clientLogger.debug(newMessage);
-  //     const lastMessage = prevMessages[prevMessages.length - 1];
-
-  //     if (newMessage.type === "chunk" || newMessage.type === "complete") {
-  //       if (lastMessage && lastMessage.id === newMessage.id) {
-  //         clientLogger.debug(newMessage.index);
-  //         // Update existing message
-  //         const updatedMessages = [...prevMessages];
-  //         updatedMessages[updatedMessages.length - 1] = {
-  //           ...lastMessage,
-  //           content: (lastMessage.content || "") + (newMessage.content || ""),
-  //           type: newMessage.type,
-  //         };
-  //         return updatedMessages;
-  //       } else {
-  //         // Add new message
-  //         return [...prevMessages, newMessage];
-  //       }
-  //     }
-
-  //     return prevMessages;
-  //   });
-  // }
-  // function updateMessageState() {
-  //   if (!lastMessage) return;
-  //   const newMessage = WebsocketMessageZodType.parse(lastMessage);
-  //   const debouncedSetMessages = debounce(setMessages, 200);
-  //   // clientLogger.debug("New message: ", newMessage);
-  //   debouncedSetMessages((prevMsg) => {
-  //     const lastReceivedMessage = prevMsg[prevMsg.length - 1];
-  //     switch (newMessage.type) {
-  //       case "complete":
-  //       case "chunk":
-  //         // if lastmessage is a chunk or complete type and has same id as last received message
-  //         // it means we are receiving the same message in chunks
-  //         // clientLogger.debug(lastReceivedMessage.content, newMessage.content);
-  //         const accumulatedContent = `${lastReceivedMessage.content ?? ""}${
-  //           newMessage.content
-  //         }`;
-  //         if (lastReceivedMessage.id === newMessage.id) {
-  //           if (newMessage.type === "chunk") {
-  //             const updatedMessage = {
-  //               ...lastReceivedMessage,
-  //               content: accumulatedContent,
-  //             };
-  //             // clientLogger.debug("Accumulated message: ", accumulatedContent);
-  //             return [...prevMsg.slice(0, -1), updatedMessage];
-  //           } else {
-  //             clientLogger.debug(
-  //               lastMessage.id === newMessage.id,
-  //               newMessage.type
-  //             );
-  //             return [...prevMsg];
-  //           }
-  //         } else {
-  //           return [...prevMsg, newMessage];
-  //         }
-  //       case "error":
-  //         clientLogger.error("Error parsing message: ", newMessage);
-  //         return [...prevMsg];
-  //       case "heartbeat":
-  //         clientLogger.debug("Heartbeat received");
-  //         return [...prevMsg];
-  //       default:
-  //         clientLogger.debug("Base case, no switch type match");
-  //         clientLogger.debug("newMessage: ", newMessage);
-  //         return [...prevMsg, newMessage];
-  //     }
-  //   });
-  // }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (inputValue.trim()) {
@@ -155,29 +75,71 @@ const ChatInterface = () => {
     }
     setInputValue("");
   }
+  const components: Components = {
+    code({ node, inline, className, children, ...props }) {
+      const match = /language-(\w+)/.exec(className || "");
+      clientLogger.debug("match: ", match, match?.[1]);
+      return !inline && match ? (
+        <div className="code-block-wrapper">
+          <SyntaxHighlighter
+            style={oneDark}
+            language={match[1]}
+            PreTag="div"
+            {...props}
+            wrapLongLines={true}
+            customStyle={{
+              margin: 0,
+              padding: "1rem",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+            }}
+            codeTagProps={{
+              style: { whiteSpace: "pre-wrap", wordBreak: "break-word" },
+            }}
+          >
+            {String(children).replace(/\n$/, "")}
+          </SyntaxHighlighter>
+        </div>
+      ) : (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      );
+    },
+    p({ children }) {
+      return <p className="mb-2 last:mb-0">{children}</p>;
+    },
+  };
+
+  const renderMessage = (message: WebSocketMessage) => (
+    <div
+      key={message.id}
+      className={`mb-4 ${
+        message.sender === "user" ? "text-right" : "text-left"
+      }`}
+    >
+      <span
+        className={`inline-block p-2 rounded-lg max-w-full ${
+          message.sender === "user"
+            ? "bg-gray-50 text-gray-800 border border-gray-200"
+            : "bg-gray-200 text-black"
+        }`}
+      >
+        <ReactMarkdown
+          components={components}
+          className="markdown-content break-words"
+        >
+          {message.content?.trim()}
+        </ReactMarkdown>
+      </span>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full w-full" ref={containerRef}>
       <ChatInterfaceHeader />
       <div className="flex-grow overflow-auto p-4">
-        {msgList.map((message) => (
-          <div
-            key={message.id}
-            className={`mb-4 whitespace-pre-wrap 
-              ${message.sender === "user" ? "text-right" : "text-left"}
-            `}
-          >
-            <span
-              className={`inline-block p-2 rounded-lg ${
-                message.sender === "user"
-                  ? "bg-gray-50 text-gray-800 border border-gray-200"
-                  : "bg-gray-200 text-black"
-              }`}
-            >
-              {message.content}
-            </span>
-          </div>
-        ))}
+        {msgList.map(renderMessage)}
         <div ref={messagesEndRef} />
       </div>
       <UserInputInterface

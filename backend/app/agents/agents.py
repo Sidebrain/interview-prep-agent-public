@@ -28,7 +28,7 @@ class AiIntelligence:
                 yield chunk.choices[0].delta.content
 
     async def process_response(
-        self, context: str, websocket: WebSocket = None, verbose: bool = True
+        self, context: str, websocket: WebSocket = None, verbose: bool = False
     ) -> str:
         id = uuid4().int
         index = 0
@@ -41,8 +41,7 @@ class AiIntelligence:
                 )
                 await websocket.send_text(response_model.model_dump_json())
             if verbose:
-                # print(response, end="", flush=True)
-                print(response_model.index, end=", ", flush=True)
+                print(response, end="", flush=True)
             full_response.append(response)
 
         if websocket:
