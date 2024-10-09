@@ -5,6 +5,7 @@ import { Icons } from "@/components/icons";
 import clientLogger from "../lib/clientLogger";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { ModeToggle } from "@/components/ThemeSwitcher";
 
 export default function Header({
   children,
@@ -21,6 +22,7 @@ export default function Header({
     <div className="flex flex-col h-screen">
       <header className="bg-gray-200 w-full">
         <div className="flex gap-2 p-2 w-full justify-end items-center">
+          <ModeToggle />
           <Button variant="outline">Account</Button>
           <Button variant="outline">Dashboard</Button>
           <Button

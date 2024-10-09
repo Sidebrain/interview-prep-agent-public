@@ -18,7 +18,7 @@ const ChatInterfaceHeader = () => {
 };
 
 const ChatInterface = () => {
-  const { connectionStatus, readyState, sendMessage, msgList, dispatch } =
+  const { sendMessage, msgList, dispatch } =
     useWebSocket({
       url: process.env.NEXT_PUBLIC_WS_URL as string,
     });
