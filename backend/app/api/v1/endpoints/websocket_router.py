@@ -10,7 +10,7 @@ router = APIRouter()
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    agent = BaseAgent("What is the meaning of life", websocket)
+    agent = BaseAgent("Describe yourself and your goals", websocket)
     await agent.process_goal()  # this sends the goal response
     try:
         while True:

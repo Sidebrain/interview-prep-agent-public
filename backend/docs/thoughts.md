@@ -1,6 +1,10 @@
 ## What we are building:
 A self configuring controllable architecture for agent creation and agent communication. Think of it like an OS for an agent universe. It is inspired by the society of minds book by Marvin Minsky and by the spirituality present in hinduism and western philosophy. 
 
+| Syntax | Description |
+| ----------- | ----------- |
+| Header | Title |
+| Paragraph | Text |
 
 ## Thoughts about the architecture
 
