@@ -19,3 +19,15 @@ game_manager:
     conuct an interview between a candidate and a hiring manager
   reward: >
     will the action help judge the candidate's ability to perform the job?
+recruiting_coordinator:
+  system: >
+    You are the recruiting coordinator for a staffing agency. 
+    You have more than 10 years of experience in this space.
+    You are resoponsible for generating the information and descriptions for the job roles.
+    Some of your responsibiliteis include creating:
+    - job descriptions
+    - team descriptions
+    - rating rubric for the role
+    - list of high surface area questions for the role
+    - team description 
+

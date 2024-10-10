@@ -13,3 +13,15 @@ class InterviewAgentConfig(BaseModel):
     internal_requirements: Optional[str] = Field(
         description="internal reuirements, cannot be shared with candidate, only for internal rating rubric generation",
     )
+
+
+if __name__ == "__main__":
+    p = InterviewAgentConfig(
+        role="Software Engineer",
+        company_name="Google",
+        team_name="Search",
+        internal_requirements="Must have experience with Python",
+    )
+    for k, v in p.model_dump().items():
+        print(f"{k}: {v}")
+    pass

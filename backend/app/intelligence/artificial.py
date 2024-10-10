@@ -14,16 +14,31 @@ from app.services.llms.openai_client import openai_async_client
 
 
 class ArtificialIntelligence:
-    def __init__(self, client: AsyncClient = openai_async_client, iq: int = 100):
+    def __init__(
+        self,
+        memory: list[str],
+        client: AsyncClient = openai_async_client,
+        iq: int = 100,
+    ):
         self.iq = iq
         self.client = client
+        self.memory = memory
 
-    async def generate_response(self, context: str) -> AsyncGenerator[str, None]:
-        agent_config = safe_load(open("config/game_manager.yaml"))
-        description = agent_config["game_manager"]["description"]
+    async def generate_response(
+        self, context: str, system: str = None, use_memory: bool = False
+    ) -> AsyncGenerator[str, None]:
+        if system is None:
+            system = safe_load(open("config/game_manager.yaml"))["game_manager"][
+                "description"
+            ]
+            print("base case system is: ", system)
         stream = await self.client.chat.completions.create(
             messages=[
-                {"role": "system", "content": description},
+                {"role": "system", "content": system},
+                {
+                    "role": "user",
+                    "content": " ".join(self.memory) if use_memory else "",
+                },
                 {"role": "user", "content": context},
             ],
             model="gpt-4o-mini",
@@ -53,7 +68,8 @@ class ArtificialIntelligence:
             parsed_response = completion.choices[0].message
             if parsed_response.parsed:
                 content: ParsedChatCompletionMessage = parsed_response.parsed
-                print(content, type(content))
+                self.memory.append(content.model_dump_json())
+                print("added to memory", self.memory)
             elif parsed_response.refusal:
                 print(parsed_response.refusal)
                 content: ChatCompletionMessage = parsed_response.refusal
@@ -80,13 +96,15 @@ class ArtificialIntelligence:
     async def process_streaming_response(
         self,
         context: str,
+        system: str = None,
         websocket: WebSocket = None,
         verbose: bool = False,
+        use_memory: bool = False,
     ):
         id = uuid4().int
         index = 0
         full_response = []
-        async for response in self.generate_response(context):
+        async for response in self.generate_response(context, system, use_memory):
             index += 1
             if websocket:
                 response_model = WebSocketStreamResponse(
@@ -108,22 +126,25 @@ class ArtificialIntelligence:
     async def route_to_appropriate_generator(
         self,
         message: AgentMessage,
+        system: str = None,
         websocket: WebSocket = None,
         verbose: bool = False,
         response_format: BaseModel | None = None,
+        use_memory: bool = False,
     ) -> str:
         context = message.content
 
         match message.routing_key:
             case "streaming":
                 return await self.process_streaming_response(
-                    context, websocket, verbose
+                    context, system, websocket, verbose, use_memory
                 )
             case "structured":
                 print("generating structured response")
-                return await self.generate_structured_response(
+                await self.generate_structured_response(
                     context, response_format, websocket
                 )
+
             case _:
                 return await self.process_streaming_response(
                     context, websocket, verbose
