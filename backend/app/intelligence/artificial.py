@@ -2,6 +2,8 @@ from typing import AsyncGenerator, Literal, Union
 from uuid import uuid4
 from fastapi import WebSocket
 from openai import AsyncClient
+from openai.types.chat import ParsedChatCompletionMessage
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
 import openai
 from pydantic import BaseModel
 from yaml import safe_load
@@ -50,11 +52,11 @@ class ArtificialIntelligence:
             )
             parsed_response = completion.choices[0].message
             if parsed_response.parsed:
-                content = parsed_response.parsed
+                content: ParsedChatCompletionMessage = parsed_response.parsed
                 print(content, type(content))
             elif parsed_response.refusal:
                 print(parsed_response.refusal)
-                content = parsed_response.refusal
+                content: ChatCompletionMessage = parsed_response.refusal
 
             if websocket:
                 response_model = WebSocketStreamResponse(
@@ -103,26 +105,7 @@ class ArtificialIntelligence:
 
         return " ".join(full_response)
 
-    async def process_response(
-        self,
-        context: str,
-        websocket: WebSocket = None,
-        verbose: bool = False,
-        processing_type: Literal["streaming", "structured"] = "streaming",
-    ) -> str:
-        match processing_type:
-            case "streaming":
-                return await self.process_streaming_response(
-                    context, websocket, verbose
-                )
-            case "structured":
-                return await self.generate_structured_response(context)
-            case _:
-                return await self.process_streaming_response(
-                    context, websocket, verbose
-                )
-
-    async def route_response(
+    async def route_to_appropriate_generator(
         self,
         message: AgentMessage,
         websocket: WebSocket = None,

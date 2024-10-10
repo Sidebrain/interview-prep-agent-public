@@ -17,15 +17,15 @@ class BaseAgent:
         return f"{self.__class__.__name__}: {self.goal}"
 
     async def process_goal(self) -> str:
-        return await self.intelligence.process_response(self.goal, self.websocket)
-
-    async def route(self, message: AgentMessage) -> str:
-        return await self.intelligence.route_response(
-            message, self.websocket, response_format=InterviewAgentConfig
+        goal = AgentMessage(content=self.goal, routing_key="streaming")
+        return await self.intelligence.route_to_appropriate_generator(
+            goal, self.websocket
         )
 
-    async def process_message(self, message: str) -> str:
-        await self.intelligence.process_response(message, self.websocket)
+    async def generate_response(self, message: AgentMessage) -> str:
+        return await self.intelligence.route_to_appropriate_generator(
+            message, self.websocket, response_format=InterviewAgentConfig
+        )
 
 
 async def main():

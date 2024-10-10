@@ -26,11 +26,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     print("Received message", data)
                     agent_message = AgentMessage.model_validate_json(data)
                     print("message successfully validated", agent_message)
-                    await agent.route(agent_message)
+                    await agent.generate_response(agent_message)
                 except Exception as e:
                     print(f"Invalid message: {e}")
                     print("Couldnt process")
-                    await agent.process_message(data)
                     continue
 
     except WebSocketDisconnect:
