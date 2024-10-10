@@ -6,6 +6,7 @@ import openai
 from pydantic import BaseModel
 from yaml import safe_load
 
+from app.types.agent_types import AgentMessage
 from app.types.websocket_types import WebSocketStreamResponse
 from app.services.llms.openai_client import openai_async_client
 
@@ -31,8 +32,13 @@ class ArtificialIntelligence:
                 yield chunk.choices[0].delta.content
 
     async def generate_structured_response(
-        self, context: str, response_format: BaseModel | None = None
+        self,
+        context: str,
+        response_format: BaseModel | None = None,
+        websocket: WebSocket = None,
     ):
+        id = uuid4().int
+        index = 0
         try:
             completion = await self.client.beta.chat.completions.parse(
                 model="gpt-4o",
@@ -44,9 +50,23 @@ class ArtificialIntelligence:
             )
             parsed_response = completion.choices[0].message
             if parsed_response.parsed:
-                return parsed_response.parsed
+                content = parsed_response.parsed
+                print(content, type(content))
             elif parsed_response.refusal:
                 print(parsed_response.refusal)
+                content = parsed_response.refusal
+
+            if websocket:
+                response_model = WebSocketStreamResponse(
+                    id=id,
+                    index=index,
+                    type="structured",
+                    content=content.model_dump_json(),
+                )
+                print("sending via websocket", response_model.model_dump_json())
+                await websocket.send_text(response_model.model_dump_json())
+            else:
+                return content
         except Exception as e:
             if type(e) == openai.LengthFinishReasonError:
                 print("The response is too long to parse", e)
@@ -97,6 +117,30 @@ class ArtificialIntelligence:
                 )
             case "structured":
                 return await self.generate_structured_response(context)
+            case _:
+                return await self.process_streaming_response(
+                    context, websocket, verbose
+                )
+
+    async def route_response(
+        self,
+        message: AgentMessage,
+        websocket: WebSocket = None,
+        verbose: bool = False,
+        response_format: BaseModel | None = None,
+    ) -> str:
+        context = message.content
+
+        match message.routing_key:
+            case "streaming":
+                return await self.process_streaming_response(
+                    context, websocket, verbose
+                )
+            case "structured":
+                print("generating structured response")
+                return await self.generate_structured_response(
+                    context, response_format, websocket
+                )
             case _:
                 return await self.process_streaming_response(
                     context, websocket, verbose

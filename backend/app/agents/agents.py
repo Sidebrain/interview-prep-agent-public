@@ -2,6 +2,8 @@ import asyncio
 from fastapi import WebSocket
 
 from app.intelligence.artificial import ArtificialIntelligence
+from app.intelligence.reasoning_structure import InterviewAgentConfig
+from app.types.agent_types import AgentMessage
 
 
 class BaseAgent:
@@ -16,6 +18,11 @@ class BaseAgent:
 
     async def process_goal(self) -> str:
         return await self.intelligence.process_response(self.goal, self.websocket)
+
+    async def route(self, message: AgentMessage) -> str:
+        return await self.intelligence.route_response(
+            message, self.websocket, response_format=InterviewAgentConfig
+        )
 
     async def process_message(self, message: str) -> str:
         await self.intelligence.process_response(message, self.websocket)

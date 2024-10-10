@@ -2,6 +2,7 @@ from uuid import uuid4
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.agents.agents import BaseAgent
+from app.types.agent_types import AgentMessage
 from app.types.websocket_types import WebSocketStreamResponse
 
 router = APIRouter()
@@ -21,7 +22,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 )
                 await websocket.send_text(send_text_body.model_dump_json())
             else:
-                await agent.process_message(data)
+                try:
+                    print("Received message", data)
+                    agent_message = AgentMessage.model_validate_json(data)
+                    print("message successfully validated", agent_message)
+                    await agent.route(agent_message)
+                except Exception as e:
+                    print(f"Invalid message: {e}")
+                    print("Couldnt process")
+                    await agent.process_message(data)
+                    continue
 
     except WebSocketDisconnect:
         print("Client disconnected")
