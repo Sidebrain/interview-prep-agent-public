@@ -5,8 +5,10 @@ import React from "react";
 const CreateInterviewPage = () => {
   return (
     <div className="w-full flex ">
-      <UserGeneratedSection />
-      <div className="hidden md:flex flex-col w-1/2 m-1 items-center justify-center">
+      {/* <div className="flex flex-col w-full  md:w-1/2 ">
+        <UserGeneratedSection />
+      </div> */}
+      <div className="hidden md:flex flex-col w-2/3 m-1 items-center justify-center">
         <ChatInterface />
       </div>
     </div>

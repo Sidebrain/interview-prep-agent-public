@@ -6,7 +6,7 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 import useWebSocket from "@/app/hooks/useWebsocket";
 import UserInputInterface from "./UserInputInterface";
-import { WebSocketMessage } from "@/types/websocketTypes";
+import { RoutingKeyType, WebSocketMessage } from "@/types/websocketTypes";
 import clientLogger from "@/app/lib/clientLogger";
 
 const ChatInterfaceHeader = () => {
@@ -18,10 +18,9 @@ const ChatInterfaceHeader = () => {
 };
 
 const ChatInterface = () => {
-  const { sendMessage, msgList, dispatch } =
-    useWebSocket({
-      url: process.env.NEXT_PUBLIC_WS_URL as string,
-    });
+  const { sendMessage, msgList, dispatch } = useWebSocket({
+    url: process.env.NEXT_PUBLIC_WS_URL as string,
+  });
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -57,6 +56,46 @@ const ChatInterface = () => {
       e.preventDefault();
       handleSubmit(e);
     }
+  }
+
+  function handleStructuredKeyDown(
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+    routingKey: RoutingKeyType
+  ) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      handleStructuredSubmit(e, routingKey);
+    }
+  }
+
+  async function handleStructuredSubmit(
+    e: React.FormEvent,
+    routingKey: RoutingKeyType
+  ) {
+    //
+    e.preventDefault();
+    if (inputValue.trim()) {
+      const messageToSend = {
+        routing_key: routingKey,
+        content: inputValue,
+      };
+      sendMessage(
+        JSON.stringify({
+          routing_key: routingKey,
+          content: inputValue,
+        })
+      );
+      dispatch({
+        type: "ADD_MESSAGE",
+        payload: {
+          id: Date.now(),
+          content: inputValue,
+          type: "complete",
+          sender: "user",
+        } as WebSocketMessage,
+      });
+    }
+    setInputValue("");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -138,14 +177,16 @@ const ChatInterface = () => {
   return (
     <div className="flex flex-col h-full w-full" ref={containerRef}>
       <ChatInterfaceHeader />
-      <div className="flex-grow overflow-auto p-4">
+      <div className="flex-grow overflow-auto no-scrollbar p-4">
         {msgList.map(renderMessage)}
         <div ref={messagesEndRef} />
       </div>
       <UserInputInterface
         inputValue={inputValue}
+        onStructuredSubmit={handleStructuredSubmit}
         onInputChange={setInputValue}
         onKeyDown={handleKeyDown}
+        onStructuredKeyDown={handleStructuredKeyDown}
         onSubmit={handleSubmit}
         maxHeight={maxTextareaHeight}
         ref={textareaRef}

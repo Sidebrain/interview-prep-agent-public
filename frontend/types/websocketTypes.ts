@@ -25,10 +25,17 @@ export type WebSocketHookResult = {
 
 export const WebsocketMessageZodType = z.object({
   id: z.number(),
-  type: z.enum(["chunk", "complete", "error", "heartbeat"]),
+  type: z.enum(["chunk", "complete", "error", "heartbeat", "structured"]),
   content: z.string().nullable(),
   sender: z.enum(["user", "bot"]),
   index: z.number().default(0),
 });
 
 export type WebSocketMessage = z.infer<typeof WebsocketMessageZodType>;
+
+export type RoutingKeyType = "streaming" | "structured";
+
+export type WebSocketSendType = {
+  routing_key: RoutingKeyType;
+  content: string;
+};

@@ -16,10 +16,6 @@ const useWebSocket = ({
   reconnectAttempts = 5,
   heartbeatInterval = 30000,
 }: WebSocketHookOptions): WebSocketHookResult => {
-  // const [lastMessage, setLastMessage] =
-  //   useState<// WebSocketEventMap["message"] | null
-  //   WebSocketMessage | null>(null);
-  // const [msgList, setMsgList] = useState<WebSocketMessage[]>([]);
   const [msgList, dispatch] = useReducer(messageReducer, [
     { id: 1, content: "Hello!", type: "complete", sender: "bot", index: 0 },
     { id: 2, content: "Hi there!", type: "complete", sender: "user", index: 0 },
@@ -95,6 +91,10 @@ const useWebSocket = ({
           dispatch({ type: "ADD_CHUNK", payload: message });
         } else if (message.type === "complete") {
           dispatch({ type: "COMPLETE", payload: message });
+        }
+        if (message.type === "structured") {
+          // clientLogger.debug("Structured message received: ", message);
+          dispatch({ type: "ADD_MESSAGE", payload: message });
         }
       } catch (error) {
         clientLogger.error("Error parsing message: ", error);
