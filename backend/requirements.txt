@@ -9,3 +9,8 @@ python-dotenv
 websockets
 pydantic
 pyyaml
+stripe
+pytest
+pytest
+pytest-asyncio
+pytest-mock
