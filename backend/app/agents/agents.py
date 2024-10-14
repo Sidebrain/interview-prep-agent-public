@@ -21,15 +21,24 @@ class BaseAgent:
 
     async def schema_based_knowledge_generator(self, schema: BaseModel):
         # for key in schema.model_dump().keys():
-        for key in ["role", "company_name", "team_name", "internal_requirements"]:
-            system = safe_load(open("config/game_manager.yaml"))[
-                "recruiting_coordinator"
-            ]["system"]
-            action = f"Generate response for {key} in markdown"
-            await self.generate_response(
+        async def generate_for_key(key: str):
+            action = f"Generate as relevant either a description or a list for {key}"
+            task = await self.generate_response(
                 message=AgentMessage(content=action, routing_key="streaming"),
                 system=system,
             )
+
+        keys = [
+            "role",
+            "company_name",
+            "team_name",
+            "rating rubric",
+            "high surface area questions",
+        ]
+        system = safe_load(open("config/game_manager.yaml"))["recruiting_coordinator"][
+            "system"
+        ]
+        asyncio.gather(*[generate_for_key(key) for key in keys])
         pass
 
     async def process_goal(self) -> str:

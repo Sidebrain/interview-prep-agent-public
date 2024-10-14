@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown, { Components } from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import remarkGfm from "remark-gfm";
 
 import useWebSocket from "@/app/hooks/useWebsocket";
 import UserInputInterface from "./UserInputInterface";
@@ -166,6 +167,7 @@ const ChatInterface = () => {
       >
         <ReactMarkdown
           components={components}
+          remarkPlugins={[remarkGfm]}
           className="markdown-content break-words"
         >
           {message.content?.trim()}

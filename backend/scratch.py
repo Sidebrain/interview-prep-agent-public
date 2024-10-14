@@ -1,4 +1,12 @@
-from yaml import safe_load
+from functools import lru_cache
+
+
+@lru_cache()
+def factorial(n: int) -> int:
+    if n == 0 | n == 1:
+        return 1
+    return n * factorial(n - 1)
+
 
 if __name__ == "__main__":
-    print(safe_load(open("config/game_manager.yaml"))["game_manager"].keys())
+    print(factorial(925))  # 120
