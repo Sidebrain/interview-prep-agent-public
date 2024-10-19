@@ -23,6 +23,9 @@ type HTMLTextAreaElementProps = {
   isRecording: boolean;
   playRecording: () => void;
   stopPlaying: () => void;
+  // transcription function
+  transcribeAudioChunk: (chunk: Blob) => Promise<void>;
+  audioChunks: Blob[];
 };
 
 const UserInputInterface = forwardRef<
@@ -43,6 +46,8 @@ const UserInputInterface = forwardRef<
       isRecording,
       playRecording,
       stopPlaying,
+      transcribeAudioChunk,
+      audioChunks,
     },
     ref
   ) => {
@@ -118,6 +123,20 @@ const UserInputInterface = forwardRef<
                 playRecording();
               }}
             >{`Play`}</Button>
+            <Button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                transcribeAudioChunk(new Blob(audioChunks));
+
+                // audioChunks.map((audioChunk, idx) => {
+                //   const chunkTranscribe = new Blob([audioChunk.slice(0, idx)]);
+                //   transcribeAudioChunk(audioChunk);
+                // });
+              }}
+            >
+              Transcribe
+            </Button>
           </div>
         </form>
       </div>

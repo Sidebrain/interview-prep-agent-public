@@ -1,12 +1,14 @@
-import { set } from "lodash";
 import { useRef, useState } from "react";
 import { useEffect } from "react";
 import { useCallback } from "react";
 import clientLogger from "../lib/clientLogger";
+import { transcribeAudioChunks } from "@/components/AiGeneratedSection/actions";
+import { on } from "events";
 
 type VoiceHookParams = {
   chunkSize?: number;
   maxRecordingTime?: number;
+  onTranscription?: (transcription: string) => void;
 };
 
 const useVoice = (props: VoiceHookParams) => {
@@ -41,7 +43,9 @@ const useVoice = (props: VoiceHookParams) => {
 
   const startRecording = useCallback(() => {
     if (streamRef.current) {
-      mediaRecorderRef.current = new MediaRecorder(streamRef.current);
+      mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
+        mimeType: "audio/webm",
+      });
 
       // Reset the audio chunks
       setAudioChunks([]);
@@ -125,6 +129,24 @@ const useVoice = (props: VoiceHookParams) => {
     }
   }, []);
 
+  const transcribeAudioChunk = useCallback(async (chunk: Blob) => {
+    const data = new FormData();
+    data.append("file", chunk, "chunk.webm");
+
+    try {
+      const response = await transcribeAudioChunks(data);
+      console.log("response", response);
+      clientLogger.debug("Transcription response: ", response);
+      if (props.onTranscription) props.onTranscription(response.transcription);
+    } catch (err) {
+      clientLogger.error(
+        "something went wrong with transcribing the audio chunks",
+        err
+      );
+      setError("Failed to transcribe audio chunks");
+    }
+  }, []);
+
   return {
     isRecording,
     error,
@@ -132,6 +154,8 @@ const useVoice = (props: VoiceHookParams) => {
     stopRecording,
     playRecording,
     stopPlaying,
+    transcribeAudioChunk,
+    audioChunks,
     // other returned values and functions
   };
 };

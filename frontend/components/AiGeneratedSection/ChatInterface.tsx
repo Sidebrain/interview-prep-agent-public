@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown, { Components, ExtraProps } from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
@@ -10,6 +10,7 @@ import UserInputInterface from "./UserInputInterface";
 import { RoutingKeyType, WebSocketMessage } from "@/types/websocketTypes";
 import clientLogger from "@/app/lib/clientLogger";
 import useVoice from "@/app/hooks/useVoice";
+import { set } from "lodash";
 
 interface CodeProps {
   node?: any;
@@ -27,6 +28,7 @@ const ChatInterfaceHeader = () => {
 };
 
 const ChatInterface = () => {
+  const [inputValue, setInputValue] = useState("");
   const { sendMessage, msgList, dispatch } = useWebSocket({
     url: process.env.NEXT_PUBLIC_WS_URL as string,
   });
@@ -36,8 +38,14 @@ const ChatInterface = () => {
     isRecording,
     playRecording,
     stopPlaying,
-  } = useVoice({});
-  const [inputValue, setInputValue] = useState("");
+    error,
+    transcribeAudioChunk,
+    audioChunks,
+  } = useVoice({
+    onTranscription: (result) => {
+      setInputValue((prev) => prev + " " + result);
+    },
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -213,6 +221,8 @@ const ChatInterface = () => {
         isRecording={isRecording}
         playRecording={playRecording}
         stopPlaying={stopPlaying}
+        transcribeAudioChunk={transcribeAudioChunk}
+        audioChunks={audioChunks}
       />
     </div>
   );
