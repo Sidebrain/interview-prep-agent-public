@@ -1,14 +1,22 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import ReactMarkdown, { Components } from "react-markdown";
+import ReactMarkdown, { Components, ExtraProps } from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import remarkGfm from "remark-gfm";
 
 import useWebSocket from "@/app/hooks/useWebsocket";
 import UserInputInterface from "./UserInputInterface";
 import { RoutingKeyType, WebSocketMessage } from "@/types/websocketTypes";
 import clientLogger from "@/app/lib/clientLogger";
+import useVoice from "@/app/hooks/useVoice";
+
+interface CodeProps {
+  node?: any;
+  inline?: any;
+  className?: any;
+  children?: any;
+}
 
 const ChatInterfaceHeader = () => {
   return (
@@ -22,6 +30,13 @@ const ChatInterface = () => {
   const { sendMessage, msgList, dispatch } = useWebSocket({
     url: process.env.NEXT_PUBLIC_WS_URL as string,
   });
+  const {
+    getPermissionsAndStartRecording,
+    stopRecording,
+    isRecording,
+    playRecording,
+    stopPlaying,
+  } = useVoice({});
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -116,13 +131,14 @@ const ChatInterface = () => {
     setInputValue("");
   }
   const components: Components = {
-    code({ node, inline, className, children, ...props }) {
+    code({ node, inline, className, children, ...props }: CodeProps) {
       const match = /language-(\w+)/.exec(className || "");
       clientLogger.debug("match: ", match, match?.[1]);
       return !inline && match ? (
         <div className="code-block-wrapper">
           <SyntaxHighlighter
-            style={oneDark}
+            {...props}
+            style={oneDark as { [key: string]: React.CSSProperties }}
             language={match[1]}
             PreTag="div"
             {...props}
@@ -192,6 +208,11 @@ const ChatInterface = () => {
         onSubmit={handleSubmit}
         maxHeight={maxTextareaHeight}
         ref={textareaRef}
+        stopRecording={stopRecording}
+        getPermissionsAndStartRecording={getPermissionsAndStartRecording}
+        isRecording={isRecording}
+        playRecording={playRecording}
+        stopPlaying={stopPlaying}
       />
     </div>
   );

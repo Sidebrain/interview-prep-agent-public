@@ -28,6 +28,19 @@ const useWebSocket = ({
   const reconnectCount = useRef<number>(0);
   const heartbeatTimer = useRef<NodeJS.Timeout | null>(null);
 
+  const startHeartbeat = useCallback(() => {
+    heartbeatTimer.current = setInterval(() => {
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        ws.current.send("ping");
+      }
+    }, heartbeatInterval);
+  }, [heartbeatInterval]);
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatTimer.current) {
+      clearInterval(heartbeatTimer.current);
+    }
+  }, []);
   const connect = useCallback(() => {
     // websocket already exists
     clientLogger.debug("useWebSocket triggered");
@@ -101,7 +114,15 @@ const useWebSocket = ({
         clientLogger.error("Message data: ", event.data);
       }
     };
-  }, []);
+  }, [
+    url,
+    protocols,
+    reconnectInterval,
+    reconnectAttempts,
+    heartbeatInterval,
+    startHeartbeat,
+    stopHeartbeat,
+  ]);
 
   const disconnect = useCallback(() => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
@@ -125,20 +146,6 @@ const useWebSocket = ({
     },
     []
   );
-
-  const startHeartbeat = useCallback(() => {
-    heartbeatTimer.current = setInterval(() => {
-      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        ws.current.send("ping");
-      }
-    }, heartbeatInterval);
-  }, [heartbeatInterval]);
-
-  const stopHeartbeat = useCallback(() => {
-    if (heartbeatTimer.current) {
-      clearInterval(heartbeatTimer.current);
-    }
-  }, []);
 
   useEffect(() => {
     connect();

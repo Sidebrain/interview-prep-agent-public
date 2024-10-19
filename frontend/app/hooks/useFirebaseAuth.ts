@@ -29,8 +29,8 @@ export const useFirebaseAuth = () => {
         : new GithubAuthProvider();
 
     try {
-      const { user } = await signInWithPopup(auth, authProvider);
-      // clientLogger.debug("provider: ", provider, user, providerId);
+      const { user, providerId } = await signInWithPopup(auth, authProvider);
+      clientLogger.debug("provider: ", provider, user, providerId);
 
       // get the id token, decode it from the server endpoint and set it as a cookie
       const token = await user.getIdToken();
@@ -40,7 +40,7 @@ export const useFirebaseAuth = () => {
       router.push("/home");
       return decodedToken;
     } catch (error) {
-      clientLogger.error("Error during singing in: ", error);
+      clientLogger.error("Error during signing in: ", error);
       throw error;
     } finally {
       setIsLoading(false);

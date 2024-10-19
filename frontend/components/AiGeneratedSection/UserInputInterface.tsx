@@ -4,6 +4,7 @@ import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { RoutingKeyType } from "@/types/websocketTypes";
+import clientLogger from "@/app/lib/clientLogger";
 
 type HTMLTextAreaElementProps = {
   inputValue: string;
@@ -16,6 +17,12 @@ type HTMLTextAreaElementProps = {
   onSubmit: (e: React.FormEvent) => void;
   onStructuredSubmit: (e: React.FormEvent, routingKey: RoutingKeyType) => void;
   maxHeight: number;
+  // voice: VoiceHookParams;
+  getPermissionsAndStartRecording: () => Promise<void>;
+  stopRecording: () => void;
+  isRecording: boolean;
+  playRecording: () => void;
+  stopPlaying: () => void;
 };
 
 const UserInputInterface = forwardRef<
@@ -31,6 +38,11 @@ const UserInputInterface = forwardRef<
       onStructuredKeyDown,
       // onSubmit,
       onStructuredSubmit,
+      getPermissionsAndStartRecording,
+      stopRecording,
+      isRecording,
+      playRecording,
+      stopPlaying,
     },
     ref
   ) => {
@@ -79,9 +91,34 @@ const UserInputInterface = forwardRef<
             style={{ maxHeight: `${maxHeight}px` }}
             rows={1}
           />
-          <Button type="submit" className="self-end">
-            Send
-          </Button>
+
+          <div className="flex flex-col gap-2">
+            <Button type="submit" className="self-end">
+              Send
+            </Button>
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                if (isRecording) {
+                  clientLogger.debug("Stopping recording");
+                  stopRecording();
+                } else {
+                  getPermissionsAndStartRecording();
+                }
+              }}
+              type="button"
+              className="self-end"
+            >
+              {isRecording ? "Stop" : "Record"}
+            </Button>
+            <Button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                playRecording();
+              }}
+            >{`Play`}</Button>
+          </div>
         </form>
       </div>
     );
