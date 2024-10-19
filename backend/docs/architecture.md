@@ -61,6 +61,11 @@ scenario based questions - sales questions (appvle vs..)
 senioir manager - scenario based, berhavioral 
 hr - acceptance 
 
+Insights from Masai:
+- pardon please, askign the ai to repeat themselves
+- clarifications on the question (can you tell me how i can share my screen)
+- reference to the speaker as AI, as in "hi AI"
+
 ```mermaid
 flowchart TD
     subgraph intro

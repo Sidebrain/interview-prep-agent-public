@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
 from app.api.v1.router import router as api_v1_router
 
 app = FastAPI()
@@ -14,6 +15,8 @@ app.add_middleware(
 )
 
 app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
+
+
 
 
 @app.get("/")

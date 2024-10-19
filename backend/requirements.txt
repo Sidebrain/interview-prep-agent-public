@@ -14,3 +14,4 @@ pytest
 pytest
 pytest-asyncio
 pytest-mock
+python-multipart
