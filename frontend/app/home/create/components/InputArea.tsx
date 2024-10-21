@@ -2,9 +2,10 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import TextareaResizable from "./TextAreaResizable";
 import InputContext from "@/context/InputContext";
+import { Button } from "@/components/ui/button";
 
 type InputAreaProps = {
-  //
+  maxTextareaHeight: number;
 };
 
 export default function InputArea(props: InputAreaProps) {
@@ -12,9 +13,7 @@ export default function InputArea(props: InputAreaProps) {
     useContext(InputContext);
 
   // refs
-  const inputAreaRef = useRef<HTMLDivElement>(null); // to calculate div height for textarea sizing
   const textareaRef = useRef<HTMLTextAreaElement>(null); // to access textarea element
-  const [maxTextareaHeight, setMaxTextareaHeight] = useState(50);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,24 +22,14 @@ export default function InputArea(props: InputAreaProps) {
     dispatchInputValue({ type: "SET_INPUT", payload: "" });
   }
 
-  // identify the max textarea height
-  useEffect(() => {
-    function computeMaxHeight() {
-      if (inputAreaRef.current) {
-        const containerHeight = inputAreaRef.current.clientHeight;
-        const newMaxHeight = Math.min(50, Math.max(150, containerHeight * 0.7));
-        setMaxTextareaHeight(newMaxHeight);
-      }
-    }
-
-    window.addEventListener("resize", computeMaxHeight);
-    return () => window.removeEventListener("resize", computeMaxHeight);
-  }, []);
   return (
-    <TextareaResizable
-      maxTextareaHeight={maxTextareaHeight}
-      ref={textareaRef}
-      handleSubmit={handleSubmit}
-    />
+    <div className="flex gap-2 items-end ">
+      <TextareaResizable
+        maxTextareaHeight={props.maxTextareaHeight}
+        ref={textareaRef}
+        handleSubmit={handleSubmit}
+      />
+      <Button onClick={handleSubmit}>Send</Button>
+    </div>
   );
 }
