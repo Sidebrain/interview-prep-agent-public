@@ -164,4 +164,3 @@ cython_debug/
 # Custom folders
 secrets
 docs/sample
-config
