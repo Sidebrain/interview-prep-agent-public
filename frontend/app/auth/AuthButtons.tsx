@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext } from "react";
-import { AuthContext } from "@/app/context/AuthContext";
+import { AuthContext } from "@/context/AuthContext";
 import { ProviderType } from "@/types/auth";
 import clientLogger from "@/app/lib/clientLogger";
 import { Button } from "@/components/ui/button";

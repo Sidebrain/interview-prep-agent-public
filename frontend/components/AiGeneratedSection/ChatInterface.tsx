@@ -5,11 +5,11 @@ import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import remarkGfm from "remark-gfm";
 
-import useWebSocket from "@/app/hooks/useWebsocket";
+import useWebSocket from "@/hooks/useWebsocket";
 import UserInputInterface from "./UserInputInterface";
 import { RoutingKeyType, WebSocketMessage } from "@/types/websocketTypes";
 import clientLogger from "@/app/lib/clientLogger";
-import useVoice from "@/app/hooks/useVoice";
+import useVoice from "@/hooks/useVoice";
 import { set } from "lodash";
 
 interface CodeProps {

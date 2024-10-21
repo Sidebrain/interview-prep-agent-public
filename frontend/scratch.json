@@ -1,0 +1,50 @@
+{
+  "text": "Hello How are you? I am doing well. This is a nice Expositionary essay about David Foster Wallace. Let's see how that comes in place. Okay. Bye",
+  "task": "transcribe",
+  "language": "english",
+  "duration": 11.829999923706055,
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.5,
+      "end": 1.899999976158142,
+      "text": " Hello",
+      "tokens": [50389, 2425, 50459],
+      "temperature": 0.5,
+      "avg_logprob": -0.33135390281677246,
+      "compression_ratio": 1.1532257795333862,
+      "no_speech_prob": 0.04964933171868324
+    },
+    {
+      "id": 1,
+      "seek": 0,
+      "start": 1.899999976158142,
+      "end": 5.940000057220459,
+      "text": " How are you? I am doing well. This is a nice",
+      "tokens": [
+        50459, 1012, 366, 291, 30, 286, 669, 884, 731, 13, 639, 307, 257, 1481,
+        50661
+      ],
+      "temperature": 0.5,
+      "avg_logprob": -0.33135390281677246,
+      "compression_ratio": 1.1532257795333862,
+      "no_speech_prob": 0.04964933171868324
+    },
+    {
+      "id": 2,
+      "seek": 0,
+      "start": 6.460000038146973,
+      "end": 11.479999542236328,
+      "text": " Expositionary essay about David Foster Wallace. Let's see how that comes in place. Okay. Bye",
+      "tokens": [
+        50687, 21391, 5830, 822, 16238, 466, 4389, 38756, 32626, 13, 961, 311,
+        536, 577, 300, 1487, 294, 1081, 13, 1033, 13, 4621, 50938
+      ],
+      "temperature": 0.5,
+      "avg_logprob": -0.33135390281677246,
+      "compression_ratio": 1.1532257795333862,
+      "no_speech_prob": 0.04964933171868324
+    }
+  ]
+}

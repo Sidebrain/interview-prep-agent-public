@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Icons } from "@/components/icons";
 import clientLogger from "../lib/clientLogger";
 import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
 import { ModeToggle } from "@/components/ThemeSwitcher";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function Header({
   children,

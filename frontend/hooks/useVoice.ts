@@ -1,9 +1,8 @@
 import { useRef, useState } from "react";
 import { useEffect } from "react";
 import { useCallback } from "react";
-import clientLogger from "../lib/clientLogger";
+import clientLogger from "../app/lib/clientLogger";
 import { transcribeAudioChunks } from "@/components/AiGeneratedSection/actions";
-import { on } from "events";
 
 type VoiceHookParams = {
   chunkSize?: number;
@@ -44,7 +43,8 @@ const useVoice = (props: VoiceHookParams) => {
   const startRecording = useCallback(() => {
     if (streamRef.current) {
       mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
-        mimeType: "audio/webm",
+        // mimeType: "audio/webm",
+        mimeType: "audio/ogg; codecs=opus",
       });
 
       // Reset the audio chunks
@@ -59,7 +59,7 @@ const useVoice = (props: VoiceHookParams) => {
         }
       };
 
-      mediaRecorderRef.current.start(props.chunkSize || 1000);
+      mediaRecorderRef.current.start(props.chunkSize || 3000);
       setIsRecording(true);
 
       // Automatically stop recording after 5 minutes

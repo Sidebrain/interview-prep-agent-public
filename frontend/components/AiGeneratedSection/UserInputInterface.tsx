@@ -130,7 +130,7 @@ const UserInputInterface = forwardRef<
                 transcribeAudioChunk(new Blob(audioChunks));
 
                 // audioChunks.map((audioChunk, idx) => {
-                //   const chunkTranscribe = new Blob([audioChunk.slice(0, idx)]);
+                //   // const chunkTranscribe = new Blob([audioChunk.slice(0, idx)]);
                 //   transcribeAudioChunk(audioChunk);
                 // });
               }}

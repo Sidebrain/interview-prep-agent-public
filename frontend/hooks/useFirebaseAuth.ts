@@ -10,10 +10,10 @@ import {
   getServerSideuser,
   updateAuthCookie,
   verifyToken,
-} from "../auth/action";
-import auth from "../lib/firebase/firebaseClient";
+} from "../app/auth/action";
+import auth from "../app/lib/firebase/firebaseClient";
 import { useEffect, useState } from "react";
-import clientLogger from "../lib/clientLogger";
+import clientLogger from "../app/lib/clientLogger";
 import { useRouter } from "next/navigation";
 
 export const useFirebaseAuth = () => {
