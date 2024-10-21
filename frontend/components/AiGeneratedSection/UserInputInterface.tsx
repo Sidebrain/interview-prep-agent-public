@@ -67,7 +67,7 @@ const UserInputInterface = forwardRef<
       adjustTextareaHeight();
     }
 
-    useEffect(adjustTextareaHeight, [inputValue, maxHeight]);
+    useEffect(adjustTextareaHeight, [maxHeight]);
 
     return (
       <div className="bg-white p-2 flex flex-col gap-2">

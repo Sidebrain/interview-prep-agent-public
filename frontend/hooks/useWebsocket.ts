@@ -7,7 +7,7 @@ import {
 } from "@/types/websocketTypes";
 import { useEffect, useRef, useState, useCallback, useReducer } from "react";
 import clientLogger from "../app/lib/clientLogger";
-import messageReducer from "../app/lib/messageReducer";
+import messageReducer from "../reducers/messageReducer";
 
 const useWebSocket = ({
   url,
