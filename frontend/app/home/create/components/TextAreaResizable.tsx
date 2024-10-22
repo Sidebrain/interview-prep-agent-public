@@ -15,8 +15,6 @@ const TextareaResizable = forwardRef<HTMLTextAreaElement, TextAreaProps>(
     function adjustTextareaHeight() {
       if (ref && typeof ref !== "function" && ref.current) {
         ref.current.style.height = "auto";
-        console.log("current scrollheight: ", ref.current.scrollHeight);
-        console.log("max height: ", props.maxTextareaHeight);
         const newHeight = Math.min(
           ref.current.scrollHeight,
           props.maxTextareaHeight

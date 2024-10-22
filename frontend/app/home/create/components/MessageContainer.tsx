@@ -1,3 +1,4 @@
+import clientLogger from "@/app/lib/clientLogger";
 import { useEffect, useRef } from "react";
 
 type MessageContainerProps = {
@@ -13,8 +14,8 @@ function MessageContainer(props: MessageContainerProps) {
       if (containerAreaRef.current) {
         const containerHeight = containerAreaRef.current.clientHeight;
         const newMaxHeight = Math.max(50, Math.max(150, containerHeight * 0.7));
-        console.log("newMaxHeight: ", newMaxHeight);
-        console.log("containerHeight: ", containerHeight);
+        clientLogger.debug("newMaxHeight: ", newMaxHeight);
+        clientLogger.debug("containerHeight: ", containerHeight);
         props.setMaxTextareaHeight(newMaxHeight);
       }
     }

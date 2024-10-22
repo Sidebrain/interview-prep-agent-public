@@ -1,6 +1,8 @@
+export type InputActionType = "SET_INPUT" | "APPEND_INPUT";
+
 const inputReducer = (
   state: string,
-  action: { type: string; payload: string }
+  action: { type: InputActionType; payload: string }
 ) => {
   switch (action.type) {
     case "SET_INPUT":

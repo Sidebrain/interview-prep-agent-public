@@ -1,11 +1,11 @@
 "use client";
 
-import inputReducer from "@/reducers/inputReducer";
+import inputReducer, { InputActionType } from "@/reducers/inputReducer";
 import { createContext, ReactNode, useReducer } from "react";
 
 type InputContextType = {
   state: string;
-  dispatch: React.Dispatch<{ type: string; payload: string }>;
+  dispatch: React.Dispatch<{ type: InputActionType; payload: string }>;
 };
 
 const InputContext = createContext<InputContextType>({

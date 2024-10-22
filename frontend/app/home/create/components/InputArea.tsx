@@ -3,6 +3,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import TextareaResizable from "./TextAreaResizable";
 import InputContext from "@/context/InputContext";
 import { Button } from "@/components/ui/button";
+import AudioButton from "./inputButtons/AudioButton";
 
 type InputAreaProps = {
   maxTextareaHeight: number;
@@ -30,6 +31,7 @@ export default function InputArea(props: InputAreaProps) {
         handleSubmit={handleSubmit}
       />
       <Button onClick={handleSubmit}>Send</Button>
+      <AudioButton />
     </div>
   );
 }

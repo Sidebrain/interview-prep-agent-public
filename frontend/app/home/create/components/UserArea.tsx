@@ -12,7 +12,9 @@ function Header() {
 }
 
 function UserArea() {
+  // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
+
   return (
     <div className="flex flex-col gap-2 h-full">
       <Header />
