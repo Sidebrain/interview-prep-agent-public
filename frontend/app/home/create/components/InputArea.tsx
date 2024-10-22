@@ -24,14 +24,21 @@ export default function InputArea(props: InputAreaProps) {
   }
 
   return (
-    <div className="flex gap-2 items-end ">
+    <div className="flex bg-gray-50 rounded-sm flex-col border border-gray-300 gap-2 items-end w-full ">
       <TextareaResizable
         maxTextareaHeight={props.maxTextareaHeight}
         ref={textareaRef}
         handleSubmit={handleSubmit}
       />
-      <Button onClick={handleSubmit}>Send</Button>
-      <AudioButton />
+      <div
+        className="flex bg-gray-100 border-t border-gray-200 rounded-b-sm
+       justify-between w-full p-1"
+      >
+        <AudioButton />
+        <Button onClick={handleSubmit} size={"sm"}>
+          Send
+        </Button>
+      </div>
     </div>
   );
 }

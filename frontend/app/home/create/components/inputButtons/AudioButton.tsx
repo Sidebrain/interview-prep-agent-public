@@ -16,26 +16,34 @@ const AudioButton = () => {
     },
   });
 
-  function stopRecordingAndTranscribe(e: React.MouseEvent) {
+  async function stopRecordingAndTranscribe(e: React.MouseEvent) {
     // e.preventDefault();
-    stopRecording();
-    transcribeAudio();
+    await stopRecording();
+    await transcribeAudio();
   }
 
   const renderRecordingIcon = () => {
     if (isRecording) {
       return (
-        <Icons.microphoneRecording
+        <div
           onClick={(e) => stopRecordingAndTranscribe(e)}
-          className="h-6 w-6"
-        />
+          className="relative inline-flex items-center justify-center"
+        >
+          <>
+            <span className="absolute inline-flex h-full w-full animate-ping opacity-75 rounded-full bg-red-600" />
+            <span className="absolute inline-flex h-[120%] w-[120%] animate-ping animation-delay-150 opacity-50 rounded-full bg-red-600" />
+          </>
+          <Icons.microphoneRecording className="h-4 w-4" />
+        </div>
       );
     }
     return (
-      <Icons.microphone
-        onClick={getPermissionsAndStartRecording}
-        className="h-6 w-6"
-      />
+      <div className="relative inline-flex items-center justify-center">
+        <Icons.microphone
+          onClick={getPermissionsAndStartRecording}
+          className="h-4 w-4"
+        />
+      </div>
     );
   };
 
