@@ -32,7 +32,7 @@ export default function InputArea(props: InputAreaProps) {
       />
       <div
         className="flex bg-gray-100 border-t border-gray-200 rounded-b-sm
-       justify-between w-full p-1"
+       justify-between items-center w-full p-1"
       >
         <AudioButton />
         <Button onClick={handleSubmit} size={"sm"}>

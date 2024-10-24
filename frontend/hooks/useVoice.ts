@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useCallback } from "react";
 import clientLogger from "../app/lib/clientLogger";
 import { transcribeAudioChunks } from "@/components/AiGeneratedSection/actions";
+import { set } from "lodash";
 
 type VoiceHookParams = {
   chunkSize?: number;
@@ -16,6 +17,7 @@ const useVoice = (props: VoiceHookParams) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [transcriptionInProgress, setTranscriptionInProgress] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -51,6 +53,7 @@ const useVoice = (props: VoiceHookParams) => {
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
+          console.log("ondataavailable event fired");
           setAudioChunks((prev) => [...prev, event.data]);
           // Do something with the audio chunks here like sending them to a server for transcription
           clientLogger.debug("event data", event.data);
@@ -88,16 +91,39 @@ const useVoice = (props: VoiceHookParams) => {
     }
   }, [getPermissions, startRecording]);
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback(async () => {
     if (
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state !== "inactive" &&
       isRecording
     ) {
       clientLogger.debug("from within useVoice stopRecording");
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      clientLogger.debug("Recording stopped", audioChunks);
+      console.log("Stopped. last ondataavailable should fire");
+      return new Promise<void>((resolve) => {
+        //
+        if (!mediaRecorderRef.current) {
+          resolve();
+        }
+
+        // else create a one time event listener to capture the last chunk
+        mediaRecorderRef.current?.addEventListener(
+          "dataavailable",
+          (event) => {
+            if (event.data.size > 0) {
+              console.log(
+                "last ondataavailable event fired from inside promise"
+              );
+              setAudioChunks((prev) => [...prev, event.data]);
+            }
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+            clientLogger.debug("Recording stopped", audioChunks);
+            resolve();
+          },
+          { once: true }
+        );
+        mediaRecorderRef.current?.requestData();
+      });
     } else {
       setError("No recording in progress");
       clientLogger.error("No recording in progress");

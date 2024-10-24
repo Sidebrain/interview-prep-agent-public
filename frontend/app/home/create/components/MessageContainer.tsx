@@ -25,7 +25,10 @@ function MessageContainer(props: MessageContainerProps) {
     return () => window.removeEventListener("resize", computeMaxHeight);
   }, []);
   return (
-    <div ref={containerAreaRef} className="flex flex-col grow gap-2">
+    <div
+      ref={containerAreaRef}
+      className="flex flex-col grow gap-2 overflow-auto no-scrollbar"
+    >
       <div className="bg-white p-2 rounded-lg">Message 1</div>
       <div className="bg-white p-2 rounded-lg">Message 2</div>
     </div>

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import InputArea from "./InputArea";
 import MessageContainer from "./MessageContainer";
+import useWebSocket from "@/hooks/userWebsocketNew";
 
 function Header() {
   return (
@@ -14,6 +15,9 @@ function Header() {
 function UserArea() {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
+  const {} = useWebSocket({
+    url: process.env.NEXT_PUBLIC_WS_URL_V2 as string,
+  });
 
   return (
     <div className="flex flex-col gap-2 h-full">
