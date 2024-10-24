@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 from app.api.v1.router import router as api_v1_router
+from app.api.v2.router import router as api_v2_router
 
 app = FastAPI()
 
@@ -15,8 +16,7 @@ app.add_middleware(
 )
 
 app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
-
-
+app.include_router(api_v2_router, prefix="/api/v2", tags=["v2"])
 
 
 @app.get("/")
