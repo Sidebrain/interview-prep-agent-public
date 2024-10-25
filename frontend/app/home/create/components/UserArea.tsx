@@ -4,6 +4,7 @@ import InputArea from "./InputArea";
 import MessageContainer from "./MessageContainer";
 import useWebSocket from "@/hooks/useWebsocketNew";
 import { Badge } from "@/components/ui/badge";
+import { PopoverComponent } from "./PopoverComponent";
 
 function Header() {
   return (
@@ -24,15 +25,16 @@ function UserArea() {
 
   const ExpandButton = () => {
     return (
-      // <div className="flex w-full justify-center items-center">
-      <Badge
-        variant={"outline"}
-        className="bg-gray-200 hover:bg-gray-100 cursor-pointer transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        {isExpanded ? "Hide Textarea" : "Show Textarea"}
-      </Badge>
-      // </div>
+      <div className="flex w-full items-center gap-2">
+        <Badge
+          variant={"outline"}
+          className="bg-gray-200 hover:bg-gray-100 cursor-pointer transition-colors w-full p-1"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? "Hide Textarea" : "Show Textarea"}
+        </Badge>
+        <PopoverComponent />
+      </div>
     );
   };
   return (
