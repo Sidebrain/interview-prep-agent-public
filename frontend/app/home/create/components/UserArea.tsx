@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import InputArea from "./InputArea";
 import MessageContainer from "./MessageContainer";
 import useWebSocket from "@/hooks/useWebsocketNew";
+import { Badge } from "@/components/ui/badge";
 
 function Header() {
   return (
@@ -19,6 +20,21 @@ function UserArea() {
     url: process.env.NEXT_PUBLIC_WS_URL_V2 as string,
   });
 
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const ExpandButton = () => {
+    return (
+      // <div className="flex w-full justify-center items-center">
+      <Badge
+        variant={"outline"}
+        className="bg-gray-200 hover:bg-gray-100 cursor-pointer transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {isExpanded ? "Hide Textarea" : "Show Textarea"}
+      </Badge>
+      // </div>
+    );
+  };
   return (
     <div className="flex flex-col gap-2 h-full">
       <Header />
@@ -26,7 +42,11 @@ function UserArea() {
         setMaxTextareaHeight={setMaxTextareaHeight}
         frameList={frameList}
       />
-      <InputArea maxTextareaHeight={maxTextareaHeight} />
+      <ExpandButton />
+      <InputArea
+        maxTextareaHeight={maxTextareaHeight}
+        isExpanded={isExpanded}
+      />
     </div>
   );
 }

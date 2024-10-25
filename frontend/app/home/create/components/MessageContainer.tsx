@@ -1,5 +1,5 @@
 import clientLogger from "@/app/lib/clientLogger";
-import { FrameType } from "@/reducers/messageFramereducer";
+import { FrameType } from "@/reducers/messageFrameReducer";
 import { useCallback, useEffect, useRef } from "react";
 
 type MessageContainerProps = {

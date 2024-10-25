@@ -6,7 +6,7 @@ import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
 import messageFrameReducer, {
   Action,
   FrameType,
-} from "@/reducers/messageFramereducer";
+} from "@/reducers/messageFrameReducer";
 
 type WebsocketHookResultNew = {
   sendMessage: (

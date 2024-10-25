@@ -4,10 +4,17 @@ import TextareaResizable from "./TextAreaResizable";
 import InputContext from "@/context/InputContext";
 import { Button } from "@/components/ui/button";
 import AudioButton from "./inputButtons/AudioButton";
+import { Badge } from "@/components/ui/badge";
 
 type InputAreaProps = {
   maxTextareaHeight: number;
+  isExpanded: boolean;
 };
+
+// Badge,
+// popopver is a nice place to bundle options ttogether
+// Scroll area for improving the default scrolling behaviour
+//
 
 export default function InputArea(props: InputAreaProps) {
   const { state: inputValue, dispatch: dispatchInputValue } =
@@ -23,8 +30,12 @@ export default function InputArea(props: InputAreaProps) {
     dispatchInputValue({ type: "SET_INPUT", payload: "" });
   }
 
+  if (!props.isExpanded) {
+    return null;
+  }
+
   return (
-    <div className="flex bg-gray-50 rounded-sm flex-col border border-gray-300 gap-2 items-end w-full ">
+    <div className="flex text-white bg-gray-500 rounded-sm flex-col border border-gray-300 gap-2 items-end w-full ">
       <TextareaResizable
         maxTextareaHeight={props.maxTextareaHeight}
         ref={textareaRef}
