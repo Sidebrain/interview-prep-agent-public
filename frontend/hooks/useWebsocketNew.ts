@@ -106,6 +106,8 @@ const useWebSocket = ({
           return;
         }
 
+        console.log("message received: ", event.data);
+
         // const data = JSON.parse(event.data);
         // const message = WebsocketMessageZodType.parse(data);
         // // clientLogger.debug("Parsed message: ", message);

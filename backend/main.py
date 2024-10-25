@@ -3,8 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 from app.api.v1.router import router as api_v1_router
 from app.api.v2.router import router as api_v2_router
+import logging
 
 app = FastAPI()
+
+# Set up basic logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"Request: {request.method} {request.url}")
+    response = await call_next(request)
+    logger.info(f"Response: {response.status_code}")
+    return response
 
 # Add CORS middleware
 app.add_middleware(

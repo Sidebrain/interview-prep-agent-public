@@ -1,30 +1,38 @@
-from pydantic import BaseModel
-from typing import List, Union, Literal, Optional
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
+from typing import Literal
 
 
 class CompletionFrameChunk(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
     id: str
     object: Literal["chat.completion"]
     model: str
-    role: Literal["assistant"]
-    content: str
-    finish_reason: Literal["stop"]
+    role: Literal["assistant", "user"]
+    content: str | None
+    delta: str | None
+    index: int = 0
+    finish_reason: Literal[
+        "stop",
+        "length",
+        "tool_calls",
+        "content_filter",
+        "function_call",
+    ]
 
-
-class StreamingFrameChunk(BaseModel):
-    id: str
-    object: Literal["chat.completion.chunk"]
-    model: str
-    index: int
-    content: str
-    role: Literal["assistant"]
-    finsh_reason: Optional[Literal["stop"]]
 
 class WebsocketFrame(BaseModel):
-    frameId: str
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
+    frame_id: str
     type: Literal["completion", "streaming", "heartbeat", "error"]
     address: Literal["content", "artefact"]
-    frame: Union[CompletionFrameChunk, StreamingFrameChunk]
+    frame: CompletionFrameChunk
 
 
 ## Old types

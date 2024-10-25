@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import InputArea from "./InputArea";
 import MessageContainer from "./MessageContainer";
-import useWebSocket from "@/hooks/userWebsocketNew";
+import useWebSocket from "@/hooks/useWebsocketNew";
 
 function Header() {
   return (

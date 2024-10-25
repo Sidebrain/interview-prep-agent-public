@@ -1,15 +1,16 @@
-from typing import Dict
+from typing import TYPE_CHECKING
 
 from fastapi import WebSocket
 
 
-class Channel:
-    def __init__(self, websocket: WebSocket):
-        self.websocket = websocket
+if TYPE_CHECKING:
+    from app.agents.agent_v2 import Agent
 
-    def __post_init__(self):
-        print("post init called")
-        self.connect()
+
+class Channel:
+    def __init__(self, websocket: WebSocket, agent: "Agent" = None):
+        self.websocket = websocket
+        self.agent = agent
 
     async def send_message(self, message: str):
         await self.websocket.send_text(message)
@@ -31,20 +32,3 @@ class Channel:
 
     async def process_heartbeat(self):
         await self.send_message("pong")
-
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: Dict[str, Channel] = {}
-
-    async def connect(self, websocket: WebSocket, token: str) -> Channel:
-        await websocket.accept()
-        if token not in self.active_connections:
-            channel = Channel(websocket)
-            self.active_connections[token] = channel
-        print(f"Client connected: {token}")
-        return channel
-
-    def disconnect(self, token: str):
-        if token in self.active_connections:
-            del self.active_connections[token]
