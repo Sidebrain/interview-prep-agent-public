@@ -1,9 +1,7 @@
 from uuid import uuid4
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from typing import Dict, List
 
 from app.connection_manager import ConnectionManager
-from app.types.websocket_types import WebsocketFrame
 
 router = APIRouter()
 

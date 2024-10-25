@@ -125,7 +125,7 @@ class Agent:
         frame_to_send = await self.thinker.generate(messages=messages)
         print("printing the frame that is being sent right before sending")
         print(frame_to_send.model_dump_json(indent=4))
-        await self.channel.send_message(frame_to_send.model_dump_json())
+        await self.channel.send_message(frame_to_send.model_dump_json(by_alias=True))
 
     async def receive_message(self):
         await self.channel.receive_message()

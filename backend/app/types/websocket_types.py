@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
+from pydantic.json_schema import GenerateJsonSchema
 from typing import Literal
 
 

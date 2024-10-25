@@ -1,4 +1,3 @@
-import { Type } from "lucide-react";
 import { z } from "zod";
 
 export type WebSocketHookOptions = {

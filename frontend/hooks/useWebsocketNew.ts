@@ -1,12 +1,12 @@
 "use client";
-import {
-  WebSocketHookOptions,
-  WebSocketMessage,
-  WebsocketMessageZodType,
-} from "@/types/websocketTypes";
+import { WebSocketHookOptions } from "@/types/websocketTypes";
 import { useEffect, useRef, useState, useCallback, useReducer } from "react";
 import clientLogger from "../app/lib/clientLogger";
-import messageReducer from "../reducers/messageReducer";
+import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
+import messageFrameReducer, {
+  Action,
+  FrameType,
+} from "@/reducers/messageFramereducer";
 
 type WebsocketHookResultNew = {
   sendMessage: (
@@ -14,6 +14,8 @@ type WebsocketHookResultNew = {
   ) => void;
   readyState: number;
   connectionStatus: string;
+  frameList: FrameType[];
+  dispatch: React.Dispatch<Action>;
 };
 
 const useWebSocket = ({
@@ -23,10 +25,7 @@ const useWebSocket = ({
   reconnectAttempts = 5,
   heartbeatInterval = 10000,
 }: WebSocketHookOptions): WebsocketHookResultNew => {
-  //   const [msgList, dispatch] = useReducer(messageReducer, [
-  //     { id: 1, content: "Hello!", type: "complete", sender: "bot", index: 0 },
-  //     { id: 2, content: "Hi there!", type: "complete", sender: "user", index: 0 },
-  //   ]);
+  const [frameList, dispatch] = useReducer(messageFrameReducer, []);
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
   const [connectionStatus, setConnectionStatus] =
     useState<string>("Disconnected");
@@ -108,25 +107,14 @@ const useWebSocket = ({
 
         console.log("message received: ", event.data);
 
-        // const data = JSON.parse(event.data);
-        // const message = WebsocketMessageZodType.parse(data);
-        // // clientLogger.debug("Parsed message: ", message);
+        const data = JSON.parse(event.data);
+        const message = WebsocketFrameSchema.parse(data);
+        if (message.type === "completion" && message.address === "content") {
+          console.log("parsed message: ", message);
+          console.log("dispatching to completion/content reducer");
 
-        // if (message.type === "heartbeat") {
-        //   // Heartbeat response received
-        //   clientLogger.debug("Heartbeat response received");
-        //   return;
-        // }
-        // // clientLogger.debug("Setting last message: ", message);
-        // if (message.type === "chunk") {
-        //   dispatch({ type: "ADD_CHUNK", payload: message });
-        // } else if (message.type === "complete") {
-        //   dispatch({ type: "COMPLETE", payload: message });
-        // }
-        // if (message.type === "structured") {
-        //   // clientLogger.debug("Structured message received: ", message);
-        //   dispatch({ type: "ADD_MESSAGE", payload: message });
-        // }
+          dispatch({ type: "completion/content", payload: message });
+        }
       } catch (error) {
         clientLogger.error("Error parsing message: ", error);
         clientLogger.error("Message data: ", event.data);
@@ -177,10 +165,10 @@ const useWebSocket = ({
 
   return {
     sendMessage,
-    // msgList,
+    frameList,
     readyState,
     connectionStatus,
-    // dispatch
+    dispatch,
   };
 };
 

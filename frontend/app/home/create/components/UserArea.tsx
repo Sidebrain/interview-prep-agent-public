@@ -15,14 +15,17 @@ function Header() {
 function UserArea() {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
-  const {} = useWebSocket({
+  const { frameList } = useWebSocket({
     url: process.env.NEXT_PUBLIC_WS_URL_V2 as string,
   });
 
   return (
     <div className="flex flex-col gap-2 h-full">
       <Header />
-      <MessageContainer setMaxTextareaHeight={setMaxTextareaHeight} />
+      <MessageContainer
+        setMaxTextareaHeight={setMaxTextareaHeight}
+        frameList={frameList}
+      />
       <InputArea maxTextareaHeight={maxTextareaHeight} />
     </div>
   );
