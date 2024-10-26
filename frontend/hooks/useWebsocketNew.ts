@@ -1,25 +1,32 @@
 "use client";
-import {
-  WebSocketHookOptions,
-  WebSocketHookResult,
-  WebSocketMessage,
-  WebsocketMessageZodType,
-} from "@/types/websocketTypes";
+import { WebSocketHookOptions } from "@/types/websocketTypes";
 import { useEffect, useRef, useState, useCallback, useReducer } from "react";
 import clientLogger from "../app/lib/clientLogger";
-import messageReducer from "../reducers/messageReducer";
+import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
+import messageFrameReducer, {
+  Action,
+  FrameType,
+} from "@/reducers/messageFrameReducer";
+import { createWebsocketFrameHandler } from "@/handlers/websocketMessageHandler";
+
+type WebsocketHookResultNew = {
+  sendMessage: (
+    data: string | ArrayBufferLike | Blob | ArrayBufferView
+  ) => void;
+  readyState: number;
+  connectionStatus: string;
+  frameList: FrameType[];
+  dispatch: React.Dispatch<Action>;
+};
 
 const useWebSocket = ({
   url,
   protocols,
   reconnectInterval = 5000,
   reconnectAttempts = 5,
-  heartbeatInterval = 30000,
-}: WebSocketHookOptions): WebSocketHookResult => {
-  const [msgList, dispatch] = useReducer(messageReducer, [
-    { id: 1, content: "Hello!", type: "complete", sender: "bot", index: 0 },
-    { id: 2, content: "Hi there!", type: "complete", sender: "user", index: 0 },
-  ]);
+  heartbeatInterval = 10000,
+}: WebSocketHookOptions): WebsocketHookResultNew => {
+  const [frameList, dispatch] = useReducer(messageFrameReducer, []);
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
   const [connectionStatus, setConnectionStatus] =
     useState<string>("Disconnected");
@@ -27,10 +34,13 @@ const useWebSocket = ({
   const ws = useRef<WebSocket | null>(null);
   const reconnectCount = useRef<number>(0);
   const heartbeatTimer = useRef<NodeJS.Timeout | null>(null);
+  const websocketFrameHandler = useRef(createWebsocketFrameHandler(dispatch));
 
   const startHeartbeat = useCallback(() => {
+    clientLogger.debug("Starting heartbeat");
     heartbeatTimer.current = setInterval(() => {
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        clientLogger.debug("Sending heartbeat");
         ws.current.send("ping");
       }
     }, heartbeatInterval);
@@ -41,6 +51,7 @@ const useWebSocket = ({
       clearInterval(heartbeatTimer.current);
     }
   }, []);
+
   const connect = useCallback(() => {
     // websocket already exists
     clientLogger.debug("useWebSocket triggered");
@@ -90,25 +101,19 @@ const useWebSocket = ({
     ws.current.onmessage = (event: WebSocketEventMap["message"]) => {
       // clientLogger.debug("WebSocket message received:", event.data);
       try {
-        const data = JSON.parse(event.data);
-        const message = WebsocketMessageZodType.parse(data);
-        // clientLogger.debug("Parsed message: ", message);
-
-        if (message.type === "heartbeat") {
+        if (event.data === "pong") {
           // Heartbeat response received
-          clientLogger.debug("Heartbeat response received");
+          clientLogger.debug("Heartbeat response ** pong ** received");
           return;
         }
-        // clientLogger.debug("Setting last message: ", message);
-        if (message.type === "chunk") {
-          dispatch({ type: "ADD_CHUNK", payload: message });
-        } else if (message.type === "complete") {
-          dispatch({ type: "COMPLETE", payload: message });
-        }
-        if (message.type === "structured") {
-          // clientLogger.debug("Structured message received: ", message);
-          dispatch({ type: "ADD_MESSAGE", payload: message });
-        }
+
+        console.log("message received: ", event.data);
+
+        const data = JSON.parse(event.data);
+        const websocketFrame = WebsocketFrameSchema.parse(data);
+
+        // let the handler handle the frame
+        websocketFrameHandler.current.handleFrame(websocketFrame);
       } catch (error) {
         clientLogger.error("Error parsing message: ", error);
         clientLogger.error("Message data: ", event.data);
@@ -157,7 +162,13 @@ const useWebSocket = ({
     };
   }, [connect, disconnect, stopHeartbeat]);
 
-  return { sendMessage, msgList, readyState, connectionStatus, dispatch };
+  return {
+    sendMessage,
+    frameList,
+    readyState,
+    connectionStatus,
+    dispatch,
+  };
 };
 
 export default useWebSocket;

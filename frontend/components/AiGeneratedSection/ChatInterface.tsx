@@ -39,7 +39,7 @@ const ChatInterface = () => {
     playRecording,
     stopPlaying,
     error,
-    transcribeAudioChunk,
+    transcribeAudio,
     audioChunks,
   } = useVoice({
     onTranscription: (result) => {
@@ -221,7 +221,7 @@ const ChatInterface = () => {
         isRecording={isRecording}
         playRecording={playRecording}
         stopPlaying={stopPlaying}
-        transcribeAudioChunk={transcribeAudioChunk}
+        transcribeAudioChunk={transcribeAudio}
         audioChunks={audioChunks}
       />
     </div>

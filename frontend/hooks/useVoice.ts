@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useCallback } from "react";
 import clientLogger from "../app/lib/clientLogger";
 import { transcribeAudioChunks } from "@/components/AiGeneratedSection/actions";
+import { set } from "lodash";
 
 type VoiceHookParams = {
   chunkSize?: number;
@@ -16,6 +17,7 @@ const useVoice = (props: VoiceHookParams) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [transcriptionInProgress, setTranscriptionInProgress] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -43,8 +45,7 @@ const useVoice = (props: VoiceHookParams) => {
   const startRecording = useCallback(() => {
     if (streamRef.current) {
       mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
-        // mimeType: "audio/webm",
-        mimeType: "audio/ogg; codecs=opus",
+        mimeType: "audio/webm",
       });
 
       // Reset the audio chunks
@@ -52,6 +53,7 @@ const useVoice = (props: VoiceHookParams) => {
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
+          console.log("ondataavailable event fired");
           setAudioChunks((prev) => [...prev, event.data]);
           // Do something with the audio chunks here like sending them to a server for transcription
           clientLogger.debug("event data", event.data);
@@ -89,16 +91,39 @@ const useVoice = (props: VoiceHookParams) => {
     }
   }, [getPermissions, startRecording]);
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback(async () => {
     if (
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state !== "inactive" &&
       isRecording
     ) {
       clientLogger.debug("from within useVoice stopRecording");
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      clientLogger.debug("Recording stopped", audioChunks);
+      console.log("Stopped. last ondataavailable should fire");
+      return new Promise<void>((resolve) => {
+        //
+        if (!mediaRecorderRef.current) {
+          resolve();
+        }
+
+        // else create a one time event listener to capture the last chunk
+        mediaRecorderRef.current?.addEventListener(
+          "dataavailable",
+          (event) => {
+            if (event.data.size > 0) {
+              console.log(
+                "last ondataavailable event fired from inside promise"
+              );
+              setAudioChunks((prev) => [...prev, event.data]);
+            }
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+            clientLogger.debug("Recording stopped", audioChunks);
+            resolve();
+          },
+          { once: true }
+        );
+        mediaRecorderRef.current?.requestData();
+      });
     } else {
       setError("No recording in progress");
       clientLogger.error("No recording in progress");
@@ -129,23 +154,37 @@ const useVoice = (props: VoiceHookParams) => {
     }
   }, []);
 
-  const transcribeAudioChunk = useCallback(async (chunk: Blob) => {
-    const data = new FormData();
-    data.append("file", chunk, "chunk.webm");
+  const transcribeAudio = useCallback(
+    async (chunk?: Blob) => {
+      const data = new FormData();
+      if (!chunk) {
+        console.log(
+          "no chunk, hence using internal audioChunks. Received: ",
+          audioChunks
+        );
+        chunk = new Blob(audioChunks, {
+          type: "audio/webm",
+        });
+        console.log("chunk created: ", chunk);
+      }
+      data.append("file", chunk, "chunk.webm");
 
-    try {
-      const response = await transcribeAudioChunks(data);
-      console.log("response", response);
-      clientLogger.debug("Transcription response: ", response);
-      if (props.onTranscription) props.onTranscription(response.transcription);
-    } catch (err) {
-      clientLogger.error(
-        "something went wrong with transcribing the audio chunks",
-        err
-      );
-      setError("Failed to transcribe audio chunks");
-    }
-  }, []);
+      try {
+        const response = await transcribeAudioChunks(data);
+        console.log("response", response);
+        clientLogger.debug("Transcription response: ", response);
+        if (props.onTranscription)
+          props.onTranscription(response.transcription);
+      } catch (err) {
+        clientLogger.error(
+          "something went wrong with transcribing the audio chunks",
+          err
+        );
+        setError("Failed to transcribe audio chunks");
+      }
+    },
+    [audioChunks, props.onTranscription]
+  );
 
   return {
     isRecording,
@@ -154,7 +193,7 @@ const useVoice = (props: VoiceHookParams) => {
     stopRecording,
     playRecording,
     stopPlaying,
-    transcribeAudioChunk,
+    transcribeAudio,
     audioChunks,
     // other returned values and functions
   };
