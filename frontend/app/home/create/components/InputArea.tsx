@@ -5,13 +5,12 @@ import InputContext from "@/context/InputContext";
 import { Button } from "@/components/ui/button";
 import AudioButton from "./inputButtons/AudioButton";
 import { send } from "process";
+import { WebsocketSendTypes } from "@/types/WebsocketSendTypes";
 
 type InputAreaProps = {
   maxTextareaHeight: number;
   isExpanded: boolean;
-  sendMessage: (
-    data: string | ArrayBufferLike | Blob | ArrayBufferView
-  ) => void;
+  sendMessage: (data: WebsocketSendTypes) => void;
 };
 
 // Badge,
@@ -29,7 +28,7 @@ export default function InputArea(props: InputAreaProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     // send the value to the server
-    props.sendMessage(inputValue);
+    props.sendMessage({ userInput: inputValue } as WebsocketSendTypes);
     console.log("submitted value: ", inputValue);
     dispatchInputValue({ type: "SET_INPUT", payload: "" });
   }

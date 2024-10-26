@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import InputArea from "./InputArea";
 import MessageContainer from "./MessageContainer";
 import useWebSocket from "@/hooks/useWebsocketNew";

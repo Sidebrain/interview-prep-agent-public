@@ -15,8 +15,8 @@ export const ModelControlsSchema = z.object({
 
 export const WebsocketSendTypesSchema = z.object({
   userInput: z.string(),
-//   attachments: z.array(z.instanceof(Blob)),
-  controls: ModelControlsSchema,
+  //   attachments: z.array(z.instanceof(Blob)),
+  controls: ModelControlsSchema.optional(),
 });
 
 export type ModelControls = z.infer<typeof ModelControlsSchema>;
