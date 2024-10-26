@@ -7,6 +7,7 @@ import messageFrameReducer, {
   Action,
   FrameType,
 } from "@/reducers/messageFrameReducer";
+import { createWebsocketFrameHandler } from "@/handlers/websocketMessageHandler";
 
 type WebsocketHookResultNew = {
   sendMessage: (
@@ -33,6 +34,7 @@ const useWebSocket = ({
   const ws = useRef<WebSocket | null>(null);
   const reconnectCount = useRef<number>(0);
   const heartbeatTimer = useRef<NodeJS.Timeout | null>(null);
+  const websocketFrameHandler = useRef(createWebsocketFrameHandler(dispatch));
 
   const startHeartbeat = useCallback(() => {
     clientLogger.debug("Starting heartbeat");
@@ -108,13 +110,10 @@ const useWebSocket = ({
         console.log("message received: ", event.data);
 
         const data = JSON.parse(event.data);
-        const message = WebsocketFrameSchema.parse(data);
-        if (message.type === "completion" && message.address === "content") {
-          console.log("parsed message: ", message);
-          console.log("dispatching to completion/content reducer");
+        const websocketFrame = WebsocketFrameSchema.parse(data);
 
-          dispatch({ type: "completion/content", payload: message });
-        }
+        // let the handler handle the frame
+        websocketFrameHandler.current.handleFrame(websocketFrame);
       } catch (error) {
         clientLogger.error("Error parsing message: ", error);
         clientLogger.error("Message data: ", event.data);
