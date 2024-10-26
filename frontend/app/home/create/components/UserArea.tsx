@@ -5,11 +5,12 @@ import MessageContainer from "./MessageContainer";
 import useWebSocket from "@/hooks/useWebsocketNew";
 import { Badge } from "@/components/ui/badge";
 import { PopoverComponent } from "./PopoverComponent";
+import { HeaderSelect } from "./HeaderSelect";
 
 function Header() {
   return (
-    <header className="bg-gray-300 rounded-sm text-center">
-      Options to learn/configure/etc
+    <header className="flex justify-center bg-gray-300 rounded-sm text-center p-2">
+      <HeaderSelect />
     </header>
   );
 }
