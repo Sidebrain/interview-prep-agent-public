@@ -4,11 +4,14 @@ import TextareaResizable from "./TextAreaResizable";
 import InputContext from "@/context/InputContext";
 import { Button } from "@/components/ui/button";
 import AudioButton from "./inputButtons/AudioButton";
-import { Badge } from "@/components/ui/badge";
+import { send } from "process";
 
 type InputAreaProps = {
   maxTextareaHeight: number;
   isExpanded: boolean;
+  sendMessage: (
+    data: string | ArrayBufferLike | Blob | ArrayBufferView
+  ) => void;
 };
 
 // Badge,
@@ -26,6 +29,7 @@ export default function InputArea(props: InputAreaProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     // send the value to the server
+    props.sendMessage(inputValue);
     console.log("submitted value: ", inputValue);
     dispatchInputValue({ type: "SET_INPUT", payload: "" });
   }

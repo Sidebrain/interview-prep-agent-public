@@ -18,7 +18,7 @@ function Header() {
 function UserArea() {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
-  const { frameList } = useWebSocket({
+  const { frameList, sendMessage } = useWebSocket({
     url: process.env.NEXT_PUBLIC_WS_URL_V2 as string,
   });
 
@@ -49,6 +49,7 @@ function UserArea() {
       <InputArea
         maxTextareaHeight={maxTextareaHeight}
         isExpanded={isExpanded}
+        sendMessage={sendMessage}
       />
     </div>
   );

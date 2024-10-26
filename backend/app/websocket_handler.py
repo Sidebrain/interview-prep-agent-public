@@ -15,14 +15,16 @@ class Channel:
     async def send_message(self, message: str):
         await self.websocket.send_text(message)
 
-    async def receive_message(self):
+    async def receive_message(self) -> str | None:
         message_from_client = await self.websocket.receive_text()
         print(f"Message received: {message_from_client}")
         match message_from_client:
             case "ping":
                 await self.process_heartbeat()
+                return None
             case _:
                 await self.send_message(message_from_client)
+                return message_from_client
 
     async def route_message(self, message: str):
         # send to the agent or the maanger agent that is responsible for the client

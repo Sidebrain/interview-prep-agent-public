@@ -116,16 +116,45 @@ class Thinker:
         )
 
 
+class Memory:
+    def __init__(self):
+        self.memory: list[WebsocketFrame] = []
+
+    def add(self, message: WebsocketFrame):
+        self.memory.append(message)
+
+    def clear(self):
+        self.memory = []
+
+    def extract_memory_for_generation(self):
+        return [
+            {
+                "role": message.frame.role,
+                "content": message.frame.content,
+            }
+            for message in self.memory
+        ]
+
+    def get(self):
+        return self.memory
+
+
 class Agent:
     def __init__(self, channel: Channel):
         self.thinker = Thinker()
+        self.memory = Memory()
         self.channel = channel
 
     async def think(self, messages: list[dict[str, str]] = None):
         frame_to_send = await self.thinker.generate(messages=messages)
+        self.memory.add(frame_to_send)  # Add the frame to memory
         print("printing the frame that is being sent right before sending")
         print(frame_to_send.model_dump_json(indent=4))
         await self.channel.send_message(frame_to_send.model_dump_json(by_alias=True))
 
     async def receive_message(self):
-        await self.channel.receive_message()
+        msg = await self.channel.receive_message()
+        if msg is None:
+            return
+        print("printing the message that is being received")
+        print(msg)
