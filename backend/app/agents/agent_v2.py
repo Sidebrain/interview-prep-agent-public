@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+import json
 from uuid import uuid4
 from openai import AsyncClient
 from app.services.llms.openai_client import openai_async_client
@@ -9,6 +10,7 @@ from openai.types.chat import ChatCompletionMessage, ChatCompletion
 from app.types.websocket_types import (
     CompletionFrameChunk,
     WebsocketFrame,
+    WebsocketFromFrontendType,
 )
 from app.websocket_handler import Channel
 import logging
@@ -75,6 +77,8 @@ class Thinker:
         messages: list[dict[str, str]] = None,
     ):
         frame_id = str(uuid4())
+        print("-" * 30, "printing the messages that are being sent to the thinker")
+        print(messages)
         if messages is None:
             messages = [
                 {
@@ -158,3 +162,17 @@ class Agent:
             return
         print("printing the message that is being received")
         print(msg)
+        try:
+            # json_msg = json.loads(msg)
+            # print("printing the json message that is being received", json_msg)
+            parsed_message = WebsocketFromFrontendType.model_validate_json(
+                msg, strict=False
+            )
+            print("printing the parsed message", parsed_message)
+            updated_memory = self.memory.extract_memory_for_generation() + [
+                {"role": "user", "content": parsed_message.content}
+            ]
+            await self.think(messages=updated_memory)
+        except json.JSONDecodeError:
+            logger.error("Failed to decode the message")
+            return

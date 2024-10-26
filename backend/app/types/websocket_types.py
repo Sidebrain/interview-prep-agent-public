@@ -1,7 +1,34 @@
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 from pydantic.json_schema import GenerateJsonSchema
-from typing import Literal
+from typing import Literal, List, Optional
+
+
+######### Receiving Types #########
+
+
+class ModelControlsConfig(BaseModel):
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+    top_p: Optional[float] = None
+    frequency_penalty: Optional[float] = None
+    presence_penalty: Optional[float] = None
+    stop: Optional[List[str]] = None
+
+
+class ModelControls(BaseModel):
+    model: str
+    provider: str
+    controls: ModelControlsConfig
+
+
+class WebsocketFromFrontendType(BaseModel):
+    content: str
+    # attachments: List[bytes]  # Equivalent to Blob array in TypeScript
+    controls: Optional[ModelControls] = None
+
+
+######### Sending Types #########
 
 
 class CompletionFrameChunk(BaseModel):

@@ -28,7 +28,7 @@ export default function InputArea(props: InputAreaProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     // send the value to the server
-    props.sendMessage({ userInput: inputValue } as WebsocketSendTypes);
+    props.sendMessage({ content: inputValue } as WebsocketSendTypes);
     console.log("submitted value: ", inputValue);
     dispatchInputValue({ type: "SET_INPUT", payload: "" });
   }

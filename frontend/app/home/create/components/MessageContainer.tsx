@@ -46,6 +46,11 @@ function MessageContainer(props: MessageContainerProps) {
     window.addEventListener("resize", computeMaxHeight);
     return () => window.removeEventListener("resize", computeMaxHeight);
   }, []);
+  useEffect(() => {
+    if (containerAreaRef.current) {
+      containerAreaRef.current.scrollTop = containerAreaRef.current.scrollHeight;
+    }
+  }, [props.frameList]);
   return (
     <div
       ref={containerAreaRef}
