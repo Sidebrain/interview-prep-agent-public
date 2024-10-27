@@ -13,10 +13,12 @@ function MessageContainer(props: MessageContainerProps) {
   // for rendering the frames
   const renderFrames = useCallback(
     (frameList: FrameType[]) => {
-      return frameList.map((frame) => (
+      return frameList.map((frame, idx) => (
         <div
           key={frame.frameId}
-          className="flex text-sm flex-col bg-green-200 rounded-sm p-4"
+          className={`flex text-sm flex-col bg-green-200 w-2/3 rounded-sm p-4 ${
+            idx % 2 === 0 ? "self-start" : "self-end"
+          }`}
         >
           <div className="m-2 bg-green-300 p-8 text-left whitespace-pre-wrap rounded-md">
             {frame.contentFrame.content}
@@ -48,13 +50,14 @@ function MessageContainer(props: MessageContainerProps) {
   }, []);
   useEffect(() => {
     if (containerAreaRef.current) {
-      containerAreaRef.current.scrollTop = containerAreaRef.current.scrollHeight;
+      containerAreaRef.current.scrollTop =
+        containerAreaRef.current.scrollHeight;
     }
   }, [props.frameList]);
   return (
     <div
       ref={containerAreaRef}
-      className="flex flex-col grow gap-2 overflow-auto no-scrollbar mx-36"
+      className="flex flex-col grow gap-2 overflow-auto no-scrollbar mx-36 "
     >
       {renderFrames(props.frameList)}
     </div>

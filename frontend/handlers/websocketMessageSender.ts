@@ -1,5 +1,4 @@
-import { WebsocketSendTypesSchema } from "@/types/WebsocketSendTypes";
-import { create } from "lodash";
+import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
 import { z } from "zod";
 
 // Base interface for all the message formatters
@@ -14,12 +13,12 @@ interface MessageSender {
 }
 
 // Types of sendable types of message
-type SendableMessage = z.infer<typeof WebsocketSendTypesSchema>;
+type SendableMessage = z.infer<typeof WebsocketFrameSchema>;
 
 // Formatter for user input messages
 class UserInputMessageFormatter implements MessageFormatter<SendableMessage> {
   canFormat(data: unknown): data is SendableMessage {
-    return WebsocketSendTypesSchema.safeParse(data).success;
+    return WebsocketFrameSchema.safeParse(data).success;
   }
 
   format(data: SendableMessage): string {

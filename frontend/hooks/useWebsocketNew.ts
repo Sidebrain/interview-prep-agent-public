@@ -2,7 +2,10 @@
 import { WebSocketHookOptions } from "@/types/websocketTypes";
 import { useEffect, useRef, useState, useCallback, useReducer } from "react";
 import clientLogger from "../app/lib/clientLogger";
-import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
+import {
+  WebsocketFrame,
+  WebsocketFrameSchema,
+} from "@/types/ScalableWebsocketTypes";
 import messageFrameReducer, {
   Action,
   FrameType,
@@ -12,11 +15,9 @@ import {
   createWebsocketMessageSender,
   WebsocketMessageSender,
 } from "@/handlers/websocketMessageSender";
-import { send } from "process";
-import { WebsocketSendTypes } from "@/types/WebsocketSendTypes";
 
 type WebsocketHookResultNew = {
-  sendMessage: (data: WebsocketSendTypes) => void;
+  sendMessage: (data: WebsocketFrame) => void;
   readyState: number;
   connectionStatus: string;
   frameList: FrameType[];
@@ -149,7 +150,7 @@ const useWebSocket = ({
 
   const sendMessage = useCallback(
     // (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
-    (data: WebsocketSendTypes) => {
+    (data: WebsocketFrame) => {
       clientLogger.debug("Attempting to send message: ", data);
       // if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       //   ws.current.send(data);

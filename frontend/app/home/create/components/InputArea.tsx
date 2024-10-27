@@ -1,16 +1,16 @@
 "use client";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useRef } from "react";
 import TextareaResizable from "./TextAreaResizable";
 import InputContext from "@/context/InputContext";
 import { Button } from "@/components/ui/button";
 import AudioButton from "./inputButtons/AudioButton";
-import { send } from "process";
-import { WebsocketSendTypes } from "@/types/WebsocketSendTypes";
+import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
+import { v4 as uuidv4 } from "uuid";
 
 type InputAreaProps = {
   maxTextareaHeight: number;
   isExpanded: boolean;
-  sendMessage: (data: WebsocketSendTypes) => void;
+  sendMessage: (data: WebsocketFrame) => void;
 };
 
 // Badge,
@@ -28,7 +28,22 @@ export default function InputArea(props: InputAreaProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     // send the value to the server
-    props.sendMessage({ content: inputValue } as WebsocketSendTypes);
+    const frameToSend = {
+      frameId: uuidv4(),
+      type: "input",
+      address: "human",
+      frame: {
+        id: uuidv4(),
+        object: "human.completion",
+        model: "infinity",
+        role: "user",
+        content: inputValue,
+        delta: null,
+        index: 0,
+        finishReason: "stop",
+      },
+    } as WebsocketFrame;
+    props.sendMessage(frameToSend);
     console.log("submitted value: ", inputValue);
     dispatchInputValue({ type: "SET_INPUT", payload: "" });
   }

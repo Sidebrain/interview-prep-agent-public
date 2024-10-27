@@ -4,40 +4,13 @@ from pydantic.json_schema import GenerateJsonSchema
 from typing import Literal, List, Optional
 
 
-######### Receiving Types #########
-
-
-class ModelControlsConfig(BaseModel):
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-    top_p: Optional[float] = None
-    frequency_penalty: Optional[float] = None
-    presence_penalty: Optional[float] = None
-    stop: Optional[List[str]] = None
-
-
-class ModelControls(BaseModel):
-    model: str
-    provider: str
-    controls: ModelControlsConfig
-
-
-class WebsocketFromFrontendType(BaseModel):
-    content: str
-    # attachments: List[bytes]  # Equivalent to Blob array in TypeScript
-    controls: Optional[ModelControls] = None
-
-
-######### Sending Types #########
-
-
 class CompletionFrameChunk(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel,
         populate_by_name=True,
     )
     id: str
-    object: Literal["chat.completion"]
+    object: Literal["chat.completion", "chat.completion.chunk", "human.completion"]
     model: str
     role: Literal["assistant", "user"]
     content: str | None
@@ -58,8 +31,8 @@ class WebsocketFrame(BaseModel):
         populate_by_name=True,
     )
     frame_id: str
-    type: Literal["completion", "streaming", "heartbeat", "error"]
-    address: Literal["content", "artefact"]
+    type: Literal["completion", "streaming", "heartbeat", "error", "input"]
+    address: Literal["content", "artefact", "human"]
     frame: CompletionFrameChunk
 
 
