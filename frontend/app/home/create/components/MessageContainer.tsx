@@ -1,34 +1,59 @@
+"use client";
 import clientLogger from "@/app/lib/clientLogger";
 import { FrameType } from "@/reducers/messageFrameReducer";
 import { useCallback, useEffect, useRef } from "react";
+import Markdown, { Components, ExtraProps } from "react-markdown";
+import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import remarkGfm from "remark-gfm";
+import javascript from "react-syntax-highlighter/dist/cjs/languages/prism/javascript";
+import typescript from "react-syntax-highlighter/dist/cjs/languages/prism/typescript";
+import python from "react-syntax-highlighter/dist/cjs/languages/prism/python";
+import { frameRenderHandler } from "@/handlers/frameRenderHandler";
+
+SyntaxHighlighter.registerLanguage("javascript", javascript);
+SyntaxHighlighter.registerLanguage("typescript", typescript);
+SyntaxHighlighter.registerLanguage("python", python);
 
 type MessageContainerProps = {
   setMaxTextareaHeight: (maxTextareaHeight: number) => void;
   frameList: FrameType[];
 };
 
+interface CodeProps {
+  node?: any;
+  inline?: any;
+  className?: any;
+  children?: any;
+}
+
 function MessageContainer(props: MessageContainerProps) {
   const containerAreaRef = useRef<HTMLDivElement>(null); // to calculate div height for textarea sizing
 
   // for rendering the frames
-  const renderFrames = useCallback(
-    (frameList: FrameType[]) => {
-      return frameList.map((frame, idx) => (
-        <div
-          key={frame.frameId}
-          className={`flex text-sm flex-col bg-green-200 w-2/3 rounded-sm p-4 ${
-            idx % 2 === 0 ? "self-start" : "self-end"
-          }`}
+  const components: Components = {
+    code: ({ node, inline, className, children, ...props }: CodeProps) => {
+      const match = /language-(\w+)/.exec(className || "");
+      return !inline && match ? (
+        <SyntaxHighlighter
+          {...props}
+          PreTag={"div"}
+          language={match[1]}
+          style={oneDark}
         >
-          <div className="m-2 bg-green-300 p-8 text-left whitespace-pre-wrap rounded-md">
-            {frame.contentFrame.content}
-          </div>
-          <div className="m-2 bg-green-300 p-8 text-left whitespace-pre-wrap rounded-s-lg">
-            {frame.artefactFrames.length === 0 && "artifact text here"}
-          </div>
-        </div>
-      ));
+          {String(children).replace(/\n$/, "")}
+        </SyntaxHighlighter>
+      ) : (
+        <code {...props} className={className}>
+          {children}
+        </code>
+      );
     },
+  };
+
+  const renderContentFrame = useCallback(
+    (frame: FrameType) =>
+      frameRenderHandler({ frame: frame, address: "content" }),
     [props.frameList]
   );
 
@@ -57,9 +82,9 @@ function MessageContainer(props: MessageContainerProps) {
   return (
     <div
       ref={containerAreaRef}
-      className="flex flex-col grow gap-2 overflow-auto no-scrollbar mx-36 "
+      className="flex flex-col grow gap-2 overflow-auto text-sm no-scrollbar w-2/3 self-center "
     >
-      {renderFrames(props.frameList)}
+      {props.frameList.map((frame) => renderContentFrame(frame))}
     </div>
   );
 }

@@ -32,7 +32,7 @@ class WebsocketFrame(BaseModel):
     )
     frame_id: str
     type: Literal["completion", "streaming", "heartbeat", "error", "input"]
-    address: Literal["content", "artefact", "human"]
+    address: Literal["content", "artefact", "human", "thought"]
     frame: CompletionFrameChunk
 
 

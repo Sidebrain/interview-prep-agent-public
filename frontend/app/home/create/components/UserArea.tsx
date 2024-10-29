@@ -6,6 +6,8 @@ import useWebSocket from "@/hooks/useWebsocketNew";
 import { Badge } from "@/components/ui/badge";
 import { PopoverComponent } from "./PopoverComponent";
 import { HeaderSelect } from "./HeaderSelect";
+import { FrameType } from "@/reducers/messageFrameReducer";
+import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 
 function Header() {
   return (
@@ -15,12 +17,15 @@ function Header() {
   );
 }
 
-function UserArea() {
+type UserAreaProps = {
+  frameList: FrameType[];
+  sendMessage: (data: WebsocketFrame) => void;
+  frameHandler: (frame: WebsocketFrame) => void;
+};
+
+function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
-  const { frameList, sendMessage } = useWebSocket({
-    url: process.env.NEXT_PUBLIC_WS_URL_V2 as string,
-  });
 
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -39,7 +44,7 @@ function UserArea() {
     );
   };
   return (
-    <div className="flex flex-col gap-2 h-full">
+    <div className="flex w-full flex-col gap-2 h-full">
       <Header />
       <MessageContainer
         setMaxTextareaHeight={setMaxTextareaHeight}
@@ -50,6 +55,7 @@ function UserArea() {
         maxTextareaHeight={maxTextareaHeight}
         isExpanded={isExpanded}
         sendMessage={sendMessage}
+        frameHandler={frameHandler}
       />
     </div>
   );

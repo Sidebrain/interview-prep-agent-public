@@ -1,15 +1,18 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import httpx
+
+import logging
+import os
+
 from app.api.v1.router import router as api_v1_router
 from app.api.v2.router import router as api_v2_router
-import logging
 
 app = FastAPI()
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -18,11 +21,15 @@ async def log_requests(request: Request, call_next):
     logger.info(f"Response: {response.status_code}")
     return response
 
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+allowed_origins = [FRONTEND_URL, "http://localhost:3000"]
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    # allow_credentials=True,
+    allow_origins=allowed_origins,  # Allows all origins
+    allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )

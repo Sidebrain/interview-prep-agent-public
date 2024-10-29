@@ -11,6 +11,7 @@ type InputAreaProps = {
   maxTextareaHeight: number;
   isExpanded: boolean;
   sendMessage: (data: WebsocketFrame) => void;
+  frameHandler: (frame: WebsocketFrame) => void;
 };
 
 // Badge,
@@ -43,7 +44,8 @@ export default function InputArea(props: InputAreaProps) {
         finishReason: "stop",
       },
     } as WebsocketFrame;
-    props.sendMessage(frameToSend);
+    props.frameHandler(frameToSend); // add to the message list
+    props.sendMessage(frameToSend); // send to the server
     console.log("submitted value: ", inputValue);
     dispatchInputValue({ type: "SET_INPUT", payload: "" });
   }

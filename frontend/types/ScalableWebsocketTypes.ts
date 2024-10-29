@@ -29,7 +29,7 @@ const WebsocketFrameSchema = z.object({
   // track changes: added "input" to type, added "human" to address
   frameId: z.string(),
   type: z.enum(["completion", "streaming", "heartbeat", "error", "input"]),
-  address: z.enum(["content", "artefact", "human"]).nullable(),
+  address: z.enum(["content", "artefact", "human", "thought"]).nullable(),
   frame: CompletionFrameChunkSchema,
 });
 

@@ -18,7 +18,7 @@ interface FrameStrategy {
 // schema for parsing completion/content frames
 const CompletionContentSchema = WebsocketFrameSchema.extend({
   type: z.literal("completion"),
-  address: z.literal("content"),
+  address: z.enum(["content", "thought"]),
 });
 
 class CompletionContentStrategy implements FrameStrategy {
@@ -31,12 +31,46 @@ class CompletionContentStrategy implements FrameStrategy {
   }
   handleFrame(frame: WebsocketFrame): Action {
     try {
+      if (frame.address === "content") {
+        return {
+          type: "completion/content",
+          payload: frame,
+        };
+      } else {
+        return {
+          type: "completion/thought",
+          payload: frame,
+        };
+      }
+    } catch (error) {
+      console.error("Error in CompletionContentStrategy:", error);
+      throw error;
+    }
+  }
+}
+
+const InputContentSchema = WebsocketFrameSchema.extend({
+  type: z.literal("input"),
+  address: z.literal("human"),
+});
+
+class InputContentStrategy implements FrameStrategy {
+  canHandle(frame: WebsocketFrame): boolean {
+    try {
+      return InputContentSchema.safeParse(frame).success;
+    } catch (error) {
+      return false;
+    }
+  }
+  handleFrame(frame: WebsocketFrame): Action {
+    console.log("InputContentStrategy handleFrame");
+    try {
       return {
         type: "completion/content",
         payload: frame,
       };
     } catch (error) {
-      console.error("Error in CompletionContentStrategy:", error);
+      console.error("Error in InputContentStrategy:", error);
       throw error;
     }
   }
@@ -48,7 +82,10 @@ export class WebsocketFrameHandler implements FrameHandler {
 
   constructor(dispatch: React.Dispatch<Action>) {
     this.dispatch = dispatch;
-    this.strategies = [new CompletionContentStrategy()];
+    this.strategies = [
+      new CompletionContentStrategy(),
+      new InputContentStrategy(),
+    ];
   }
 
   handleFrame(frame: WebsocketFrame): void {

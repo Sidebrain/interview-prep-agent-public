@@ -22,6 +22,7 @@ type WebsocketHookResultNew = {
   connectionStatus: string;
   frameList: FrameType[];
   dispatch: React.Dispatch<Action>;
+  frameHandler: (frame: WebsocketFrame) => void;
 };
 
 const useWebSocket = ({
@@ -121,7 +122,7 @@ const useWebSocket = ({
         const websocketFrame = WebsocketFrameSchema.parse(data);
 
         // let the handler handle the frame
-        websocketFrameHandlerRef.current.handleFrame(websocketFrame);
+        frameHandler(websocketFrame);
       } catch (error) {
         clientLogger.error("Error parsing message: ", error);
         clientLogger.error("Message data: ", event.data);
@@ -136,6 +137,10 @@ const useWebSocket = ({
     startHeartbeat,
     stopHeartbeat,
   ]);
+
+  const frameHandler = useCallback((frame: WebsocketFrame) => {
+    websocketFrameHandlerRef.current.handleFrame(frame);
+  }, []);
 
   const disconnect = useCallback(() => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
@@ -193,6 +198,7 @@ const useWebSocket = ({
     readyState,
     connectionStatus,
     dispatch,
+    frameHandler,
   };
 };
 
