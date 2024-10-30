@@ -120,6 +120,51 @@ const messageFrameReducer = (
 
       return newFrameList;
     }
+
+    case "completion/artefact": {
+      console.log("completion/artefact action entered");
+      // ensure the address is artefact
+      if (address !== "artefact") {
+        console.log("Invalid address for completion/artefact", address);
+        return frameList;
+      }
+
+      // find appropriate frame index if it exists
+      const frameIndexToUpdate = frameList.findIndex(
+        (existingFrame) => existingFrame.frameId === frameId
+      );
+
+      // if frame not found, create a new frame
+      if (frameIndexToUpdate === -1) {
+        console.log("Frame not found, creating new frame");
+        return [
+          ...frameList,
+          {
+            frameId,
+            contentFrame: {} as CompletionFrameChunk,
+            artefactFrames: [incomingFrame],
+            thoughtFrames: [],
+          } as FrameType,
+        ];
+      }
+
+      const updatedFrame = {
+        ...frameList[frameIndexToUpdate],
+        artefactFrames: [
+          ...frameList[frameIndexToUpdate].artefactFrames,
+          incomingFrame,
+        ],
+      } as FrameType;
+
+      const newFrameList = [
+        ...frameList.slice(0, frameIndexToUpdate),
+        updatedFrame,
+        ...frameList.slice(frameIndexToUpdate + 1),
+      ];
+
+      return newFrameList;
+    }
+
     default:
       return frameList;
   }

@@ -91,13 +91,13 @@ class InternalRequirements(Concept):
 hiring_requirements = [
     Role,
     Designation,
-    Company,
-    Requirement,
-    Budget,
-    Expected,
-    Backup,
-    CultureFit,
-    InternalRequirements,
+    # Company,
+    # Requirement,
+    # Budget,
+    # Expected,
+    # Backup,
+    # CultureFit,
+    # InternalRequirements,
 ]
 
 

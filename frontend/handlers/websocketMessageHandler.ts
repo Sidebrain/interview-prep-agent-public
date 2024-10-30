@@ -18,7 +18,7 @@ interface FrameStrategy {
 // schema for parsing completion/content frames
 const CompletionContentSchema = WebsocketFrameSchema.extend({
   type: z.literal("completion"),
-  address: z.enum(["content", "thought"]),
+  address: z.enum(["content", "thought", "artefact"]),
 });
 
 class CompletionContentStrategy implements FrameStrategy {
@@ -36,9 +36,14 @@ class CompletionContentStrategy implements FrameStrategy {
           type: "completion/content",
           payload: frame,
         };
-      } else {
+      } else if (frame.address === "thought") {
         return {
           type: "completion/thought",
+          payload: frame,
+        };
+      } else {
+        return {
+          type: "completion/artefact",
           payload: frame,
         };
       }
