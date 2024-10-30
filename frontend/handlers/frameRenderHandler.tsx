@@ -6,11 +6,13 @@ import remarkGfm from "remark-gfm";
 import javascript from "react-syntax-highlighter/dist/cjs/languages/prism/javascript";
 import typescript from "react-syntax-highlighter/dist/cjs/languages/prism/typescript";
 import python from "react-syntax-highlighter/dist/cjs/languages/prism/python";
+import json from "react-syntax-highlighter/dist/cjs/languages/prism/json";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 
 SyntaxHighlighter.registerLanguage("javascript", javascript);
 SyntaxHighlighter.registerLanguage("typescript", typescript);
 SyntaxHighlighter.registerLanguage("python", python);
+SyntaxHighlighter.registerLanguage("json", json);
 
 interface CodeProps {
   node?: any;
@@ -49,13 +51,24 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
   switch (address) {
     case "thought":
       return (
-        <div>
+        <>
           {frame.thoughtFrames.map((tframe, idx) => (
             <div className="border border-gray-400 p-2 m-2" key={idx}>
-              {tframe.content}
+              <SyntaxHighlighter
+                language="json"
+                style={oneDark}
+                PreTag={"div"}
+                remarkPlugins={[remarkGfm]}
+                components={components}
+                className="markdown-content break-words text-sm"
+                wrapLines={true}
+                wrapLongLines={true}
+              >
+                {`${tframe.content}`}
+              </SyntaxHighlighter>
             </div>
           ))}
-        </div>
+        </>
       );
     case "artefact":
       return (

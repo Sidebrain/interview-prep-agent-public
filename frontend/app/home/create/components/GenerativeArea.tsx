@@ -45,9 +45,9 @@ const ThoughtFrames = (props: { frameList: FrameType[] }) => {
 
 const GenerativeArea = (props: GenerativeAreaProps) => {
   return (
-    <div className="w-full bg-gray-100 h-full flex flex-col items-center ">
-      <Tabs defaultValue="thoughts" className="w-full p-2 h-full">
-        <TabsList className="w-full">
+    <div className="w-full bg-gray-100 h-full flex flex-col items-center overflow-scroll">
+      <Tabs defaultValue="thoughts" className="w-full p-2 h-full sticky">
+        <TabsList className="w-full ">
           <TabsTrigger value="thoughts" className="w-full">
             Thoughts
           </TabsTrigger>
@@ -55,10 +55,10 @@ const GenerativeArea = (props: GenerativeAreaProps) => {
             Artefacts
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="thoughts" className="h-full">
+        <TabsContent value="thoughts" className="h-full ">
           <ThoughtFrames frameList={props.frameList} />
         </TabsContent>
-        <TabsContent value="artefacts" className="h-full">
+        <TabsContent value="artefacts" className="h-full ">
           <ArtefactFrames frameList={props.frameList} />
         </TabsContent>
       </Tabs>
