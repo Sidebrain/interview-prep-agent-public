@@ -2,17 +2,14 @@
 import { useState } from "react";
 import InputArea from "./InputArea";
 import MessageContainer from "./MessageContainer";
-import useWebSocket from "@/hooks/useWebsocketNew";
 import { Badge } from "@/components/ui/badge";
-import { PopoverComponent } from "./PopoverComponent";
-import { HeaderSelect } from "./HeaderSelect";
 import { FrameType } from "@/reducers/messageFrameReducer";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 
 function Header() {
   return (
-    <header className="flex justify-center bg-gray-300 rounded-sm text-center p-2">
-      <HeaderSelect />
+    <header className="flex justify-center bg-gray-300 rounded-sm text-center p-0 font-bold text-gray-600">
+      Interview Assistant
     </header>
   );
 }
@@ -31,7 +28,7 @@ function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
 
   const ExpandButton = () => {
     return (
-      <div className="flex w-full items-center gap-2">
+      <div className="flex w-full items-center">
         <Badge
           variant={"outline"}
           className="bg-gray-200 hover:bg-gray-100 cursor-pointer transition-colors w-full p-1"
@@ -39,12 +36,11 @@ function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
         >
           {isExpanded ? "Hide Textarea" : "Show Textarea"}
         </Badge>
-        <PopoverComponent />
       </div>
     );
   };
   return (
-    <div className="flex w-full flex-col gap-2 h-full">
+    <div className="flex w-full flex-col gap-2 h-full pr-2">
       <Header />
       <MessageContainer
         setMaxTextareaHeight={setMaxTextareaHeight}

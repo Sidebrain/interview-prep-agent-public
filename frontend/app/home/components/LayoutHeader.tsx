@@ -11,9 +11,9 @@ export default function LayoutHeader(props: LayoutHeaderProps) {
   return (
     <header className="bg-gray-200 w-full">
       <div className="flex gap-2 p-2 w-full justify-end items-center">
-        <ModeToggle />
-        <Button variant="outline">Account</Button>
-        <Button variant="outline">Dashboard</Button>
+        {/* <ModeToggle /> */}
+        {/* <Button variant="outline">Account</Button>
+        <Button variant="outline">Dashboard</Button> */}
         <Button
           variant="default"
           onClick={props.handleSignOut}
