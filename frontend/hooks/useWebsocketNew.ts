@@ -2,21 +2,27 @@
 import { WebSocketHookOptions } from "@/types/websocketTypes";
 import { useEffect, useRef, useState, useCallback, useReducer } from "react";
 import clientLogger from "../app/lib/clientLogger";
-import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
+import {
+  WebsocketFrame,
+  WebsocketFrameSchema,
+} from "@/types/ScalableWebsocketTypes";
 import messageFrameReducer, {
   Action,
   FrameType,
 } from "@/reducers/messageFrameReducer";
 import { createWebsocketFrameHandler } from "@/handlers/websocketMessageHandler";
+import {
+  createWebsocketMessageSender,
+  WebsocketMessageSender,
+} from "@/handlers/websocketMessageSender";
 
 type WebsocketHookResultNew = {
-  sendMessage: (
-    data: string | ArrayBufferLike | Blob | ArrayBufferView
-  ) => void;
+  sendMessage: (data: WebsocketFrame) => void;
   readyState: number;
   connectionStatus: string;
   frameList: FrameType[];
   dispatch: React.Dispatch<Action>;
+  frameHandler: (frame: WebsocketFrame) => void;
 };
 
 const useWebSocket = ({
@@ -34,7 +40,10 @@ const useWebSocket = ({
   const ws = useRef<WebSocket | null>(null);
   const reconnectCount = useRef<number>(0);
   const heartbeatTimer = useRef<NodeJS.Timeout | null>(null);
-  const websocketFrameHandler = useRef(createWebsocketFrameHandler(dispatch));
+  const websocketFrameHandlerRef = useRef(
+    createWebsocketFrameHandler(dispatch)
+  );
+  const senderRef = useRef<WebsocketMessageSender | null>(null);
 
   const startHeartbeat = useCallback(() => {
     clientLogger.debug("Starting heartbeat");
@@ -113,7 +122,7 @@ const useWebSocket = ({
         const websocketFrame = WebsocketFrameSchema.parse(data);
 
         // let the handler handle the frame
-        websocketFrameHandler.current.handleFrame(websocketFrame);
+        frameHandler(websocketFrame);
       } catch (error) {
         clientLogger.error("Error parsing message: ", error);
         clientLogger.error("Message data: ", event.data);
@@ -129,6 +138,10 @@ const useWebSocket = ({
     stopHeartbeat,
   ]);
 
+  const frameHandler = useCallback((frame: WebsocketFrame) => {
+    websocketFrameHandlerRef.current.handleFrame(frame);
+  }, []);
+
   const disconnect = useCallback(() => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.close(1000, "component unmounting");
@@ -141,18 +154,24 @@ const useWebSocket = ({
   }, []);
 
   const sendMessage = useCallback(
-    (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
+    // (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
+    (data: WebsocketFrame) => {
       clientLogger.debug("Attempting to send message: ", data);
-      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        ws.current.send(data);
+      // if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      //   ws.current.send(data);
+      if (!senderRef.current) {
+        clientLogger.error("No sender found");
+        return false;
       } else {
-        clientLogger.error("WebSocket is not connected");
+        // clientLogger.error("WebSocket is not connected");
+        return senderRef.current.send(data);
       }
     },
     []
   );
 
   useEffect(() => {
+    // connect to websocket
     connect();
 
     return () => {
@@ -162,12 +181,24 @@ const useWebSocket = ({
     };
   }, [connect, disconnect, stopHeartbeat]);
 
+  useEffect(() => {
+    // create message sender
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      senderRef.current = createWebsocketMessageSender(ws.current);
+      clientLogger.debug("webcocket message sender created");
+    }
+    return () => {
+      senderRef.current = null;
+    };
+  }, [ws.current?.readyState]);
+
   return {
     sendMessage,
     frameList,
     readyState,
     connectionStatus,
     dispatch,
+    frameHandler,
   };
 };
 

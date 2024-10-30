@@ -1,15 +1,19 @@
 {
-  "frame_id": "637c0ce6-4bfb-4ce3-98a3-3ec007843cf3",
-  "type": "completion",
-  "address": "content",
-  "frame": {
-    "id": "chatcmpl-AMFFTx0kAfZmHpNg0mcfFVV3M7m1i",
-    "object": "chat.completion",
-    "model": "gpt-4o-mini-2024-07-18",
-    "role": "assistant",
-    "content": "Yes, there is a distinction between mental time and chronological time, and understanding this difference can shed light on our experiences and mental pain.\n\n1. **Chronological Time**: This refers to the objective, measurable progression of time as it is universally understood—seconds, minutes, hours, days, and so forth. It is a natural phenomenon that exists independently of human thought. Chronological time is used for scheduling, determining events, and organizing daily life.\n\n2. **Mental Time**: This is more subjective and relates to how we perceive, remember, and think about time. It includes our thoughts about the past (memories), present (awareness), and future (anticipations and planning). Mental time can be very varied; for instance, moments of intense joy may feel fleeting, while moments of pain may seem to stretch on indefinitely.\n\nRegarding mental pain, many people experience distress when they ruminate about the past (regret, guilt) or feel anxiety about the future (worry, fear of the unknown). Mental time often influences our emotional states, and these can indeed be significant sources of psychological discomfort. In contrast, chronological time is neutral; it is the lens through which we interpret and assign meaning to our experiences that can lead to mental pain.\n\nIn summary, while chronological time is a constant backdrop to our lives, mental time shapes our emotional experiences and can be a source of suffering. Balancing our awareness and interpreting of mental time can help alleviate some of that pain.",
-    "delta": null,
-    "index": 0,
-    "finish_reason": "stop"
+  "arguments": {
+    "role": { "reward": "excellent", "role": "Designer" },
+    "designation": { "reward": "excellent", "designation": "UI/UX Designer" },
+    "company": { "reward": "lacking", "company_name": null },
+    "requirement": {
+      "reward": "excellent",
+      "requirement_details": "The designer needs to have experience in creating high-fidelity designs for both websites and applications. They will closely collaborate with the engineering and product teams, so good communication skills and teamwork experience are critical. The designer will be responsible for the main product, which is a hiring assistant, requiring an understanding of the hiring industry and the ability to gather industry-relevant information if needed."
+    },
+    "budget": { "reward": "lacking", "budget": 0 },
+    "expected": { "reward": "lacking", "salary": 0 },
+    "backup": { "reward": "lacking", "backup_plan": "" },
+    "culture_fit": { "reward": "lacking", "culture_fit": "" },
+    "internal_requirements": {
+      "reward": "lacking",
+      "internal_requirements": ""
+    }
   }
 }

@@ -1,7 +1,9 @@
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 from pydantic.json_schema import GenerateJsonSchema
-from typing import Literal
+from typing import Literal, List, Optional
+
+AddressType = Literal["content", "artefact", "human", "thought"]
 
 
 class CompletionFrameChunk(BaseModel):
@@ -10,7 +12,7 @@ class CompletionFrameChunk(BaseModel):
         populate_by_name=True,
     )
     id: str
-    object: Literal["chat.completion"]
+    object: Literal["chat.completion", "chat.completion.chunk", "human.completion"]
     model: str
     role: Literal["assistant", "user"]
     content: str | None
@@ -31,8 +33,8 @@ class WebsocketFrame(BaseModel):
         populate_by_name=True,
     )
     frame_id: str
-    type: Literal["completion", "streaming", "heartbeat", "error"]
-    address: Literal["content", "artefact"]
+    type: Literal["completion", "streaming", "heartbeat", "error", "input"]
+    address: AddressType
     frame: CompletionFrameChunk
 
 

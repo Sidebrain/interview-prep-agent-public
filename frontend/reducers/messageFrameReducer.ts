@@ -7,14 +7,16 @@ export type FrameType = {
   frameId: string;
   contentFrame: CompletionFrameChunk;
   artefactFrames: CompletionFrameChunk[];
+  thoughtFrames: CompletionFrameChunk[];
 };
 
 type ActionType =
   | "heartbeat"
   | "completion/content"
+  | "completion/thought"
+  | "completion/artefact"
   | "streaming/content"
-  | "streaming/artefact"
-  | "completion/artefact";
+  | "streaming/artefact";
 
 export type Action = {
   type: ActionType;
@@ -34,10 +36,11 @@ const messageFrameReducer = (
       // do nothing, return as is. heartbeat doesn't mutate state
       return frameList;
     }
+
     case "completion/content": {
       console.log("completion/content action entered");
       // ensure the address is completion
-      if (address !== "content") {
+      if (address !== "content" && address !== "human") {
         console.log("Invalid address for completion/content", address);
         return frameList;
       }
@@ -49,21 +52,64 @@ const messageFrameReducer = (
       // if frame not found, create a new frame
       if (frameIndexToUpdate === -1) {
         console.log("Frame not found, creating new frame");
-        console.log("incomingFrame: ", incomingFrame);
-        console.log("New Framelist");
-        console.log(frameList);
         return [
           ...frameList,
           {
             frameId,
             contentFrame: incomingFrame,
             artefactFrames: [],
+            thoughtFrames: [],
           } as FrameType,
         ];
       }
       const updatedFrame = {
         ...frameList[frameIndexToUpdate],
         contentFrame: incomingFrame,
+      } as FrameType;
+
+      const newFrameList = [
+        ...frameList.slice(0, frameIndexToUpdate),
+        updatedFrame,
+        ...frameList.slice(frameIndexToUpdate + 1),
+      ];
+
+      return newFrameList;
+    }
+
+    case "completion/thought": {
+      //
+      console.log("completion/thought action entered");
+      // ensure the address is completion
+      if (address !== "thought") {
+        console.log("Invalid address for completion/thought", address);
+        return frameList;
+      }
+
+      // find appropriate frame index if it exists
+      const frameIndexToUpdate = frameList.findIndex(
+        (existingFrame) => existingFrame.frameId === frameId
+      );
+
+      // if frame not found, create a new frame
+      if (frameIndexToUpdate === -1) {
+        console.log("Frame not found, creating new frame");
+        return [
+          ...frameList,
+          {
+            frameId,
+            contentFrame: {} as CompletionFrameChunk,
+            artefactFrames: [],
+            thoughtFrames: [incomingFrame],
+          } as FrameType,
+        ];
+      }
+
+      const updatedFrame = {
+        ...frameList[frameIndexToUpdate],
+        thoughtFrames: [
+          ...frameList[frameIndexToUpdate].thoughtFrames,
+          incomingFrame,
+        ],
       } as FrameType;
 
       const newFrameList = [

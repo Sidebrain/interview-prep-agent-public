@@ -4,9 +4,13 @@ import { z } from "zod";
 
 const CompletionFrameChunkSchema = z.object({
   id: z.string(),
-  object: z.enum(["chat.completion", "chat.completion.chunk"]),
+  object: z.enum([
+    "chat.completion",
+    "chat.completion.chunk",
+    "human.completion",
+  ]),
   model: z.string(),
-  role: z.literal("assistant"),
+  role: z.enum(["assistant", "user"]),
   content: z.string().nullable(),
   delta: z.string().nullable(),
   index: z.number(),
@@ -22,9 +26,10 @@ const CompletionFrameChunkSchema = z.object({
 type CompletionFrameChunk = z.infer<typeof CompletionFrameChunkSchema>;
 
 const WebsocketFrameSchema = z.object({
+  // track changes: added "input" to type, added "human" to address
   frameId: z.string(),
-  type: z.enum(["completion", "streaming", "heartbeat", "error"]),
-  address: z.enum(["content", "artefact"]).nullable(),
+  type: z.enum(["completion", "streaming", "heartbeat", "error", "input"]),
+  address: z.enum(["content", "artefact", "human", "thought"]).nullable(),
   frame: CompletionFrameChunkSchema,
 });
 
