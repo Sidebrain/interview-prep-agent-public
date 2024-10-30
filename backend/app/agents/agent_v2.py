@@ -1,7 +1,8 @@
+import asyncio
 from datetime import datetime
 from enum import Enum
 import json
-from typing import Literal, Optional, get_type_hints
+from typing import Generic, Literal, Optional, Tuple, TypeVar, get_type_hints
 from uuid import uuid4
 import instructor
 from openai import AsyncClient
@@ -11,12 +12,18 @@ from app.services.llms.openai_client import openai_async_client
 
 from openai.types.chat import ChatCompletionMessage, ChatCompletion
 
-from app.types.interview_concept_types import Role
+from app.types.interview_concept_types import (
+    HiringRequirements,
+    QuestionAndAnswer,
+    Role,
+    hiring_requirements,
+)
 from app.types.websocket_types import (
     CompletionFrameChunk,
     WebsocketFrame,
 )
 from app.websocket_handler import Channel
+
 import logging
 
 # Create a child logger instance
@@ -38,40 +45,8 @@ logger.addHandler(stream_handler)
 # Optionally set the logging level for the child logger
 logger.setLevel(logging.DEBUG)
 
-
-class ThinkerIntelligenceEnum(Enum):
-    # The source of the entity's intelligence
-    human = "human"
-    artificial = "artificial_intelligence"
-
-
-class HumanInputHandler:
-    """Not using this right now, but it's a placeholder for a human input handler.
-    The output interface is same as openai's chatcompletion.
-    We'll see if it will be useful."""
-
-    def __init__(self):
-        pass
-
-    async def create(self, messages: list[dict[str, str]] = None):
-        # Simulate the behavior of OpenAI's chat completion
-        user_input = input("User: ")
-        return ChatCompletion(
-            id=uuid4(),
-            created=int(datetime.now().timestamp()),
-            model="human",
-            object="human.completion",
-            choices=[
-                ChatCompletionMessage(
-                    role="user",
-                    content=user_input,
-                )
-            ],
-        )
-
-
-def package_into_frame(response, frame_id: str) -> WebsocketFrame:
-    raise NotImplementedError
+# globally unify the model
+model = "gpt-4o-mini-2024-07-18"
 
 
 class Thinker:
@@ -81,11 +56,11 @@ class Thinker:
         self.client = client
 
     async def generate(self, messages: list[dict[str, str]], frame_id: str):
-        print("-" * 30, "printing the messages that are being sent to the thinker")
-        print(messages)
+        # print("-" * 30, "printing the messages that are being sent to the thinker")
+        # print(messages)
         response = await self.client.chat.completions.create(
             messages=messages,
-            model="gpt-4o-mini-2024-07-18",
+            model=model,
         )
 
         logger.debug(response.model_dump_json(indent=4))
@@ -113,15 +88,15 @@ class Thinker:
         pydantic_structure_to_extract: BaseModel,
         messages: list[dict[str, str]],
         frame_id: str,
-    ):
-        model = "gpt-4o-mini-2024-07-18"
+    ) -> WebsocketFrame:
+        model = (model,)
         isntructor_client = instructor.from_openai(self.client)
         extracted_structure = await isntructor_client.chat.completions.create(
             model=model,
             response_model=pydantic_structure_to_extract,
             messages=messages,
         )
-        print("printing the extracted structure", extracted_structure)
+        # print("printing the extracted structure", extracted_structure)
 
         completion_frame = CompletionFrameChunk(
             id=str(uuid4()),
@@ -141,7 +116,38 @@ class Thinker:
             frame=completion_frame,
         )
 
-        return websocket_frame
+        return websocket_frame, extracted_structure
+
+    async def think_with_tool(
+        self, messages: list[dict[str, str]], tool: dict[str, str], frame_id: str
+    ):
+        response = await self.client.chat.completions.create(
+            messages=messages,
+            model=model,
+            tools=[{"type": "function", "function": tool}],
+        )
+        # print(
+        #     "printing the response from the think_with_tool method",
+        #     response.model_dump_json(indent=4),
+        # )
+
+        completion_frame = CompletionFrameChunk(
+            id=response.id,
+            object=response.object,
+            model=response.model,
+            role=response.choices[0].message.role,
+            content=response.choices[0].message.content,
+            delta=None,
+            index=response.choices[0].index,
+            finish_reason=response.choices[0].finish_reason,
+        )
+
+        return WebsocketFrame(
+            frame_id=frame_id,
+            type="completion",
+            address="content",
+            frame=completion_frame,
+        )
 
 
 class Memory:
@@ -154,7 +160,9 @@ class Memory:
     def clear(self):
         self.memory = []
 
-    def extract_memory_for_generation(self):
+    def extract_memory_for_generation(
+        self, custom_user_instruction: dict[str, str] = None
+    ):
         with open("config/agent_v2.yaml", "r") as file:
             config = yaml.safe_load(file)
             system = [
@@ -163,15 +171,19 @@ class Memory:
                     "content": config["interview_agent"]["system_prompt"],
                 }
             ]
-            print("system", system)
+            # print("system", system)
 
-        return system + [
-            {
-                "role": message.frame.role,
-                "content": message.frame.content,
-            }
-            for message in self.memory
-        ]
+        return (
+            system
+            + [
+                {
+                    "role": message.frame.role,
+                    "content": message.frame.content,
+                }
+                for message in self.memory
+            ]
+            + ([custom_user_instruction] if custom_user_instruction else [])
+        )
 
     def get(self):
         return self.memory
@@ -182,27 +194,7 @@ class Agent:
         self.thinker = Thinker()
         self.memory = Memory()
         self.channel = channel
-
-    async def think(self, extract: bool = False):
-        frame_id = str(uuid4())
-        frame_to_send = await self.thinker.generate(
-            messages=self.memory.extract_memory_for_generation(), frame_id=frame_id
-        )
-        if extract:
-            structured_extraction = await self.thinker.extract_structured_response(
-                pydantic_structure_to_extract=Role,
-                messages=self.memory.extract_memory_for_generation(),
-                frame_id=frame_id,
-            )
-        self.memory.add(frame_to_send)  # Add the frame to memory
-        # print("printing the frame that is being sent right before sending")
-        # print(frame_to_send.model_dump_json(indent=4))
-        await self.channel.send_message(frame_to_send.model_dump_json(by_alias=True))
-
-        if extract:
-            await self.channel.send_message(
-                structured_extraction.model_dump_json(by_alias=True)
-            )
+        self.interview = Interview(self.thinker, self.memory, self.channel)
 
     async def internal_thought_projection(self):
         """Use this to generate helper text"""
@@ -212,29 +204,86 @@ class Agent:
         """Use this to generate artefacts"""
         raise NotImplementedError
 
-    async def interview(self, pydantic_type: BaseModel, frame_id: str):
-        """Use this to interview the user"""
-        structured_extraction = await self.thinker.extract_structured_response(
-            pydantic_structure_to_extract=pydantic_type,
-            messages=self.memory.extract_memory_for_generation(),
-            frame_id=frame_id,
-        )
-        print("structured exrtraction yielded", structured_extraction)
-        return structured_extraction
-
     async def receive_message(self):
         msg = await self.channel.receive_message()
         if msg is None:
             return
-        print("printing the message that is being received")
-        print(msg)
+        # print("printing the message that is being received")
+        # print(msg)
         try:
+            frame_id = str(uuid4())
             # json_msg = json.loads(msg)
             # print("printing the json message that is being received", json_msg)
             parsed_message = WebsocketFrame.model_validate_json(msg, strict=False)
-            print("printing the parsed message", parsed_message)
+            # print("printing the parsed message", parsed_message)
             self.memory.add(parsed_message)
-            await self.think(extract=True)
+            await self.interview(frame_id=frame_id)
         except json.JSONDecodeError:
             logger.error("Failed to decode the message")
             return
+
+
+class Interview:
+    def __init__(self, thinker: Thinker, memory: Memory, channel: Channel):
+        self.concepts = hiring_requirements.copy()
+        self.thinker = thinker
+        self.memory = memory
+        self.channel = channel
+        pass
+
+    async def generate_q_and_a_for_concept(
+        self, concept: BaseModel, frame_id: str
+    ) -> Tuple[WebsocketFrame, QuestionAndAnswer]:
+        print("printing the concept that is being interviewed", concept)
+        info_to_extract_from_user = [
+            field_details.description
+            for field, field_details in concept.model_fields.items()
+            if field != "reward"
+        ]
+        print("printing the current instruction", info_to_extract_from_user)
+        messages = self.memory.extract_memory_for_generation(
+            custom_user_instruction={
+                "role": "user",
+                "content": """Ask a question to get the following information:\n{info_to_extract_from_user} """.format(
+                    info_to_extract_from_user=" ".join(info_to_extract_from_user)
+                ),
+            }
+        )
+        q_and_a_frame, q_and_a = await self.thinker.extract_structured_response(
+            pydantic_structure_to_extract=QuestionAndAnswer,
+            messages=messages,
+            frame_id=frame_id,
+        )
+        return q_and_a_frame, q_and_a
+
+    async def __call__(self, frame_id: str):
+        concept = self.concepts.pop(0)
+        q_and_a_frame, q_and_a = await self.generate_q_and_a_for_concept(
+            concept, frame_id
+        )
+        # await self.channel.send_message(q_and_a.model_dump_json(by_alias=True))
+        frame_to_send_to_user = WebsocketFrame(
+            frame_id=frame_id,
+            type="completion",
+            address="content",
+            frame=CompletionFrameChunk(
+                content=q_and_a.question,
+                role="assistant",
+                finish_reason="stop",
+                index=0,
+                delta=None,
+                id=str(uuid4()),
+                model=model,
+                object="chat.completion",
+            ),
+        )
+        self.memory.add(frame_to_send_to_user)
+
+        await asyncio.gather(
+            *[
+                self.channel.send_message(
+                    frame_to_send_to_user.model_dump_json(by_alias=True)
+                ),
+                self.channel.send_message(q_and_a_frame.model_dump_json(by_alias=True)),
+            ]
+        )

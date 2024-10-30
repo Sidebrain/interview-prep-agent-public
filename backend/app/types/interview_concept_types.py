@@ -1,11 +1,12 @@
-from typing import Optional, get_type_hints
+from typing import Literal, Optional, get_type_hints
 from pydantic import BaseModel, Field, model_validator
+from enum import Enum
 
 
 class Concept(BaseModel):
-    reward: bool = Field(
+    reward: Literal["excellent", "acceptable", "lacking"] = Field(
         ...,
-        description="""A boolean value that indicates whether the answer provided by the hiring manager is detailed enough to be rewarded. Like or dislike, binary classification.""",
+        description="""A reward for the detail provided in the concept. Generally one would expect a reward of 'excellent' for a concept that is well thought out and detailed, 'acceptable' for a concept that is just complete but lacks details, and 'lacking' for a concept that is missing a lot of details.""",
     )
 
 
@@ -88,66 +89,38 @@ class InternalRequirements(Concept):
     )
 
 
-class HiringRequirements(BaseModel):
-    role: Role
-    designation: Designation
-    company: Company
-    requirement: Requirement
-    budget: Budget
-    expected: Expected
-    backup: Backup
-    culture_fit: CultureFit
-    internal_requirements: InternalRequirements
-
-    @model_validator(mode="after")
-    def validate_role_and_designation(cls, values):
-        if values.get("role").role != values.get("designation").designation:
-            raise ValueError(
-                "The role and designation must be the same. The role is the title of the job, and the designation is the official title of the person."
-            )
-        return values
-
-    @model_validator(mode="after")
-    def validate_expected_and_budget(cls, values):
-        if values.get("expected").salary > values.get("budget").budget:
-            raise ValueError("The expected salary cannot be greater than the budget.")
-        return values
-
-    @model_validator(mode="after")
-    def validate_backup_and_culture_fit(cls, values):
-        if values.get("backup").backup_plan == values.get("culture_fit").culture_fit:
-            raise ValueError(
-                "The backup plan and the culture fit cannot be the same. The backup plan is the plan in case the role is not filled or the candidate does not work out, and the culture fit is the environment that the candidate would be working in."
-            )
-        return values
+hiring_requirements = [
+    Role,
+    Designation,
+    Company,
+    Requirement,
+    Budget,
+    Expected,
+    Backup,
+    CultureFit,
+    InternalRequirements,
+]
 
 
-def main():
-    # hiring_requirements = HiringRequirements(
-    #     role=Role(reward=True, role="Software Engineer"),
-    #     designation=Designation(reward=True, designation="Software Engineer"),
-    #     company=Company(reward=True, company_name="Company A"),
-    #     requirement=Requirement(reward=True, requirement_details="Experience building a team"),
-    #     budget=Budget(reward=True, budget=100000),
-    #     expected=Expected(reward=True, salary=90000),
-    #     backup=Backup(reward=True, backup_plan="Hire a contractor"),
-    #     culture_fit=CultureFit(reward=True, culture_fit="Remote work"),
-    #     internal_requirements=InternalRequirements(
-    #         reward=True, internal_requirements="Python, Django, React"
-    #     ),
-    # )
-    # print(hiring_requirements)
-    # t = get_type_hints(HiringRequirements)
-    # print(t)
-    # for k, v in t.items():
-    #     print(k)
-    #     print(get_type_hints(v))
-    #     print(v.model_fields)
-    # print(*HiringRequirements.model_fields, sep='\n')
-    for n, py_class in get_type_hints(HiringRequirements).items():
-        for n, f in py_class.model_fields.items():
-            if n not in ["reward"]:
-                print(n, f.description, sep="     ")
+class QuestionAndAnswer(BaseModel):
+    question: str = Field(
+        ...,
+        description="A question that the recruiter asks the hiring manager to get more information about the role",
+        title="Interview question",
+    )
+    sample_answer: str = Field(
+        ...,
+        description="A sample answer with a variety of possible answers generated based on the question and the context so far",
+        title="Expected answer",
+    )
+    options: str = Field(
+        ...,
+        description="Some options that the hiring manager can choose from",
+        title="Correct answer",
+    )
+
+
+def main(): ...
 
 
 if __name__ == "__main__":
