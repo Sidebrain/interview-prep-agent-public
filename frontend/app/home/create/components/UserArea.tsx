@@ -24,7 +24,7 @@ function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const ExpandButton = () => {
     return (

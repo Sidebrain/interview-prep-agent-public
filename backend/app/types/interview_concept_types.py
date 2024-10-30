@@ -1,6 +1,5 @@
-from typing import Literal, Optional, get_type_hints
-from pydantic import BaseModel, Field, model_validator
-from enum import Enum
+from typing import Literal, Optional
+from pydantic import BaseModel, Field
 
 
 class Concept(BaseModel):
