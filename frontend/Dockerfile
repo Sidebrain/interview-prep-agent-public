@@ -1,5 +1,19 @@
 FROM node:18-alpine AS base
 
+# Accept build args
+ARG NEXT_PUBLIC_WS_URL
+ARG NEXT_PUBLIC_WS_URL_V2
+ARG NEXT_PUBLIC_CLIENT_LOG_LEVEL
+ARG BACKEND_URL
+
+# Set them as environment variables
+ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
+ENV NEXT_PUBLIC_WS_URL_V2=$NEXT_PUBLIC_WS_URL_V2
+ENV NEXT_PUBLIC_CLIENT_LOG_LEVEL=$NEXT_PUBLIC_CLIENT_LOG_LEVEL
+ENV BACKEND_URL=$BACKEND_URL
+
+# ... rest of your Dockerfile
+
 # Install dependencies only when needed
 FROM base AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
