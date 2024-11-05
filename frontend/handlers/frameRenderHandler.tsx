@@ -63,6 +63,7 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
                 className="markdown-content break-words text-sm"
                 wrapLines={true}
                 wrapLongLines={true}
+                key={`tframe-${idx}`}
               >
                 {`${tframe.content}`}
               </SyntaxHighlighter>
@@ -79,6 +80,7 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
                 remarkPlugins={[remarkGfm]}
                 components={components}
                 className="markdown-content break-words text-sm "
+                key={`artifact-${idx}`}
               >
                 {aframe.content}
               </Markdown>

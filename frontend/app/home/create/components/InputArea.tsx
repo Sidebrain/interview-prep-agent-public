@@ -27,6 +27,9 @@ export default function InputArea(props: InputAreaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null); // to access textarea element
 
   function handleSubmit(e: React.FormEvent) {
+    if (!inputValue.trim()) {
+      return;
+    }
     e.preventDefault();
     // send the value to the server
     const frameToSend = {

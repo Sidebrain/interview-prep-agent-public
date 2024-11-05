@@ -27,6 +27,7 @@ type WebsocketHookResultNew = {
 
 const useWebSocket = ({
   url,
+  enabled,
   protocols,
   reconnectInterval = 5000,
   reconnectAttempts = 5,
@@ -172,6 +173,10 @@ const useWebSocket = ({
 
   useEffect(() => {
     // connect to websocket
+    if (!enabled) {
+      clientLogger.debug("url not ready, waiting for url to be loaded");
+      return;
+    }
     connect();
 
     return () => {
@@ -179,7 +184,7 @@ const useWebSocket = ({
       disconnect();
       stopHeartbeat();
     };
-  }, [connect, disconnect, stopHeartbeat]);
+  }, [connect, disconnect, stopHeartbeat, enabled]);
 
   useEffect(() => {
     // create message sender

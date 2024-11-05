@@ -31,6 +31,7 @@ const ChatInterface = () => {
   const [inputValue, setInputValue] = useState("");
   const { sendMessage, msgList, dispatch } = useWebSocket({
     url: process.env.NEXT_PUBLIC_WS_URL as string,
+    enabled: true,
   });
   const {
     getPermissionsAndStartRecording,
