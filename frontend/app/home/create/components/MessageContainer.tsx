@@ -30,27 +30,6 @@ interface CodeProps {
 function MessageContainer(props: MessageContainerProps) {
   const containerAreaRef = useRef<HTMLDivElement>(null); // to calculate div height for textarea sizing
 
-  // for rendering the frames
-  const components: Components = {
-    code: ({ node, inline, className, children, ...props }: CodeProps) => {
-      const match = /language-(\w+)/.exec(className || "");
-      return !inline && match ? (
-        <SyntaxHighlighter
-          {...props}
-          PreTag={"div"}
-          language={match[1]}
-          style={oneDark}
-        >
-          {String(children).replace(/\n$/, "")}
-        </SyntaxHighlighter>
-      ) : (
-        <code {...props} className={className}>
-          {children}
-        </code>
-      );
-    },
-  };
-
   const renderContentFrame = useCallback(
     (frame: FrameType) =>
       frameRenderHandler({ frame: frame, address: "content" }),
