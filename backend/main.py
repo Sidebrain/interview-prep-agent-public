@@ -2,10 +2,26 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 import logging
-import os
+import os, sys
 
 from app.api.v1.router import router as api_v1_router
 from app.api.v2.router import router as api_v2_router
+
+
+def verify_secrets():
+    required_secrets = ["OPENAI_API_KEY", "STRIPE_API_KEY"]
+    missing_secrets = [
+        secret for secret in required_secrets if not os.environ.get(secret)
+    ]
+
+    if missing_secrets:
+        print(f"Missing required secrets: {missing_secrets}")
+        sys.exit(1)
+
+    print("All required secrets present")
+
+
+verify_secrets()
 
 app = FastAPI()
 
@@ -22,8 +38,8 @@ async def log_requests(request: Request, call_next):
     return response
 
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
-allowed_origins = [FRONTEND_URL, "http://localhost:3000"]
+CLIENT_URL = os.getenv("CLIENT_URL", "http://localhost:3000")
+allowed_origins = [CLIENT_URL, "http://localhost:3000"]
 
 # Add CORS middleware
 app.add_middleware(

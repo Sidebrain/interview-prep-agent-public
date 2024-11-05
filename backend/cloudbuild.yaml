@@ -1,0 +1,27 @@
+steps:
+  # Pull the previous image for caching
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker pull asia-south2-docker.pkg.dev/audition-prod/docker-repo/backend:latest || exit 0
+  
+  # Build with cache
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'asia-south2-docker.pkg.dev/audition-prod/docker-repo/backend:latest',
+      '--cache-from', 'asia-south2-docker.pkg.dev/audition-prod/docker-repo/backend:latest',
+      '.'
+    ]
+  
+  # Push the image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'asia-south2-docker.pkg.dev/audition-prod/docker-repo/backend:latest']
+
+images:
+  - 'asia-south2-docker.pkg.dev/audition-prod/docker-repo/backend:latest'
+
+options:
+  machineType: 'E2_HIGHCPU_8'

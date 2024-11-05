@@ -63,6 +63,7 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
                 className="markdown-content break-words text-sm"
                 wrapLines={true}
                 wrapLongLines={true}
+                key={`tframe-${idx}`}
               >
                 {`${tframe.content}`}
               </SyntaxHighlighter>
@@ -72,10 +73,17 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
       );
     case "artefact":
       return (
-        <div className="flex flex-col gap-2 ">
+        <div className="flex flex-col gap-2">
           {frame.artefactFrames.map((aframe, idx) => (
             <div className="border border-gray-400 p-2 m-2" key={idx}>
-              {aframe.content}
+              <Markdown
+                remarkPlugins={[remarkGfm]}
+                components={components}
+                className="markdown-content break-words text-sm "
+                key={`artifact-${idx}`}
+              >
+                {aframe.content}
+              </Markdown>
             </div>
           ))}
         </div>

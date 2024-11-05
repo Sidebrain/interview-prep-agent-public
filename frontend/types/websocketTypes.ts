@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export type WebSocketHookOptions = {
   url: string;
+  enabled: boolean;
   protocols?: string | string[];
   reconnectInterval?: number;
   reconnectAttempts?: number;
