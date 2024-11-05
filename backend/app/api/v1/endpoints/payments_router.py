@@ -3,11 +3,13 @@ from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
 import stripe
 
-from dotenv import load_dotenv
+from app.services.env_keys import STRIPE_API_KEY
 
-load_dotenv()
+# from dotenv import load_dotenv
 
-stripe.api_key = os.getenv("STRIPE_API_KEY")
+# load_dotenv(".env.local")
+
+stripe.api_key = STRIPE_API_KEY
 
 
 router = APIRouter()

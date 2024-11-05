@@ -92,12 +92,12 @@ hiring_requirements = [
     Role,
     Designation,
     # Company,
-    # Requirement,
-    # Budget,
+    Requirement,
+    Budget,
     # Expected,
-    # Backup,
-    # CultureFit,
-    # InternalRequirements,
+    Backup,
+    CultureFit,
+    InternalRequirements,
 ]
 
 

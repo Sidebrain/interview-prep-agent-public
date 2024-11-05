@@ -1,7 +1,10 @@
 from firebase_admin import credentials, initialize_app, auth
+import os
 
 default_app = initialize_app(
-    credential=credentials.Certificate("secrets/firebase-admin-key.json")
+    credential=credentials.Certificate(
+        os.getenv("FIREBASE_ADMIN_CREDENTIALS", "secrets/firebase-admin-key.json")
+    )
 )
 
 
