@@ -1,10 +1,11 @@
 "use client";
 import { InputProvider } from "@/context/InputContext";
 import UserArea from "./components/UserArea";
-import GenerativeArea from "./components/GenerativeArea";
 import useWebSocket from "@/hooks/useWebsocketNew";
 import { useEffect, useState } from "react";
 import clientLogger from "@/app/lib/clientLogger";
+import GenerativeArea2 from "./components/GenerativeArea2";
+import { ArtifactProvider } from "@/context/ArtefactContext";
 
 export default function InteractionArea() {
   const [wsUrl, setWsUrl] = useState<string | null>(null);
@@ -37,12 +38,15 @@ export default function InteractionArea() {
   return (
     <div className="w-full flex p-2">
       <InputProvider>
+        <ArtifactProvider>
         <UserArea
           frameList={frameList}
           sendMessage={sendMessage}
           frameHandler={frameHandler}
         />
-        <GenerativeArea frameList={frameList} />
+        {/* <GenerativeArea frameList={frameList} artefactText={artefactText} /> */}
+          <GenerativeArea2 />
+        </ArtifactProvider>
       </InputProvider>
     </div>
   );

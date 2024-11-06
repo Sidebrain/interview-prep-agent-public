@@ -13,6 +13,12 @@ type MessageContainerProps = {
 function MessageContainer(props: MessageContainerProps) {
   const containerAreaRef = useRef<HTMLDivElement>(null); // to calculate div height for textarea sizing
 
+  const renderContentFrame = useCallback(
+    (frame: FrameType) =>
+      frameRenderHandler({ frame: frame, address: "content" }),
+    [props.frameList]
+  );
+
   // identify the max textarea height
   useEffect(() => {
     function computeMaxHeight() {
@@ -40,6 +46,7 @@ function MessageContainer(props: MessageContainerProps) {
       ref={containerAreaRef}
       className="flex flex-col grow gap-2 overflow-auto text-sm no-scrollbar w-2/3 self-center "
     >
+      {/* {props.frameList.map((frame) => renderContentFrame(frame))} */}
       {props.frameList.map((frame, idx) => (
         <Frame frame={frame} key={idx} />
       ))}

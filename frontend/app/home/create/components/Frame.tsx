@@ -1,38 +1,37 @@
 import { FrameType } from "@/reducers/messageFrameReducer";
 import { frameRenderHandler } from "@/handlers/frameRenderHandler";
+import { useArtifact } from "@/context/ArtefactContext";
+import { Button } from "@/components/ui/button";
 
 type FrameProps = {
   frame: FrameType;
 };
 
 const Frame = ({ frame }: FrameProps) => {
+  const { setArtifactText } = useArtifact();
+
+  const handleArtifactClick = (artifactText: string) => {
+    setArtifactText(artifactText);
+  };
   return (
     <div className="flex flex-col gap-2">
       {/* Content frame is always rendered */}
       {frameRenderHandler({ frame, address: "content" })}
-
-      {/* Artefact frames are optional */}
+      {/* Artefact frames rendered if available */}
       {frame.artefactFrames?.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-2">
           {frame.artefactFrames.map((artefact, idx) => {
-            const previewText =
-              artefact.content?.split("\n")[0].slice(0, 50) + "...";
             return (
-              <details
+              <Button
+                className="bg-green-500 p-4 rounded-md"
                 key={idx}
-                className="border border-gray-400 p-2 m-2 rounded cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleArtifactClick(artefact.content || "");
+                }}
               >
-                <summary className="font-medium text-sm hover:text-blue-600">
-                  {previewText}
-                </summary>
-                {frameRenderHandler({
-                  frame: {
-                    ...frame,
-                    artefactFrames: [artefact],
-                  },
-                  address: "artefact",
-                })}
-              </details>
+                {artefact.content?.slice(0, 50)}
+              </Button>
             );
           })}
         </div>

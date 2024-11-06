@@ -224,8 +224,8 @@ class Agent:
         """Use this to generate artefacts"""
         artefacts_to_generate = [
             "job description",
-            "high surface aera interview questions",
-            "rating rubric in tabular form",
+            "high surface aera interview questions, including coding questions with code snippets if applicable",
+            "rating rubric",
         ]
         generated_items = await asyncio.gather(
             *[
