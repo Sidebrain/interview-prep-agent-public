@@ -54,7 +54,7 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
         <>
           {frame.thoughtFrames.map((tframe, idx) => (
             <div className="border border-gray-400 p-2 m-2" key={idx}>
-              <SyntaxHighlighter
+              {/* <SyntaxHighlighter
                 language="json"
                 style={oneDark}
                 PreTag={"div"}
@@ -64,9 +64,9 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
                 wrapLines={true}
                 wrapLongLines={true}
                 key={`tframe-${idx}`}
-              >
-                {`${tframe.content}`}
-              </SyntaxHighlighter>
+              > */}
+              {`${tframe.content}`}
+              {/* </SyntaxHighlighter> */}
             </div>
           ))}
         </>
@@ -100,7 +100,7 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
             className={`inline-block p-2 rounded-lg max-w-full ${
               frame.contentFrame.role === "user"
                 ? "bg-gray-100 text-gray-800 border border-gray-200"
-                : "bg-gray-200 text-black"
+                : "bg-gray-300 text-black"
             }`}
           >
             <Markdown

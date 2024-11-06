@@ -23,6 +23,14 @@ const CompletionFrameChunkSchema = z.object({
   ]),
 });
 
+const ThoughtSchema = z.object({
+  question: z.string(),
+  sample_answer: z.string(),
+  options: z.string(),
+});
+
+export type Thought = z.infer<typeof ThoughtSchema>;
+
 type CompletionFrameChunk = z.infer<typeof CompletionFrameChunkSchema>;
 
 const WebsocketFrameSchema = z.object({
@@ -42,4 +50,4 @@ export type {
 };
 
 // zod types for type validation on the websocket
-export { CompletionFrameChunkSchema, WebsocketFrameSchema };
+export { CompletionFrameChunkSchema, WebsocketFrameSchema, ThoughtSchema };
