@@ -3,7 +3,7 @@ import { frameRenderHandler } from "@/handlers/frameRenderHandler";
 
 type FrameProps = {
   frame: FrameType;
-}
+};
 
 const Frame = ({ frame }: FrameProps) => {
   return (
@@ -11,27 +11,26 @@ const Frame = ({ frame }: FrameProps) => {
       {/* Content frame is always rendered */}
       {frameRenderHandler({ frame, address: "content" })}
 
-      {/* Thought frames are optional */}
-      {frame.thoughtFrames?.length > 0 && 
-        frameRenderHandler({ frame, address: "thought" })
-      }
-
       {/* Artefact frames are optional */}
       {frame.artefactFrames?.length > 0 && (
         <div className="flex flex-col gap-2">
           {frame.artefactFrames.map((artefact, idx) => {
-            const previewText = artefact.content?.split('\n')[0].slice(0, 50) + '...';
+            const previewText =
+              artefact.content?.split("\n")[0].slice(0, 50) + "...";
             return (
-              <details key={idx} className="border border-gray-400 p-2 m-2 rounded cursor-pointer">
+              <details
+                key={idx}
+                className="border border-gray-400 p-2 m-2 rounded cursor-pointer"
+              >
                 <summary className="font-medium text-sm hover:text-blue-600">
                   {previewText}
                 </summary>
-                {frameRenderHandler({ 
+                {frameRenderHandler({
                   frame: {
                     ...frame,
-                    artefactFrames: [artefact]
-                  }, 
-                  address: "artefact"
+                    artefactFrames: [artefact],
+                  },
+                  address: "artefact",
                 })}
               </details>
             );

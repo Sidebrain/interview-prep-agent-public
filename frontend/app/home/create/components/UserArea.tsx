@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { FrameType } from "@/reducers/messageFrameReducer";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import Suggestion from "./Suggestion";
+import HelperContent from "./HelperContent";
 
 function Header() {
   return (
@@ -48,7 +49,7 @@ function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
         frameList={frameList}
       />
       {frameList.length > 0 && (
-        <Suggestion frame={frameList[frameList.length - 1]} />
+        <HelperContent frame={frameList[frameList.length - 1]} />
       )}
       <ExpandButton />
       <InputArea

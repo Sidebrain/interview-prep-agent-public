@@ -1,16 +1,14 @@
 import { Button } from "@/components/ui/button";
 import InputContext from "@/context/InputContext";
-import { frameRenderHandler } from "@/handlers/frameRenderHandler";
-import { FrameType } from "@/reducers/messageFrameReducer";
-import { Thought, ThoughtSchema } from "@/types/ScalableWebsocketTypes";
 import { CheckCircleIcon } from "lucide-react";
 import { useContext, useRef } from "react";
 
 type SuggestionProps = {
-  frame: FrameType;
+  suggestion: string;
+  key: number;
 };
 
-const Suggestion = ({ frame }: SuggestionProps) => {
+const Suggestion = ({ suggestion, key }: SuggestionProps) => {
   const { dispatch: dispatchInputValue } = useContext(InputContext);
   const suggestionRef = useRef<HTMLParagraphElement>(null);
 
@@ -21,20 +19,17 @@ const Suggestion = ({ frame }: SuggestionProps) => {
       payload: suggestionRef.current?.textContent ?? "",
     });
   };
-  const renderSuggestion = (frame: FrameType) => {
-    const thoughts = frame.thoughtFrames.map((tframe) =>
-      ThoughtSchema.parse(JSON.parse(tframe.content ?? ""))
-    );
-    return thoughts.map((tframe, idx) => (
+  const renderSuggestion = (suggestion: string) => {
+    return (
       <div
         className="p-1 rounded-sm text-sm flex flex-col gap-2 items-start relative bg-transparent"
-        key={idx}
+        key={key}
       >
-        <p className="border p-1 bg-green-600 text-sm rounded-sm text-white z-10">
+        <p className="border p-1 bg-yellow-600 text-sm rounded-sm text-white z-10">
           Suggestion
         </p>
-        <p ref={suggestionRef} className="text-sm bg-green-200 p-2 rounded-md">
-          {tframe.sample_answer}
+        <p ref={suggestionRef} className="text-sm bg-yellow-200 p-2 rounded-md">
+          {suggestion}
         </p>
         <div className="flex w-full justify-end absolute bottom-0 right-0">
           <Button
@@ -47,9 +42,9 @@ const Suggestion = ({ frame }: SuggestionProps) => {
           </Button>
         </div>
       </div>
-    ));
+    );
   };
-  return <>{renderSuggestion(frame)}</>;
+  return <>{renderSuggestion(suggestion)}</>;
 };
 
 export default Suggestion;
