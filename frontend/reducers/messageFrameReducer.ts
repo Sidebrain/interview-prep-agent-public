@@ -14,9 +14,9 @@ type ActionType =
   | "heartbeat"
   | "completion/content"
   | "completion/thought"
-  | "completion/artefact"
+  | "completion/artifact"
   | "streaming/content"
-  | "streaming/artefact";
+  | "streaming/artifact";
 
 export type Action = {
   type: ActionType;
@@ -30,7 +30,7 @@ const messageFrameReducer = (
   console.log("messageFrameReducer entered");
   console.log("action: ", action);
   console.log("frameList: ", frameList);
-  const { frameId, frame: incomingFrame, address, type } = action.payload;
+  const { frameId, frame: incomingFrame, address } = action.payload;
   switch (action.type) {
     case "heartbeat": {
       // do nothing, return as is. heartbeat doesn't mutate state
@@ -121,10 +121,10 @@ const messageFrameReducer = (
       return newFrameList;
     }
 
-    case "completion/artefact": {
+    case "completion/artifact": {
       console.log("completion/artefact action entered");
       // ensure the address is artefact
-      if (address !== "artefact") {
+      if (address !== "artifact") {
         console.log("Invalid address for completion/artefact", address);
         return frameList;
       }

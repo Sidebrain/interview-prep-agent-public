@@ -41,6 +41,7 @@ export class WebsocketMessageSender implements MessageSender {
   }
 
   send(data: unknown): boolean {
+    console.log("Sending data: ", data);
     for (const formatter of this.formatters) {
       if (formatter.canFormat(data)) {
         const message = formatter.format(data as any);

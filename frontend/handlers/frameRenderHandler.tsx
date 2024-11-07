@@ -71,7 +71,7 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
           ))}
         </>
       );
-    case "artefact":
+    case "artifact":
       return (
         <div className="flex flex-col gap-2">
           {frame.artefactFrames.map((aframe, idx) => (

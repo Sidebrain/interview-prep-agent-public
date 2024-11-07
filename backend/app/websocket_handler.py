@@ -17,7 +17,6 @@ class Channel:
 
     async def receive_message(self) -> str | None:
         message_from_client = await self.websocket.receive_text()
-        print(f"Message received: {message_from_client}")
         match message_from_client:
             case "ping":
                 await self.process_heartbeat()

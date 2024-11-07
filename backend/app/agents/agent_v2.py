@@ -63,6 +63,8 @@ class Dispatcher:
             finish_reason=response.choices[0].finish_reason,
         )
 
+        logger.debug(completion_frame.model_dump_json(indent=4))
+
         return WebsocketFrame(
             frame_id=frame_id,
             type="completion",
@@ -218,35 +220,35 @@ class Agent:
         """Use this to generate helper text"""
         raise NotImplementedError
 
-    async def generate_all_artefacts(
+    async def generate_all_artifacts(
         self, frame_id: str
     ) -> Tuple[list[WebsocketFrame], list[ChatCompletion]]:
-        """Use this to generate artefacts"""
-        artefacts_to_generate = [
+        """Use this to generate artifacts"""
+        artifacts_to_generate = [
             "job description",
             "high surface aera interview questions, including coding questions with code snippets if applicable",
             "rating rubric",
         ]
         generated_items = await asyncio.gather(
             *[
-                self.generate_single_artefact(artefact, frame_id)
-                for artefact in artefacts_to_generate
+                self.generate_single_artifact(artifact, frame_id)
+                for artifact in artifacts_to_generate
             ]
         )
         frames, responses = zip(*generated_items)
         return frames, responses
 
-    async def generate_single_artefact(
-        self, artefact: str, frame_id: str
+    async def generate_single_artifact(
+        self, artifact: str, frame_id: str
     ) -> Tuple[WebsocketFrame, ChatCompletion]:
         messages = self.memory.extract_memory_for_generation(
             custom_user_instruction={
                 "role": "user",
-                "content": f"Using the previous information provided by the user, generate a high quality and detailed: {artefact}",
+                "content": f"Using the previous information provided by the user, generate a high quality and detailed: {artifact}",
             }
         )
         websocket_frame, response = await self.thinker.generate(
-            messages=messages, frame_id=frame_id, address="artefact"
+            messages=messages, frame_id=frame_id, address="artifact"
         )
         return websocket_frame, response
 
@@ -258,10 +260,10 @@ class Agent:
         # print(msg)
         frame_id = str(uuid4())
         try:
-            # json_msg = json.loads(msg)
-            # print("printing the json message that is being received", json_msg)
             parsed_message = WebsocketFrame.model_validate_json(msg, strict=False)
-            # print("printing the parsed message", parsed_message)
+            logger.debug(
+                f"Message received: {parsed_message.model_dump_json(indent=4)}"
+            )
             self.memory.add(parsed_message)
             await self.interview(frame_id=frame_id)
         except json.JSONDecodeError:
@@ -269,8 +271,8 @@ class Agent:
             return
         except IndexError:
             logger.error("Popping from empty concept list")
-            # generate artefacts at this point
-            (frames, responses) = await self.generate_all_artefacts(frame_id)
+            # generate artifacts at this point
+            (frames, responses) = await self.generate_all_artifacts(frame_id)
             print(frames, sep=f"\n{'-'*30}\n")
 
             await asyncio.gather(

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createTimestamp } from "@/app/lib/helperFunctions";
 
 // zod types for type validation
 
@@ -13,6 +14,8 @@ const CompletionFrameChunkSchema = z.object({
   role: z.enum(["assistant", "user"]),
   content: z.string().nullable(),
   delta: z.string().nullable(),
+  createdTs: z.number().int().default(createTimestamp()), // unix timestamp
+  title: z.string().nullable(),
   index: z.number(),
   finishReason: z.enum([
     "stop",
@@ -37,7 +40,7 @@ const WebsocketFrameSchema = z.object({
   // track changes: added "input" to type, added "human" to address
   frameId: z.string(),
   type: z.enum(["completion", "streaming", "heartbeat", "error", "input"]),
-  address: z.enum(["content", "artefact", "human", "thought"]).nullable(),
+  address: z.enum(["content", "artifact", "human", "thought"]).nullable(),
   frame: CompletionFrameChunkSchema,
 });
 

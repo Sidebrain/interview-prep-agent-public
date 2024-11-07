@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import AudioButton from "./inputButtons/AudioButton";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import { v4 as uuidv4 } from "uuid";
+import { createTimestamp } from "@/app/lib/helperFunctions";
 
 type InputAreaProps = {
   maxTextareaHeight: number;
@@ -42,6 +43,8 @@ export default function InputArea(props: InputAreaProps) {
         model: "infinity",
         role: "user",
         content: inputValue,
+        createdTs: createTimestamp(),
+        title: null,
         delta: null,
         index: 0,
         finishReason: "stop",
