@@ -33,8 +33,7 @@ export default function InputArea(props: InputAreaProps) {
       return;
     }
     e.preventDefault();
-    // send the value to the server
-    const frameToSend = props.createHumanInputFrame(inputValue);
+    const frameToSend = props.createHumanInputFrame(inputValue); // creates a frame with the input value
     props.frameHandler(frameToSend); // add to the message list
     props.sendMessage(frameToSend); // send to the server
     console.log("submitted value: ", inputValue);

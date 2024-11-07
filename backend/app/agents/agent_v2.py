@@ -102,11 +102,7 @@ class Thinker:
     async def generate(
         self,
         messages: list[dict[str, str]],
-        frame_id: str,
-        address: AddressType = "content",
-    ) -> Tuple[WebsocketFrame, ChatCompletion]:
-        # print("-" * 30, "printing the messages that are being sent to the thinker")
-        # print(messages)
+    ) -> ChatCompletion:
         response = await self.client.chat.completions.create(
             messages=messages,
             model=model,
@@ -114,49 +110,34 @@ class Thinker:
 
         logger.debug(response.model_dump_json(indent=4))
 
-        websocket_frame = Dispatcher.package_and_transform_to_webframe(
-            response, address, frame_id
-        )
-
-        return websocket_frame, response
+        return response
 
     async def extract_structured_response(
         self,
         pydantic_structure_to_extract: BaseModel,
         messages: list[dict[str, str]],
-        frame_id: str,
-    ) -> Tuple[WebsocketFrame, BaseModel]:
+    ) -> BaseModel:
         instructor_client = instructor.from_openai(self.client)
         extracted_structure = await instructor_client.chat.completions.create(
             model=model,
             response_model=pydantic_structure_to_extract,
             messages=messages,
         )
-        # print("printing the extracted structure", extracted_structure)
+        logger.debug(extracted_structure.model_dump_json(indent=4))
 
-        websocket_frame = Dispatcher.package_and_transform_to_webframe(
-            extracted_structure, "thought", frame_id
-        )
-
-        return websocket_frame, extracted_structure
+        return extracted_structure
 
     async def think_with_tool(
         self, messages: list[dict[str, str]], tool: dict[str, str], frame_id: str
-    ) -> Tuple[WebsocketFrame, ChatCompletion]:
+    ) -> ChatCompletion:
         response = await self.client.chat.completions.create(
             messages=messages,
             model=model,
             tools=[{"type": "function", "function": tool}],
         )
-        # print(
-        #     "printing the response from the think_with_tool method",
-        #     response.model_dump_json(indent=4),
-        # )
+        logger.debug(response.model_dump_json(indent=4))
 
-        websocket_frame = Dispatcher.package_and_transform_to_webframe(
-            response, "content", frame_id
-        )
-        return websocket_frame, response
+        return response
 
 
 class Memory:
@@ -208,12 +189,14 @@ class Agent:
     async def think(self) -> None:
         """This function is called as soon as the websocket is connected. It is the entry point for the agent. It is responsible for generating the first message to the user."""
         frame_id = str(uuid4())
-        frame_to_send, _ = await self.thinker.generate(
-            messages=self.memory.extract_memory_for_generation(), frame_id=frame_id
+        response = await self.thinker.generate(
+            messages=self.memory.extract_memory_for_generation()
+        )
+        frame_to_send = Dispatcher.package_and_transform_to_webframe(
+            response, "content", frame_id
         )
         self.memory.add(frame_to_send)  # Add the frame to memory
-        # print("printing the frame that is being sent right before sending")
-        # print(frame_to_send.model_dump_json(indent=4))
+
         await self.channel.send_message(frame_to_send.model_dump_json(by_alias=True))
 
     async def internal_thought_projection(self):
@@ -247,8 +230,9 @@ class Agent:
                 "content": f"Using the previous information provided by the user, generate a high quality and detailed: {artifact}",
             }
         )
-        websocket_frame, response = await self.thinker.generate(
-            messages=messages, frame_id=frame_id, address="artifact"
+        response = await self.thinker.generate(messages=messages)
+        websocket_frame = Dispatcher.package_and_transform_to_webframe(
+            response, "artifact", frame_id
         )
         return websocket_frame, response
 
@@ -256,8 +240,6 @@ class Agent:
         msg = await self.channel.receive_message()
         if msg is None:
             return
-        # print("printing the message that is being received")
-        # print(msg)
         frame_id = str(uuid4())
         try:
             parsed_message = WebsocketFrame.model_validate_json(msg, strict=False)
@@ -273,7 +255,9 @@ class Agent:
             logger.error("Popping from empty concept list")
             # generate artifacts at this point
             (frames, responses) = await self.generate_all_artifacts(frame_id)
-            print(frames, sep=f"\n{'-'*30}\n")
+            for frame in frames:
+                logger.debug(frame.model_dump_json(indent=4))
+                logger.debug(f"\n{'-'*30}\n")
 
             await asyncio.gather(
                 *[
@@ -295,13 +279,13 @@ class Interview:
     async def generate_q_and_a_for_concept(
         self, concept: BaseModel, frame_id: str
     ) -> Tuple[WebsocketFrame, QuestionAndAnswer]:
-        print("printing the concept that is being interviewed", concept)
+        logger.debug(f"printing the concept that is being interviewed: {concept}")
         info_to_extract_from_user = [
             field_details.description
             for field, field_details in concept.model_fields.items()
             if field != "reward"
         ]
-        print("printing the current instruction", info_to_extract_from_user)
+        logger.debug(f"printing the current instruction: {info_to_extract_from_user}")
         messages = self.memory.extract_memory_for_generation(
             custom_user_instruction={
                 "role": "user",
@@ -310,19 +294,20 @@ class Interview:
                 ),
             }
         )
-        q_and_a_frame, q_and_a = await self.thinker.extract_structured_response(
+        q_and_a = await self.thinker.extract_structured_response(
             pydantic_structure_to_extract=QuestionAndAnswer,
             messages=messages,
-            frame_id=frame_id,
         )
-        return q_and_a_frame, q_and_a
+        websocket_frame = Dispatcher.package_and_transform_to_webframe(
+            q_and_a, "thought", frame_id
+        )
+        return websocket_frame, q_and_a
 
     async def __call__(self, frame_id: str):
         concept = self.concepts.pop(0)
         q_and_a_frame, q_and_a = await self.generate_q_and_a_for_concept(
             concept, frame_id
         )
-        # await self.channel.send_message(q_and_a.model_dump_json(by_alias=True))
         frame_to_send_to_user = WebsocketFrame(
             frame_id=frame_id,
             type="completion",
