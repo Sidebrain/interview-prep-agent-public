@@ -1,5 +1,8 @@
 import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
 import { z } from "zod";
+import { v4 as uuidv4 } from "uuid";
+import { createTimestamp } from "@/app/lib/helperFunctions";
+import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 
 // Base interface for all the message formatters
 interface MessageFormatter<T> {
@@ -52,6 +55,26 @@ export class WebsocketMessageSender implements MessageSender {
 
     console.error("No formatter found for data: ", data);
     return false;
+  }
+
+  createHumanInputFrame(content: string): WebsocketFrame {
+    return {
+      frameId: uuidv4(),
+      type: "input",
+      address: "human",
+      frame: {
+        id: uuidv4(),
+        object: "human.completion",
+        model: "infinity",
+        role: "user",
+        content: content,
+        createdTs: createTimestamp(),
+        title: null,
+        delta: null,
+        index: 0,
+        finishReason: "stop",
+      },
+    };
   }
 }
 

@@ -9,9 +9,8 @@ import { ArtifactProvider, useArtifact } from "@/context/ArtefactContext";
 
 export default function InteractionArea() {
   const [wsUrl, setWsUrl] = useState<string | null>(null);
-  const { artifactText } = useArtifact();
   // hooks here
-  const { frameList, sendMessage, frameHandler } = useWebSocket({
+  const { frameList, sendMessage, frameHandler, createHumanInputFrame } = useWebSocket({
     url: wsUrl || "",
     enabled: !!wsUrl,
   });
@@ -44,6 +43,7 @@ export default function InteractionArea() {
             frameList={frameList}
             sendMessage={sendMessage}
             frameHandler={frameHandler}
+            createHumanInputFrame={createHumanInputFrame}
           />
           {/* <GenerativeArea frameList={frameList} artefactText={artefactText} /> */}
           <GenerativeArea />

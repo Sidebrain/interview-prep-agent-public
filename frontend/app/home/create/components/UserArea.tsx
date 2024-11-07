@@ -21,9 +21,15 @@ type UserAreaProps = {
   frameList: FrameType[];
   sendMessage: (data: WebsocketFrame) => void;
   frameHandler: (frame: WebsocketFrame) => void;
+  createHumanInputFrame: (content: string) => WebsocketFrame;
 };
 
-function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
+function UserArea({
+  frameHandler,
+  frameList,
+  sendMessage,
+  createHumanInputFrame,
+}: UserAreaProps) {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
   const { artifactText } = useArtifact();
@@ -63,6 +69,7 @@ function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
         isExpanded={isExpanded}
         sendMessage={sendMessage}
         frameHandler={frameHandler}
+        createHumanInputFrame={createHumanInputFrame}
       />
     </div>
   );

@@ -23,6 +23,7 @@ type WebsocketHookResultNew = {
   frameList: FrameType[];
   dispatch: React.Dispatch<Action>;
   frameHandler: (frame: WebsocketFrame) => void;
+  createHumanInputFrame: (content: string) => WebsocketFrame;
 };
 
 const useWebSocket = ({
@@ -197,6 +198,13 @@ const useWebSocket = ({
     };
   }, [ws.current?.readyState]);
 
+  const createHumanInputFrame = useCallback((content: string) => {
+    if (!senderRef.current) {
+      throw new Error("No sender found");
+    }
+    return senderRef.current.createHumanInputFrame(content);
+  }, []);
+
   return {
     sendMessage,
     frameList,
@@ -204,6 +212,7 @@ const useWebSocket = ({
     connectionStatus,
     dispatch,
     frameHandler,
+    createHumanInputFrame,
   };
 };
 

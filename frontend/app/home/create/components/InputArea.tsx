@@ -13,6 +13,7 @@ type InputAreaProps = {
   isExpanded: boolean;
   sendMessage: (data: WebsocketFrame) => void;
   frameHandler: (frame: WebsocketFrame) => void;
+  createHumanInputFrame: (content: string) => WebsocketFrame;
 };
 
 // Badge,
@@ -33,23 +34,7 @@ export default function InputArea(props: InputAreaProps) {
     }
     e.preventDefault();
     // send the value to the server
-    const frameToSend = {
-      frameId: uuidv4(),
-      type: "input",
-      address: "human",
-      frame: {
-        id: uuidv4(),
-        object: "human.completion",
-        model: "infinity",
-        role: "user",
-        content: inputValue,
-        createdTs: createTimestamp(),
-        title: null,
-        delta: null,
-        index: 0,
-        finishReason: "stop",
-      },
-    } as WebsocketFrame;
+    const frameToSend = props.createHumanInputFrame(inputValue);
     props.frameHandler(frameToSend); // add to the message list
     props.sendMessage(frameToSend); // send to the server
     console.log("submitted value: ", inputValue);
