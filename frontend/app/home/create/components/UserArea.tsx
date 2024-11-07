@@ -7,6 +7,7 @@ import { FrameType } from "@/reducers/messageFrameReducer";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import Suggestion from "./Suggestion";
 import HelperContent from "./HelperContent";
+import { useArtifact } from "@/context/ArtefactContext";
 
 function Header() {
   return (
@@ -25,6 +26,7 @@ type UserAreaProps = {
 function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
+  const { artifactText } = useArtifact();
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -42,7 +44,11 @@ function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
     );
   };
   return (
-    <div className="flex w-full flex-col gap-2 h-full pr-2">
+    <div
+      className={`flex ${
+        artifactText ? "hidden md:flex md:w-1/2" : "w-full md:w-1/2"
+      } flex-col gap-2 h-full pr-2`}
+    >
       <Header />
       <MessageContainer
         setMaxTextareaHeight={setMaxTextareaHeight}

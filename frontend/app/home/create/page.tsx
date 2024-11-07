@@ -4,11 +4,12 @@ import UserArea from "./components/UserArea";
 import useWebSocket from "@/hooks/useWebsocketNew";
 import { useEffect, useState } from "react";
 import clientLogger from "@/app/lib/clientLogger";
-import GenerativeArea2 from "./components/GenerativeArea2";
-import { ArtifactProvider } from "@/context/ArtefactContext";
+import GenerativeArea from "./components/GenerativeArea";
+import { ArtifactProvider, useArtifact } from "@/context/ArtefactContext";
 
 export default function InteractionArea() {
   const [wsUrl, setWsUrl] = useState<string | null>(null);
+  const { artifactText } = useArtifact();
   // hooks here
   const { frameList, sendMessage, frameHandler } = useWebSocket({
     url: wsUrl || "",
@@ -36,16 +37,16 @@ export default function InteractionArea() {
   }
 
   return (
-    <div className="w-full flex p-2">
+    <div className="w-full flex p-2 justify-center">
       <InputProvider>
         <ArtifactProvider>
-        <UserArea
-          frameList={frameList}
-          sendMessage={sendMessage}
-          frameHandler={frameHandler}
-        />
-        {/* <GenerativeArea frameList={frameList} artefactText={artefactText} /> */}
-          <GenerativeArea2 />
+          <UserArea
+            frameList={frameList}
+            sendMessage={sendMessage}
+            frameHandler={frameHandler}
+          />
+          {/* <GenerativeArea frameList={frameList} artefactText={artefactText} /> */}
+          <GenerativeArea />
         </ArtifactProvider>
       </InputProvider>
     </div>
