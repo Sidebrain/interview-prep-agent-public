@@ -38,19 +38,31 @@ logger.addHandler(stream_handler)
 
 # Optionally set the logging level for the child logger
 logger.setLevel(logging.DEBUG)
+logger.propagate = False
 
 # globally unify the model
 model = "gpt-4o-mini-2024-07-18"
 
+# After the imports, before the logger setup
+
+DEBUG_CONFIG = {
+    "dispatcher": False,
+    "thinker": False,
+    "interview": False,
+    "agent": True,
+}
+
 
 class Dispatcher:
+    debug = DEBUG_CONFIG["dispatcher"]
+
     @singledispatch
     def package_and_transform_to_webframe(
         response, address: AddressType, frame_id: str
-    ): ...
+    ) -> WebsocketFrame: ...
 
     @package_and_transform_to_webframe.register(ChatCompletion)
-    def _(response, address: AddressType, frame_id: str):
+    def _(response, address: AddressType, frame_id: str, debug: bool = False):
 
         completion_frame = CompletionFrameChunk(
             id=response.id,
@@ -63,7 +75,8 @@ class Dispatcher:
             finish_reason=response.choices[0].finish_reason,
         )
 
-        logger.debug(completion_frame.model_dump_json(indent=4))
+        if Dispatcher.debug and debug:
+            logger.debug(completion_frame.model_dump_json(indent=4))
 
         return WebsocketFrame(
             frame_id=frame_id,
@@ -94,21 +107,23 @@ class Dispatcher:
 
 
 class Thinker:
+    debug = DEBUG_CONFIG["thinker"]
+
     def __init__(self, client: AsyncClient = None):
         if client is None:
             client = openai_async_client
         self.client = client
 
     async def generate(
-        self,
-        messages: list[dict[str, str]],
+        self, messages: list[dict[str, str]], debug: bool = False
     ) -> ChatCompletion:
         response = await self.client.chat.completions.create(
             messages=messages,
             model=model,
         )
 
-        logger.debug(response.model_dump_json(indent=4))
+        if self.debug and debug:
+            logger.debug(response.model_dump_json(indent=4))
 
         return response
 
@@ -116,6 +131,7 @@ class Thinker:
         self,
         pydantic_structure_to_extract: BaseModel,
         messages: list[dict[str, str]],
+        debug: bool = False,
     ) -> BaseModel:
         instructor_client = instructor.from_openai(self.client)
         extracted_structure = await instructor_client.chat.completions.create(
@@ -123,19 +139,21 @@ class Thinker:
             response_model=pydantic_structure_to_extract,
             messages=messages,
         )
-        logger.debug(extracted_structure.model_dump_json(indent=4))
+        if self.debug and debug:
+            logger.debug(extracted_structure.model_dump_json(indent=4))
 
         return extracted_structure
 
     async def think_with_tool(
-        self, messages: list[dict[str, str]], tool: dict[str, str], frame_id: str
+        self, messages: list[dict[str, str]], tool: dict[str, str], debug: bool = False
     ) -> ChatCompletion:
         response = await self.client.chat.completions.create(
             messages=messages,
             model=model,
             tools=[{"type": "function", "function": tool}],
         )
-        logger.debug(response.model_dump_json(indent=4))
+        if self.debug and debug:
+            logger.debug(response.model_dump_json(indent=4))
 
         return response
 
@@ -180,6 +198,8 @@ class Memory:
 
 
 class Agent:
+    debug = DEBUG_CONFIG["agent"]
+
     def __init__(self, channel: Channel):
         self.thinker = Thinker()
         self.memory = Memory()
@@ -187,7 +207,10 @@ class Agent:
         self.interview = Interview(self.thinker, self.memory, self.channel)
 
     async def think(self) -> None:
-        """This function is called as soon as the websocket is connected. It is the entry point for the agent. It is responsible for generating the first message to the user."""
+        """This function is called as soon as the websocket is connected.
+        It is the entry point for the agent.
+        It is responsible for generating the first message to the user."""
+
         frame_id = str(uuid4())
         response = await self.thinker.generate(
             messages=self.memory.extract_memory_for_generation()
@@ -209,7 +232,7 @@ class Agent:
         """Use this to generate artifacts"""
         artifacts_to_generate = [
             "job description",
-            "high surface aera interview questions, including coding questions with code snippets if applicable",
+            "high surface area interview questions, including coding questions with code snippets if applicable",
             "rating rubric",
         ]
         generated_items = await asyncio.gather(
@@ -222,7 +245,7 @@ class Agent:
         return frames, responses
 
     async def generate_single_artifact(
-        self, artifact: str, frame_id: str
+        self, artifact: str, frame_id: str, debug: bool = True
     ) -> Tuple[WebsocketFrame, ChatCompletion]:
         messages = self.memory.extract_memory_for_generation(
             custom_user_instruction={
@@ -234,18 +257,25 @@ class Agent:
         websocket_frame = Dispatcher.package_and_transform_to_webframe(
             response, "artifact", frame_id
         )
+        if self.debug and debug:
+            # logger.debug(f"Artifact generated: {artifact}")
+            # logger.debug(websocket_frame.model_dump_json(indent=4))
+            logger.debug(
+                f"Artifact generated: {artifact} \n frame n length: {len(websocket_frame.model_dump_json())}\n\n"
+            )
         return websocket_frame, response
 
-    async def receive_message(self):
+    async def receive_message(self, debug: bool = False):
         msg = await self.channel.receive_message()
         if msg is None:
             return
         frame_id = str(uuid4())
         try:
             parsed_message = WebsocketFrame.model_validate_json(msg, strict=False)
-            logger.debug(
-                f"Message received: {parsed_message.model_dump_json(indent=4)}"
-            )
+            if self.debug and debug:
+                logger.debug(
+                    f"Message received: {parsed_message.model_dump_json(indent=4)}"
+                )
             self.memory.add(parsed_message)
             await self.interview(frame_id=frame_id)
         except json.JSONDecodeError:
@@ -253,11 +283,11 @@ class Agent:
             return
         except IndexError:
             logger.error("Popping from empty concept list")
-            # generate artifacts at this point
             (frames, responses) = await self.generate_all_artifacts(frame_id)
-            for frame in frames:
-                logger.debug(frame.model_dump_json(indent=4))
-                logger.debug(f"\n{'-'*30}\n")
+            if self.debug and debug:
+                for frame in frames:
+                    logger.debug(frame.model_dump_json(indent=4))
+                    logger.debug(f"\n{'-'*30}\n")
 
             await asyncio.gather(
                 *[
@@ -269,6 +299,8 @@ class Agent:
 
 
 class Interview:
+    debug = DEBUG_CONFIG["interview"]
+
     def __init__(self, thinker: Thinker, memory: Memory, channel: Channel):
         self.concepts = hiring_requirements.copy()
         self.thinker = thinker
@@ -277,15 +309,20 @@ class Interview:
         pass
 
     async def generate_q_and_a_for_concept(
-        self, concept: BaseModel, frame_id: str
+        self, concept: BaseModel, frame_id: str, debug: bool = False
     ) -> Tuple[WebsocketFrame, QuestionAndAnswer]:
-        logger.debug(f"printing the concept that is being interviewed: {concept}")
+        if self.debug and debug:
+            logger.debug(f"printing the concept that is being interviewed: {concept}")
+
         info_to_extract_from_user = [
             field_details.description
             for field, field_details in concept.model_fields.items()
             if field != "reward"
         ]
-        logger.debug(f"printing the current instruction: {info_to_extract_from_user}")
+        if self.debug and debug:
+            logger.debug(
+                f"printing the current instruction: {info_to_extract_from_user}"
+            )
         messages = self.memory.extract_memory_for_generation(
             custom_user_instruction={
                 "role": "user",
