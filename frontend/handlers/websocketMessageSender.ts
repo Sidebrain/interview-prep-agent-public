@@ -3,6 +3,7 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { createTimestamp } from "@/app/lib/helperFunctions";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
+import { FrameType } from "@/types/reducerTypes";
 
 // Base interface for all the message formatters
 interface MessageFormatter<T> {
@@ -56,6 +57,18 @@ export class WebsocketMessageSender implements MessageSender {
     console.error("No formatter found for data: ", data);
     return false;
   }
+
+  // createRegenerateSignalFrame(frameToRegenerate: FrameType): WebsocketFrame {
+  //   return {
+  //     frameId: frameToRegenerate.frameId,
+  //     type: "input",
+  //     address: "human",
+  //     frame: {
+  //       object: "human.signal",
+  //       // ...frameToRegenerate.frame,
+  //     }
+  //   };
+  // }
 
   createHumanInputFrame(content: string): WebsocketFrame {
     return {
