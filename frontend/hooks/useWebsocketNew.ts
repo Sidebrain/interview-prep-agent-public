@@ -6,25 +6,13 @@ import {
   WebsocketFrame,
   WebsocketFrameSchema,
 } from "@/types/ScalableWebsocketTypes";
-import messageFrameReducer, {
-  Action,
-  FrameType,
-} from "@/reducers/messageFrameReducer";
+import messageFrameReducer from "@/reducers/messageFrameReducer";
 import { createWebsocketFrameHandler } from "@/handlers/websocketMessageHandler";
 import {
   createWebsocketMessageSender,
   WebsocketMessageSender,
 } from "@/handlers/websocketMessageSender";
-
-type WebsocketHookResultNew = {
-  sendMessage: (data: WebsocketFrame) => void;
-  readyState: number;
-  connectionStatus: string;
-  frameList: FrameType[];
-  dispatch: React.Dispatch<Action>;
-  frameHandler: (frame: WebsocketFrame) => void;
-  createHumanInputFrame: (content: string) => WebsocketFrame;
-};
+import { WebsocketInterface } from "@/types/websocketInterface";
 
 const useWebSocket = ({
   url,
@@ -33,7 +21,8 @@ const useWebSocket = ({
   reconnectInterval = 5000,
   reconnectAttempts = 5,
   heartbeatInterval = 10000,
-}: WebSocketHookOptions): WebsocketHookResultNew => {
+}: WebSocketHookOptions): WebsocketInterface => {
+
   const [frameList, dispatch] = useReducer(messageFrameReducer, []);
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
   const [connectionStatus, setConnectionStatus] =

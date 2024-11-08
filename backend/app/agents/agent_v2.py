@@ -256,9 +256,10 @@ class Agent:
     ) -> Tuple[list[WebsocketFrame], list[ChatCompletion]]:
         """Use this to generate artifacts"""
         artifacts_to_generate = [
-            "job description",
-            "high surface area interview questions, including coding questions with code snippets if applicable",
-            "rating rubric",
+            "Short description of the job",
+            # "job description",
+            # "high surface area interview questions, including coding questions with code snippets if applicable",
+            # "rating rubric",
         ]
         generated_items = await asyncio.gather(
             *[

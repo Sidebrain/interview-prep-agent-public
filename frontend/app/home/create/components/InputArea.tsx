@@ -7,21 +7,16 @@ import AudioButton from "./inputButtons/AudioButton";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import { v4 as uuidv4 } from "uuid";
 import { createTimestamp } from "@/app/lib/helperFunctions";
+import { useWebsocketContext } from "@/context/WebsocketContext";
 
 type InputAreaProps = {
   maxTextareaHeight: number;
   isExpanded: boolean;
-  sendMessage: (data: WebsocketFrame) => void;
-  frameHandler: (frame: WebsocketFrame) => void;
-  createHumanInputFrame: (content: string) => WebsocketFrame;
 };
 
-// Badge,
-// popopver is a nice place to bundle options ttogether
-// Scroll area for improving the default scrolling behaviour
-//
 
 export default function InputArea(props: InputAreaProps) {
+  const { sendMessage, frameHandler, createHumanInputFrame } = useWebsocketContext();
   const { state: inputValue, dispatch: dispatchInputValue } =
     useContext(InputContext);
 
@@ -33,9 +28,9 @@ export default function InputArea(props: InputAreaProps) {
       return;
     }
     e.preventDefault();
-    const frameToSend = props.createHumanInputFrame(inputValue); // creates a frame with the input value
-    props.frameHandler(frameToSend); // add to the message list
-    props.sendMessage(frameToSend); // send to the server
+    const frameToSend = createHumanInputFrame(inputValue); // creates a frame with the input value
+    frameHandler(frameToSend); // add to the message list
+    sendMessage(frameToSend); // send to the server
     console.log("submitted value: ", inputValue);
     dispatchInputValue({ type: "SET_INPUT", payload: "" });
   }

@@ -1,5 +1,5 @@
-import { useArtifact } from "@/context/ArtefactContext";
-import ArtefactFrame from "./ArtefactFrame";
+import { useArtifact } from "@/context/ArtifactContext";
+import ArtifactFrame from "./ArtifactFrame";
 
 const GenerativeArea = () => {
   const { artifact } = useArtifact();
@@ -10,7 +10,7 @@ const GenerativeArea = () => {
         artifact ? "w-full md:w-1/2" : "hidden"
       }`}
     >
-      <ArtefactFrame />
+      <ArtifactFrame />
     </div>
   );
 };

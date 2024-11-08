@@ -1,4 +1,4 @@
-import { FrameType } from "@/reducers/messageFrameReducer";
+import { FrameType } from "@/types/reducerTypes";
 import Markdown, { Components } from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";

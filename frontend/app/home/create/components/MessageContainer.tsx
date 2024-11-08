@@ -1,6 +1,6 @@
 "use client";
 import clientLogger from "@/app/lib/clientLogger";
-import { FrameType } from "@/reducers/messageFrameReducer";
+import { FrameType } from "@/types/reducerTypes";
 import { useEffect, useRef } from "react";
 import Frame from "./Frame";
 

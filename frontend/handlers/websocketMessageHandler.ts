@@ -1,4 +1,4 @@
-import { Action } from "@/reducers/messageFrameReducer";
+import { Action } from "@/types/reducerTypes";
 import {
   WebsocketFrame,
   WebsocketFrameSchema,

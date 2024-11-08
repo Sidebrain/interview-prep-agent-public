@@ -1,4 +1,4 @@
-import { FrameType } from "@/reducers/messageFrameReducer";
+import { FrameType } from "@/types/reducerTypes";
 import Suggestion from "./Suggestion";
 import Option from "./Option";
 import { ThoughtSchema } from "@/types/ScalableWebsocketTypes";
@@ -13,10 +13,10 @@ const HelperContent = ({ frame }: HelperContentProps) => {
       ThoughtSchema.parse(JSON.parse(tframe.content ?? ""))
     );
     return thoughts.map((thought, idx) => (
-      <>
-        <Option option={thought.options} key={idx} />
-        <Suggestion suggestion={thought.sample_answer} key={idx} />
-      </>
+      <div key={`thought-${idx}`}>
+        <Option option={thought.options} />
+        <Suggestion suggestion={thought.sample_answer} />
+      </div>
     ));
   };
   return <>{renderSuggestion(frame)}</>;

@@ -3,11 +3,9 @@ import { useState } from "react";
 import InputArea from "./InputArea";
 import MessageContainer from "./MessageContainer";
 import { Badge } from "@/components/ui/badge";
-import { FrameType } from "@/reducers/messageFrameReducer";
-import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
-import Suggestion from "./Suggestion";
 import HelperContent from "./HelperContent";
-import { useArtifact } from "@/context/ArtefactContext";
+import { useArtifact } from "@/context/ArtifactContext";
+import { useWebsocketContext } from "@/context/WebsocketContext";
 
 function Header() {
   return (
@@ -18,20 +16,12 @@ function Header() {
 }
 
 type UserAreaProps = {
-  frameList: FrameType[];
-  sendMessage: (data: WebsocketFrame) => void;
-  frameHandler: (frame: WebsocketFrame) => void;
-  createHumanInputFrame: (content: string) => WebsocketFrame;
 };
 
-function UserArea({
-  frameHandler,
-  frameList,
-  sendMessage,
-  createHumanInputFrame,
-}: UserAreaProps) {
+function UserArea({}: UserAreaProps) {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
+  const { frameList } = useWebsocketContext();
   const { artifact } = useArtifact();
 
   const [isExpanded, setIsExpanded] = useState(true);
@@ -67,9 +57,6 @@ function UserArea({
       <InputArea
         maxTextareaHeight={maxTextareaHeight}
         isExpanded={isExpanded}
-        sendMessage={sendMessage}
-        frameHandler={frameHandler}
-        createHumanInputFrame={createHumanInputFrame}
       />
     </div>
   );

@@ -1,6 +1,6 @@
-import { FrameType } from "@/reducers/messageFrameReducer";
+import { FrameType } from "@/types/reducerTypes";
 import { frameRenderHandler } from "@/handlers/frameRenderHandler";
-import { useArtifact } from "@/context/ArtefactContext";
+import { useArtifact } from "@/context/ArtifactContext";
 import { Button } from "@/components/ui/button";
 
 type FrameProps = {
@@ -18,7 +18,7 @@ const Frame = ({ frame }: FrameProps) => {
     <div className="flex flex-col gap-2">
       {/* Content frame is always rendered */}
       {frameRenderHandler({ frame, address: "content" })}
-      {/* Artefact frames rendered if available */}
+      {/* Artifact frames rendered if available */}
       {frame.artifactFrames?.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {frame.artifactFrames.map((artifact, idx) => {

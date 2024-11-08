@@ -1,11 +1,11 @@
 "use client";
 import React, { useCallback } from "react";
-import { Artifact, useArtifact } from "@/context/ArtefactContext";
+import { Artifact, useArtifact } from "@/context/ArtifactContext";
 import Markdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import { X, Copy, Download } from "lucide-react";
+import { X, Copy, Download, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Define the CodeProps type to fix the linter error
@@ -49,7 +49,7 @@ const TopButtonTray = ({ onClose, title }: TopButtonTrayProps) => {
         variant="ghost"
         size="sm"
         onClick={onClose}
-        className="hover:bg-gray-200"
+        className="hover:bg-gray-300"
       >
         <X className="h-4 w-4" />
       </Button>
@@ -68,8 +68,16 @@ const BottomButtonTray = ({ onCopy, onDownload }: BottomButtonTrayProps) => {
       <Button
         variant="ghost"
         size="sm"
+        onClick={() => console.log("regenerate clicked")}
+        className="hover:bg-gray-300"
+      >
+        <RefreshCcw className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={onCopy}
-        className="hover:bg-gray-200"
+        className="hover:bg-gray-300"
       >
         <Copy className="h-4 w-4" />
       </Button>
@@ -77,7 +85,7 @@ const BottomButtonTray = ({ onCopy, onDownload }: BottomButtonTrayProps) => {
         variant="ghost"
         size="sm"
         onClick={onDownload}
-        className="hover:bg-gray-200"
+        className="hover:bg-gray-300"
       >
         <Download className="h-4 w-4" />
       </Button>
@@ -85,7 +93,7 @@ const BottomButtonTray = ({ onCopy, onDownload }: BottomButtonTrayProps) => {
   );
 };
 
-const ArtefactFrame = () => {
+const ArtifactFrame = () => {
   const { artifact, setArtifact } = useArtifact();
 
   const handleCopyArtifact = async () => {
@@ -110,7 +118,7 @@ const ArtefactFrame = () => {
     URL.revokeObjectURL(url);
   };
 
-  const renderArtefactFrame = useCallback(
+  const renderArtifactFrame = useCallback(
     (artifact: Artifact) => {
       if (!artifact) return null;
       return (
@@ -143,7 +151,7 @@ const ArtefactFrame = () => {
     [artifact, setArtifact]
   );
 
-  return <>{renderArtefactFrame(artifact)}</>;
+  return <>{renderArtifactFrame(artifact)}</>;
 };
 
-export default ArtefactFrame;
+export default ArtifactFrame;

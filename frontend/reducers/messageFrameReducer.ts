@@ -1,27 +1,5 @@
-import {
-  CompletionFrameChunk,
-  WebsocketFrame,
-} from "@/types/ScalableWebsocketTypes";
-
-export type FrameType = {
-  frameId: string;
-  contentFrame: CompletionFrameChunk;
-  artifactFrames: CompletionFrameChunk[];
-  thoughtFrames: CompletionFrameChunk[];
-};
-
-type ActionType =
-  | "heartbeat"
-  | "completion/content"
-  | "completion/thought"
-  | "completion/artifact"
-  | "streaming/content"
-  | "streaming/artifact";
-
-export type Action = {
-  type: ActionType;
-  payload: WebsocketFrame;
-};
+import { CompletionFrameChunk } from "@/types/ScalableWebsocketTypes";
+import { FrameType, Action } from "@/types/reducerTypes";
 
 const messageFrameReducer = (
   frameList: FrameType[] = [],
@@ -122,10 +100,10 @@ const messageFrameReducer = (
     }
 
     case "completion/artifact": {
-      console.log("completion/artefact action entered");
-      // ensure the address is artefact
+      console.log("completion/artifact action entered");
+      // ensure the address is artifact
       if (address !== "artifact") {
-        console.log("Invalid address for completion/artefact", address);
+        console.log("Invalid address for completion/artifact", address);
         return frameList;
       }
 
