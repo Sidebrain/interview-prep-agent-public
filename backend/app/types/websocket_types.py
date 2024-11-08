@@ -14,7 +14,9 @@ class CompletionFrameChunk(BaseModel):
     )
     id: str
     object: Literal[
-        "chat.completion", "chat.completion.chunk", "human.completion", "human.signal"
+        "chat.completion",
+        "chat.completion.chunk",
+        "human.completion",
     ]
     model: str
     role: Literal["assistant", "user"]
@@ -41,7 +43,9 @@ class WebsocketFrame(BaseModel):
         populate_by_name=True,
     )
     frame_id: str
-    type: Literal["completion", "streaming", "heartbeat", "error", "input"]
+    type: Literal[
+        "completion", "streaming", "heartbeat", "error", "input", "signal.regenerate"
+    ]
     address: AddressType
     frame: CompletionFrameChunk
 

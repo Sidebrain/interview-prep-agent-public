@@ -9,7 +9,6 @@ const CompletionFrameChunkSchema = z.object({
     "chat.completion",
     "chat.completion.chunk",
     "human.completion",
-    "human.signal",
   ]),
   model: z.string(),
   role: z.enum(["assistant", "user"]),
@@ -40,7 +39,14 @@ type CompletionFrameChunk = z.infer<typeof CompletionFrameChunkSchema>;
 const WebsocketFrameSchema = z.object({
   // track changes: added "input" to type, added "human" to address
   frameId: z.string(),
-  type: z.enum(["completion", "streaming", "heartbeat", "error", "input"]),
+  type: z.enum([
+    "completion",
+    "streaming",
+    "heartbeat",
+    "error",
+    "input",
+    "signal.regenerate",
+  ]),
   address: z.enum(["content", "artifact", "human", "thought"]).nullable(),
   frame: CompletionFrameChunkSchema,
 });

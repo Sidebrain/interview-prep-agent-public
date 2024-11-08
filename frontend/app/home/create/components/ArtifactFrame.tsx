@@ -1,12 +1,13 @@
 "use client";
 import React, { useCallback } from "react";
-import { Artifact, useArtifact } from "@/context/ArtifactContext";
+import { useArtifact } from "@/context/ArtifactContext";
 import Markdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { X, Copy, Download, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CompletionFrameChunk } from "@/types/ScalableWebsocketTypes";
 
 // Define the CodeProps type to fix the linter error
 type CodeProps = {
@@ -97,17 +98,17 @@ const ArtifactFrame = () => {
   const { artifact, setArtifact } = useArtifact();
 
   const handleCopyArtifact = async () => {
-    if (!artifact?.text) return;
+    if (!artifact) return;
     try {
-      await navigator.clipboard.writeText(artifact?.text || "");
+      await navigator.clipboard.writeText(artifact.content || "");
     } catch (err) {
       console.error("Failed to copy:", err);
     }
   };
 
   const handleDownloadArtifact = () => {
-    if (!artifact?.text) return;
-    const blob = new Blob([artifact.text], { type: "text/markdown" });
+    if (!artifact) return;
+    const blob = new Blob([artifact.content || ""], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -119,7 +120,7 @@ const ArtifactFrame = () => {
   };
 
   const renderArtifactFrame = useCallback(
-    (artifact: Artifact) => {
+    (artifact: CompletionFrameChunk | null) => {
       if (!artifact) return null;
       return (
         <div className="w-full bg-white rounded-lg shadow-lg max-w-4xl mx-auto my-2 flex flex-col h-full">
@@ -136,7 +137,7 @@ const ArtifactFrame = () => {
                 className="markdown-content break-words text-sm"
                 components={components}
               >
-                {artifact.text}
+                {artifact.content || ""}
               </Markdown>
             </div>
           </div>

@@ -2,6 +2,7 @@ import { FrameType } from "@/types/reducerTypes";
 import { frameRenderHandler } from "@/handlers/frameRenderHandler";
 import { useArtifact } from "@/context/ArtifactContext";
 import { Button } from "@/components/ui/button";
+import { CompletionFrameChunk } from "@/types/ScalableWebsocketTypes";
 
 type FrameProps = {
   frame: FrameType;
@@ -10,8 +11,8 @@ type FrameProps = {
 const Frame = ({ frame }: FrameProps) => {
   const { setArtifact } = useArtifact();
 
-  const handleArtifactClick = (text: string, title: string | null) => {
-    setArtifact({ text, title });
+  const handleArtifactClick = (frame: CompletionFrameChunk) => {
+    setArtifact(frame);
   };
 
   return (
@@ -28,10 +29,7 @@ const Frame = ({ frame }: FrameProps) => {
                 key={idx}
                 onClick={(e) => {
                   e.preventDefault();
-                  handleArtifactClick(
-                    artifact.content || "hello",
-                    artifact.title || "no title"
-                  );
+                  handleArtifactClick(artifact);
                 }}
               >
                 {artifact.title || artifact.content?.slice(0, 50)}
