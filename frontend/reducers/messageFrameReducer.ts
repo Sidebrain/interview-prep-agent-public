@@ -6,7 +6,7 @@ import {
 export type FrameType = {
   frameId: string;
   contentFrame: CompletionFrameChunk;
-  artefactFrames: CompletionFrameChunk[];
+  artifactFrames: CompletionFrameChunk[];
   thoughtFrames: CompletionFrameChunk[];
 };
 
@@ -57,7 +57,7 @@ const messageFrameReducer = (
           {
             frameId,
             contentFrame: incomingFrame,
-            artefactFrames: [],
+            artifactFrames: [],
             thoughtFrames: [],
           } as FrameType,
         ];
@@ -98,7 +98,7 @@ const messageFrameReducer = (
           {
             frameId,
             contentFrame: {} as CompletionFrameChunk,
-            artefactFrames: [],
+            artifactFrames: [],
             thoughtFrames: [incomingFrame],
           } as FrameType,
         ];
@@ -142,7 +142,7 @@ const messageFrameReducer = (
           {
             frameId,
             contentFrame: {} as CompletionFrameChunk,
-            artefactFrames: [incomingFrame],
+            artifactFrames: [incomingFrame],
             thoughtFrames: [],
           } as FrameType,
         ];
@@ -150,8 +150,8 @@ const messageFrameReducer = (
 
       const updatedFrame = {
         ...frameList[frameIndexToUpdate],
-        artefactFrames: [
-          ...frameList[frameIndexToUpdate].artefactFrames,
+        artifactFrames: [
+          ...frameList[frameIndexToUpdate].artifactFrames,
           incomingFrame,
         ],
       } as FrameType;

@@ -2,21 +2,26 @@
 
 import { createContext, ReactNode, useState, useContext } from "react";
 
+type Artifact = {
+  text: string | null;
+  title: string | null;
+} | null;
+
 type ArtifactContextType = {
-  artifactText: string | null;
-  setArtifactText: (text: string | null) => void;
+  artifact: Artifact;
+  setArtifact: (artifact: Artifact) => void;
 };
 
 const ArtifactContext = createContext<ArtifactContextType>({
-  artifactText: null,
-  setArtifactText: () => {},
+  artifact: null,
+  setArtifact: () => {},
 });
 
 export const ArtifactProvider = ({ children }: { children: ReactNode }) => {
-  const [artifactText, setArtifactText] = useState<string | null>(null);
+  const [artifact, setArtifact] = useState<Artifact>(null);
 
   return (
-    <ArtifactContext.Provider value={{ artifactText, setArtifactText }}>
+    <ArtifactContext.Provider value={{ artifact, setArtifact }}>
       {children}
     </ArtifactContext.Provider>
   );
@@ -30,5 +35,7 @@ export const useArtifact = () => {
   }
   return context;
 };
+
+export type { Artifact };
 
 export default ArtifactContext;

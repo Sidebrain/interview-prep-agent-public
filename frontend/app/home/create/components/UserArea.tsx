@@ -32,7 +32,7 @@ function UserArea({
 }: UserAreaProps) {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
-  const { artifactText } = useArtifact();
+  const { artifact } = useArtifact();
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -52,7 +52,7 @@ function UserArea({
   return (
     <div
       className={`flex ${
-        artifactText ? "hidden md:flex md:w-1/2" : "w-full md:w-1/2"
+        artifact ? "hidden md:flex md:w-1/2" : "w-full md:w-1/2"
       } flex-col gap-2 h-full pr-2`}
     >
       <Header />

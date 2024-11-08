@@ -74,7 +74,7 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
     case "artifact":
       return (
         <div className="flex flex-col gap-2">
-          {frame.artefactFrames.map((aframe, idx) => (
+          {frame.artifactFrames.map((aframe, idx) => (
             <div className="border border-gray-400 p-2 m-2" key={idx}>
               <Markdown
                 remarkPlugins={[remarkGfm]}

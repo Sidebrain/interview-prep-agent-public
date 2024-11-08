@@ -8,29 +8,33 @@ type FrameProps = {
 };
 
 const Frame = ({ frame }: FrameProps) => {
-  const { setArtifactText } = useArtifact();
+  const { setArtifact } = useArtifact();
 
-  const handleArtifactClick = (artifactText: string) => {
-    setArtifactText(artifactText);
+  const handleArtifactClick = (text: string, title: string | null) => {
+    setArtifact({ text, title });
   };
+
   return (
     <div className="flex flex-col gap-2">
       {/* Content frame is always rendered */}
       {frameRenderHandler({ frame, address: "content" })}
       {/* Artefact frames rendered if available */}
-      {frame.artefactFrames?.length > 0 && (
+      {frame.artifactFrames?.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {frame.artefactFrames.map((artefact, idx) => {
+          {frame.artifactFrames.map((artifact, idx) => {
             return (
               <Button
                 className="bg-green-500 p-4 rounded-md"
                 key={idx}
                 onClick={(e) => {
                   e.preventDefault();
-                  handleArtifactClick(artefact.content || "");
+                  handleArtifactClick(
+                    artifact.content || "hello",
+                    artifact.title || "no title"
+                  );
                 }}
               >
-                {artefact.content?.slice(0, 50)}
+                {artifact.title || artifact.content?.slice(0, 50)}
               </Button>
             );
           })}

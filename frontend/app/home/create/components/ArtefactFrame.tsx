@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback } from "react";
-import { useArtifact } from "@/context/ArtefactContext";
+import { Artifact, useArtifact } from "@/context/ArtefactContext";
 import Markdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import SyntaxHighlighter from "react-syntax-highlighter";
@@ -38,11 +38,13 @@ const components: Components = {
 
 type TopButtonTrayProps = {
   onClose: () => void;
+  title: string;
 };
 
-const TopButtonTray = ({ onClose }: TopButtonTrayProps) => {
+const TopButtonTray = ({ onClose, title }: TopButtonTrayProps) => {
   return (
-    <div className="flex justify-end p-1 bg-gray-200 border-b rounded-t-lg sticky top-0 z-10">
+    <div className="flex justify-between items-center p-1 bg-gray-200 border-b rounded-t-lg sticky top-0 z-10">
+      <h3 className="text-md font-semibold mx-4 truncate">{title}</h3>
       <Button
         variant="ghost"
         size="sm"
@@ -58,7 +60,7 @@ const TopButtonTray = ({ onClose }: TopButtonTrayProps) => {
 type BottomButtonTrayProps = {
   onCopy: () => void;
   onDownload: () => void;
-}
+};
 
 const BottomButtonTray = ({ onCopy, onDownload }: BottomButtonTrayProps) => {
   return (
@@ -84,20 +86,20 @@ const BottomButtonTray = ({ onCopy, onDownload }: BottomButtonTrayProps) => {
 };
 
 const ArtefactFrame = () => {
-  const { artifactText, setArtifactText } = useArtifact();
+  const { artifact, setArtifact } = useArtifact();
 
   const handleCopyArtifact = async () => {
-    if (!artifactText) return;
+    if (!artifact?.text) return;
     try {
-      await navigator.clipboard.writeText(artifactText);
+      await navigator.clipboard.writeText(artifact?.text || "");
     } catch (err) {
       console.error("Failed to copy:", err);
     }
   };
 
   const handleDownloadArtifact = () => {
-    if (!artifactText) return;
-    const blob = new Blob([artifactText], { type: "text/markdown" });
+    if (!artifact?.text) return;
+    const blob = new Blob([artifact.text], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -109,11 +111,14 @@ const ArtefactFrame = () => {
   };
 
   const renderArtefactFrame = useCallback(
-    (artefactText: string | null) => {
-      if (!artefactText) return null;
+    (artifact: Artifact) => {
+      if (!artifact) return null;
       return (
         <div className="w-full bg-white rounded-lg shadow-lg max-w-4xl mx-auto my-2 flex flex-col h-full">
-          <TopButtonTray onClose={() => setArtifactText(null)} />
+          <TopButtonTray
+            onClose={() => setArtifact(null)}
+            title={artifact.title || ""}
+          />
 
           {/* Content - scrollable */}
           <div className="flex-1 overflow-auto min-h-0">
@@ -123,7 +128,7 @@ const ArtefactFrame = () => {
                 className="markdown-content break-words text-sm"
                 components={components}
               >
-                {artefactText}
+                {artifact.text}
               </Markdown>
             </div>
           </div>
@@ -135,10 +140,10 @@ const ArtefactFrame = () => {
         </div>
       );
     },
-    [artifactText, setArtifactText]
+    [artifact, setArtifact]
   );
 
-  return <>{artifactText && renderArtefactFrame(artifactText)}</>;
+  return <>{renderArtefactFrame(artifact)}</>;
 };
 
 export default ArtefactFrame;
