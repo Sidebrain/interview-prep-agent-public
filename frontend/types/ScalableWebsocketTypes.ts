@@ -9,6 +9,7 @@ const CompletionFrameChunkSchema = z.object({
     "chat.completion",
     "chat.completion.chunk",
     "human.completion",
+    "human.signal",
   ]),
   model: z.string(),
   role: z.enum(["assistant", "user"]),

@@ -13,7 +13,9 @@ class CompletionFrameChunk(BaseModel):
         populate_by_name=True,
     )
     id: str
-    object: Literal["chat.completion", "chat.completion.chunk", "human.completion"]
+    object: Literal[
+        "chat.completion", "chat.completion.chunk", "human.completion", "human.signal"
+    ]
     model: str
     role: Literal["assistant", "user"]
     content: str | None
