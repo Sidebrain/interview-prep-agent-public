@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useArtifact } from "@/context/ArtifactContext";
 import Markdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -63,65 +63,99 @@ type BottomButtonTrayProps = {
   onCopy: () => void;
   onDownload: () => void;
   onRegenerate: () => void;
+  numVersions: number;
+  setIndex: (index: number) => void;
+  index: number;
 };
 
 const BottomButtonTray = ({
   onCopy,
   onDownload,
   onRegenerate,
+  numVersions,
+  setIndex,
+  index,
 }: BottomButtonTrayProps) => {
   return (
-    <div className="flex justify-end gap-2 p-1 bg-gray-200 border-t sticky bottom-0 z-10">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onRegenerate}
-        className="hover:bg-gray-300"
-      >
-        <RefreshCcw className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onCopy}
-        className="hover:bg-gray-300"
-      >
-        <Copy className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onDownload}
-        className="hover:bg-gray-300"
-      >
-        <Download className="h-4 w-4" />
-      </Button>
+    <div className="flex justify-between items-center">
+      {
+        <div className="flex gap-1 p-1">
+          {[...Array(numVersions)].map((_, i) => (
+            <Button
+              key={i}
+              variant="ghost"
+              size="sm"
+              onClick={() => setIndex(i)}
+              className={`w-8 h-8 hover:bg-gray-300 ${
+                index === i ? "bg-gray-300" : ""
+              }`}
+            >
+              {i + 1}
+            </Button>
+          ))}
+        </div>
+      }
+      <div className="flex justify-end gap-2 p-1 bg-gray-200 border-t sticky bottom-0 z-10">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRegenerate}
+          className="hover:bg-gray-300"
+        >
+          <RefreshCcw className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onCopy}
+          className="hover:bg-gray-300"
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDownload}
+          className="hover:bg-gray-300"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };
 
 const ArtifactFrame = () => {
-  const { sendMessage, createRegenerateSignalFrame } = useWebsocketContext();
-  const { artifact, setArtifact } = useArtifact();
+  const { sendMessage, createRegenerateSignalFrame, frameList } =
+    useWebsocketContext();
+  const { artifacts, setArtifacts } = useArtifact();
+  const [index, setIndex] = useState(0);
+  const [numVersions, setNumVersions] = useState(0);
 
   const handleRegenerate = () => {
-    if (!artifact) return;
-    const regenerateFrame = createRegenerateSignalFrame(artifact);
+    if (!artifacts.length) return;
+    const regenerateFrame = createRegenerateSignalFrame(artifacts[index]);
     sendMessage(regenerateFrame);
   };
 
+  useEffect(() => {
+    setNumVersions(artifacts.length);
+  }, [artifacts, handleRegenerate]);
+
   const handleCopyArtifact = async () => {
-    if (!artifact) return;
+    if (!artifacts.length) return;
     try {
-      await navigator.clipboard.writeText(artifact.content || "");
+      await navigator.clipboard.writeText(artifacts[index].content || "");
     } catch (err) {
       console.error("Failed to copy:", err);
     }
   };
 
   const handleDownloadArtifact = () => {
-    if (!artifact) return;
-    const blob = new Blob([artifact.content || ""], { type: "text/markdown" });
+    if (!artifacts.length) return;
+    const blob = new Blob([artifacts[index].content || ""], {
+      type: "text/markdown",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -132,14 +166,13 @@ const ArtifactFrame = () => {
     URL.revokeObjectURL(url);
   };
 
-  const renderArtifactFrame = useCallback(
-    (artifact: CompletionFrameChunk | null) => {
-      if (!artifact) return null;
+  const renderArtifactFrames = useCallback(
+    (artifacts: CompletionFrameChunk[]) => {
       return (
         <div className="w-full bg-white rounded-lg shadow-lg max-w-4xl mx-auto my-2 flex flex-col h-full">
           <TopButtonTray
-            onClose={() => setArtifact(null)}
-            title={artifact.title || ""}
+            onClose={() => setArtifacts([])}
+            title={artifacts[index].title || ""}
           />
 
           {/* Content - scrollable */}
@@ -150,12 +183,15 @@ const ArtifactFrame = () => {
                 className="markdown-content break-words text-sm"
                 components={components}
               >
-                {artifact.content || ""}
+                {artifacts[index].content || ""}
               </Markdown>
             </div>
           </div>
 
           <BottomButtonTray
+            numVersions={numVersions}
+            setIndex={setIndex}
+            index={index}
             onCopy={handleCopyArtifact}
             onDownload={handleDownloadArtifact}
             onRegenerate={handleRegenerate}
@@ -163,10 +199,10 @@ const ArtifactFrame = () => {
         </div>
       );
     },
-    [artifact, setArtifact]
+    [artifacts, setArtifacts, index, numVersions]
   );
 
-  return <>{renderArtifactFrame(artifact)}</>;
+  return <>{renderArtifactFrames(artifacts)}</>;
 };
 
 export default ArtifactFrame;

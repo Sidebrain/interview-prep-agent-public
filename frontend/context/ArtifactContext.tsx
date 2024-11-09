@@ -1,24 +1,29 @@
 "use client";
 
 import { CompletionFrameChunk } from "@/types/ScalableWebsocketTypes";
-import { createContext, ReactNode, useState, useContext } from "react";
-
+import {
+  createContext,
+  ReactNode,
+  useState,
+  useContext,
+} from "react";
 
 type ArtifactContextType = {
-  artifact: CompletionFrameChunk | null;
-  setArtifact: (artifact: CompletionFrameChunk | null) => void;
+  artifacts: CompletionFrameChunk[];
+  setArtifacts: (artifact: CompletionFrameChunk[]) => void;
 };
 
 const ArtifactContext = createContext<ArtifactContextType>({
-  artifact: null,
-  setArtifact: () => {},
+  artifacts: [],
+  setArtifacts: () => {},
 });
 
 export const ArtifactProvider = ({ children }: { children: ReactNode }) => {
-  const [artifact, setArtifact] = useState<CompletionFrameChunk | null>(null);
+  const [artifacts, setArtifacts] = useState<CompletionFrameChunk[]>([]);
+
 
   return (
-    <ArtifactContext.Provider value={{ artifact, setArtifact }}>
+    <ArtifactContext.Provider value={{ artifacts, setArtifacts }}>
       {children}
     </ArtifactContext.Provider>
   );

@@ -15,14 +15,13 @@ function Header() {
   );
 }
 
-type UserAreaProps = {
-};
+type UserAreaProps = {};
 
 function UserArea({}: UserAreaProps) {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
   const { frameList } = useWebsocketContext();
-  const { artifact } = useArtifact();
+  const { artifacts } = useArtifact();
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -42,7 +41,7 @@ function UserArea({}: UserAreaProps) {
   return (
     <div
       className={`flex ${
-        artifact ? "hidden md:flex md:w-1/2" : "w-full md:w-1/2"
+        artifacts ? "hidden md:flex md:w-1/2" : "w-full md:w-1/2"
       } flex-col gap-2 h-full pr-2`}
     >
       <Header />
