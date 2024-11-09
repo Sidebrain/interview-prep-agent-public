@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createTimestamp } from "@/app/lib/helperFunctions";
 
 // zod types for type validation
 
@@ -13,6 +14,8 @@ const CompletionFrameChunkSchema = z.object({
   role: z.enum(["assistant", "user"]),
   content: z.string().nullable(),
   delta: z.string().nullable(),
+  createdTs: z.number().int().default(createTimestamp()), // unix timestamp
+  title: z.string().nullable(),
   index: z.number(),
   finishReason: z.enum([
     "stop",
@@ -23,13 +26,28 @@ const CompletionFrameChunkSchema = z.object({
   ]),
 });
 
+const ThoughtSchema = z.object({
+  question: z.string(),
+  sample_answer: z.string(),
+  options: z.string(),
+});
+
+export type Thought = z.infer<typeof ThoughtSchema>;
+
 type CompletionFrameChunk = z.infer<typeof CompletionFrameChunkSchema>;
 
 const WebsocketFrameSchema = z.object({
   // track changes: added "input" to type, added "human" to address
   frameId: z.string(),
-  type: z.enum(["completion", "streaming", "heartbeat", "error", "input"]),
-  address: z.enum(["content", "artefact", "human", "thought"]).nullable(),
+  type: z.enum([
+    "completion",
+    "streaming",
+    "heartbeat",
+    "error",
+    "input",
+    "signal.regenerate",
+  ]),
+  address: z.enum(["content", "artifact", "human", "thought"]).nullable(),
   frame: CompletionFrameChunkSchema,
 });
 
@@ -42,4 +60,4 @@ export type {
 };
 
 // zod types for type validation on the websocket
-export { CompletionFrameChunkSchema, WebsocketFrameSchema };
+export { CompletionFrameChunkSchema, WebsocketFrameSchema, ThoughtSchema };

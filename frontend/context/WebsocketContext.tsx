@@ -1,0 +1,28 @@
+"use client";
+import React, { createContext, useContext } from "react";
+import useWebSocket from "@/hooks/useWebsocketNew";
+import { WebSocketHookOptions } from "@/types/websocketTypes";
+import { WebsocketInterface } from "@/types/websocketInterface";
+
+const WebsocketContext = createContext<WebsocketInterface | null>(null);
+
+export const WebsocketProvider: React.FC<{
+  children: React.ReactNode;
+  options: WebSocketHookOptions;
+}> = ({ children, options }) => {
+  const websocket = useWebSocket(options);
+
+  return (
+    <WebsocketContext.Provider value={websocket}>
+      {children}
+    </WebsocketContext.Provider>
+  );
+};
+
+export const useWebsocketContext = () => {
+  const context = useContext(WebsocketContext);
+  if (!context) {
+    throw new Error("useWebsocketContext must be used within a WebsocketProvider");
+  }
+  return context;
+};

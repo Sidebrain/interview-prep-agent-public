@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { useCallback } from "react";
 import clientLogger from "../app/lib/clientLogger";
 import { transcribeAudioChunks } from "@/components/AiGeneratedSection/actions";
-import { set } from "lodash";
 
 type VoiceHookParams = {
   chunkSize?: number;
@@ -17,7 +16,6 @@ const useVoice = (props: VoiceHookParams) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [transcriptionInProgress, setTranscriptionInProgress] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -61,7 +59,7 @@ const useVoice = (props: VoiceHookParams) => {
         }
       };
 
-      mediaRecorderRef.current.start(props.chunkSize || 3000);
+      mediaRecorderRef.current.start(props.chunkSize || 0);
       setIsRecording(true);
 
       // Automatically stop recording after 5 minutes

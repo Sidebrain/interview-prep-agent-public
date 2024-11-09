@@ -1,27 +1,5 @@
-import {
-  CompletionFrameChunk,
-  WebsocketFrame,
-} from "@/types/ScalableWebsocketTypes";
-
-export type FrameType = {
-  frameId: string;
-  contentFrame: CompletionFrameChunk;
-  artefactFrames: CompletionFrameChunk[];
-  thoughtFrames: CompletionFrameChunk[];
-};
-
-type ActionType =
-  | "heartbeat"
-  | "completion/content"
-  | "completion/thought"
-  | "completion/artefact"
-  | "streaming/content"
-  | "streaming/artefact";
-
-export type Action = {
-  type: ActionType;
-  payload: WebsocketFrame;
-};
+import { CompletionFrameChunk } from "@/types/ScalableWebsocketTypes";
+import { FrameType, Action } from "@/types/reducerTypes";
 
 const messageFrameReducer = (
   frameList: FrameType[] = [],
@@ -30,7 +8,7 @@ const messageFrameReducer = (
   console.log("messageFrameReducer entered");
   console.log("action: ", action);
   console.log("frameList: ", frameList);
-  const { frameId, frame: incomingFrame, address, type } = action.payload;
+  const { frameId, frame: incomingFrame, address } = action.payload;
   switch (action.type) {
     case "heartbeat": {
       // do nothing, return as is. heartbeat doesn't mutate state
@@ -57,7 +35,7 @@ const messageFrameReducer = (
           {
             frameId,
             contentFrame: incomingFrame,
-            artefactFrames: [],
+            artifactFrames: [],
             thoughtFrames: [],
           } as FrameType,
         ];
@@ -98,7 +76,7 @@ const messageFrameReducer = (
           {
             frameId,
             contentFrame: {} as CompletionFrameChunk,
-            artefactFrames: [],
+            artifactFrames: [],
             thoughtFrames: [incomingFrame],
           } as FrameType,
         ];
@@ -121,11 +99,11 @@ const messageFrameReducer = (
       return newFrameList;
     }
 
-    case "completion/artefact": {
-      console.log("completion/artefact action entered");
-      // ensure the address is artefact
-      if (address !== "artefact") {
-        console.log("Invalid address for completion/artefact", address);
+    case "completion/artifact": {
+      console.log("completion/artifact action entered");
+      // ensure the address is artifact
+      if (address !== "artifact") {
+        console.log("Invalid address for completion/artifact", address);
         return frameList;
       }
 
@@ -142,7 +120,7 @@ const messageFrameReducer = (
           {
             frameId,
             contentFrame: {} as CompletionFrameChunk,
-            artefactFrames: [incomingFrame],
+            artifactFrames: [incomingFrame],
             thoughtFrames: [],
           } as FrameType,
         ];
@@ -150,8 +128,8 @@ const messageFrameReducer = (
 
       const updatedFrame = {
         ...frameList[frameIndexToUpdate],
-        artefactFrames: [
-          ...frameList[frameIndexToUpdate].artefactFrames,
+        artifactFrames: [
+          ...frameList[frameIndexToUpdate].artifactFrames,
           incomingFrame,
         ],
       } as FrameType;

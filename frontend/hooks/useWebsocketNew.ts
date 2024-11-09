@@ -3,27 +3,17 @@ import { WebSocketHookOptions } from "@/types/websocketTypes";
 import { useEffect, useRef, useState, useCallback, useReducer } from "react";
 import clientLogger from "../app/lib/clientLogger";
 import {
+  CompletionFrameChunk,
   WebsocketFrame,
   WebsocketFrameSchema,
 } from "@/types/ScalableWebsocketTypes";
-import messageFrameReducer, {
-  Action,
-  FrameType,
-} from "@/reducers/messageFrameReducer";
+import messageFrameReducer from "@/reducers/messageFrameReducer";
 import { createWebsocketFrameHandler } from "@/handlers/websocketMessageHandler";
 import {
   createWebsocketMessageSender,
   WebsocketMessageSender,
 } from "@/handlers/websocketMessageSender";
-
-type WebsocketHookResultNew = {
-  sendMessage: (data: WebsocketFrame) => void;
-  readyState: number;
-  connectionStatus: string;
-  frameList: FrameType[];
-  dispatch: React.Dispatch<Action>;
-  frameHandler: (frame: WebsocketFrame) => void;
-};
+import { WebsocketInterface } from "@/types/websocketInterface";
 
 const useWebSocket = ({
   url,
@@ -32,7 +22,7 @@ const useWebSocket = ({
   reconnectInterval = 5000,
   reconnectAttempts = 5,
   heartbeatInterval = 10000,
-}: WebSocketHookOptions): WebsocketHookResultNew => {
+}: WebSocketHookOptions): WebsocketInterface => {
   const [frameList, dispatch] = useReducer(messageFrameReducer, []);
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
   const [connectionStatus, setConnectionStatus] =
@@ -197,6 +187,23 @@ const useWebSocket = ({
     };
   }, [ws.current?.readyState]);
 
+  const createHumanInputFrame = useCallback((content: string) => {
+    if (!senderRef.current) {
+      throw new Error("No sender found");
+    }
+    return senderRef.current.createHumanInputFrame(content);
+  }, []);
+
+  const createRegenerateSignalFrame = useCallback(
+    (frameToRegenerate: CompletionFrameChunk) => {
+      if (!senderRef.current) {
+        throw new Error("No sender found");
+      }
+      return senderRef.current.createRegenerateSignalFrame(frameToRegenerate);
+    },
+    []
+  );
+
   return {
     sendMessage,
     frameList,
@@ -204,6 +211,8 @@ const useWebSocket = ({
     connectionStatus,
     dispatch,
     frameHandler,
+    createHumanInputFrame,
+    createRegenerateSignalFrame,
   };
 };
 

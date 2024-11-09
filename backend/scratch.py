@@ -1,17 +1,8 @@
-from dataclasses import dataclass
-
-
-@dataclass
-class A:
-    x = 10
-
-    def __post_init__(self):
-        print("\n ------ Post init called ------ \n")
-
-    def __repr__(self):
-        return f"A.x = {self.x}"
+def fib(n: int) -> list[int]:
+    if n == 2 or n == 1:
+        return 1
+    return n + n - 1
 
 
 if __name__ == "__main__":
-    a = A()
-    print(a)
+    print(fib(5))

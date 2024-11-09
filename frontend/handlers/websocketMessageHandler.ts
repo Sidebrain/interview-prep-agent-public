@@ -1,4 +1,4 @@
-import { Action } from "@/reducers/messageFrameReducer";
+import { Action } from "@/types/reducerTypes";
 import {
   WebsocketFrame,
   WebsocketFrameSchema,
@@ -18,7 +18,7 @@ interface FrameStrategy {
 // schema for parsing completion/content frames
 const CompletionContentSchema = WebsocketFrameSchema.extend({
   type: z.literal("completion"),
-  address: z.enum(["content", "thought", "artefact"]),
+  address: z.enum(["content", "thought", "artifact"]),
 });
 
 class CompletionContentStrategy implements FrameStrategy {
@@ -43,7 +43,7 @@ class CompletionContentStrategy implements FrameStrategy {
         };
       } else {
         return {
-          type: "completion/artefact",
+          type: "completion/artifact",
           payload: frame,
         };
       }

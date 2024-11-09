@@ -1,5 +1,9 @@
-import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
+import { CompletionFrameChunk, WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
 import { z } from "zod";
+import { v4 as uuidv4 } from "uuid";
+import { createTimestamp } from "@/app/lib/helperFunctions";
+import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
+import { FrameType } from "@/types/reducerTypes";
 
 // Base interface for all the message formatters
 interface MessageFormatter<T> {
@@ -41,6 +45,7 @@ export class WebsocketMessageSender implements MessageSender {
   }
 
   send(data: unknown): boolean {
+    console.log("Sending data: ", data);
     for (const formatter of this.formatters) {
       if (formatter.canFormat(data)) {
         const message = formatter.format(data as any);
@@ -51,6 +56,37 @@ export class WebsocketMessageSender implements MessageSender {
 
     console.error("No formatter found for data: ", data);
     return false;
+  }
+
+  createRegenerateSignalFrame(
+    frameToRegenerate: CompletionFrameChunk
+  ): WebsocketFrame {
+    return {
+      frameId: uuidv4(),
+      type: "signal.regenerate",
+      address: "human",
+      frame: frameToRegenerate,
+    };
+  }
+
+  createHumanInputFrame(content: string): WebsocketFrame {
+    return {
+      frameId: uuidv4(),
+      type: "input",
+      address: "human",
+      frame: {
+        id: uuidv4(),
+        object: "human.completion",
+        model: "infinity",
+        role: "user",
+        content: content,
+        createdTs: createTimestamp(),
+        title: null,
+        delta: null,
+        index: 0,
+        finishReason: "stop",
+      },
+    };
   }
 }
 

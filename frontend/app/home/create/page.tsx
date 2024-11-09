@@ -1,18 +1,15 @@
 "use client";
 import { InputProvider } from "@/context/InputContext";
 import UserArea from "./components/UserArea";
-import GenerativeArea from "./components/GenerativeArea";
-import useWebSocket from "@/hooks/useWebsocketNew";
 import { useEffect, useState } from "react";
 import clientLogger from "@/app/lib/clientLogger";
+import GenerativeArea from "./components/GenerativeArea";
+import { ArtifactProvider } from "@/context/ArtifactContext";
+import { WebsocketProvider } from "@/context/WebsocketContext";
 
 export default function InteractionArea() {
   const [wsUrl, setWsUrl] = useState<string | null>(null);
   // hooks here
-  const { frameList, sendMessage, frameHandler } = useWebSocket({
-    url: wsUrl || "",
-    enabled: !!wsUrl,
-  });
 
   clientLogger.debug("ws url", process.env.NEXT_PUBLIC_WS_URL_V2);
 
@@ -35,15 +32,20 @@ export default function InteractionArea() {
   }
 
   return (
-    <div className="w-full flex p-2">
-      <InputProvider>
-        <UserArea
-          frameList={frameList}
-          sendMessage={sendMessage}
-          frameHandler={frameHandler}
-        />
-        <GenerativeArea frameList={frameList} />
-      </InputProvider>
+    <div className="w-full flex p-2 justify-center">
+      <WebsocketProvider
+        options={{
+          url: wsUrl || "",
+          enabled: !!wsUrl,
+        }}
+      >
+        <InputProvider>
+          <ArtifactProvider>
+            <UserArea />
+            <GenerativeArea />
+          </ArtifactProvider>
+        </InputProvider>
+      </WebsocketProvider>
     </div>
   );
 }

@@ -1,40 +1,16 @@
 "use client";
 import clientLogger from "@/app/lib/clientLogger";
-import { FrameType } from "@/reducers/messageFrameReducer";
-import { useCallback, useEffect, useRef } from "react";
-import Markdown, { Components, ExtraProps } from "react-markdown";
-import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import remarkGfm from "remark-gfm";
-import javascript from "react-syntax-highlighter/dist/cjs/languages/prism/javascript";
-import typescript from "react-syntax-highlighter/dist/cjs/languages/prism/typescript";
-import python from "react-syntax-highlighter/dist/cjs/languages/prism/python";
-import { frameRenderHandler } from "@/handlers/frameRenderHandler";
-
-SyntaxHighlighter.registerLanguage("javascript", javascript);
-SyntaxHighlighter.registerLanguage("typescript", typescript);
-SyntaxHighlighter.registerLanguage("python", python);
+import { FrameType } from "@/types/reducerTypes";
+import { useEffect, useRef } from "react";
+import Frame from "./Frame";
 
 type MessageContainerProps = {
   setMaxTextareaHeight: (maxTextareaHeight: number) => void;
   frameList: FrameType[];
 };
 
-interface CodeProps {
-  node?: any;
-  inline?: any;
-  className?: any;
-  children?: any;
-}
-
 function MessageContainer(props: MessageContainerProps) {
   const containerAreaRef = useRef<HTMLDivElement>(null); // to calculate div height for textarea sizing
-
-  const renderContentFrame = useCallback(
-    (frame: FrameType) =>
-      frameRenderHandler({ frame: frame, address: "content" }),
-    [props.frameList]
-  );
 
   // identify the max textarea height
   useEffect(() => {
@@ -52,18 +28,23 @@ function MessageContainer(props: MessageContainerProps) {
     window.addEventListener("resize", computeMaxHeight);
     return () => window.removeEventListener("resize", computeMaxHeight);
   }, []);
+
   useEffect(() => {
     if (containerAreaRef.current) {
       containerAreaRef.current.scrollTop =
         containerAreaRef.current.scrollHeight;
     }
   }, [props.frameList]);
+
   return (
     <div
       ref={containerAreaRef}
-      className="flex flex-col grow gap-2 overflow-auto text-sm no-scrollbar w-2/3 self-center "
+      className="flex flex-col grow gap-2 overflow-auto text-sm no-scrollbar md:w-2/3 w-full self-center p-4 md:p-0"
     >
-      {props.frameList.map((frame) => renderContentFrame(frame))}
+      {/* {props.frameList.map((frame) => renderContentFrame(frame))} */}
+      {props.frameList.map((frame, idx) => (
+        <Frame frame={frame} key={idx} />
+      ))}
     </div>
   );
 }

@@ -3,8 +3,9 @@ import { useState } from "react";
 import InputArea from "./InputArea";
 import MessageContainer from "./MessageContainer";
 import { Badge } from "@/components/ui/badge";
-import { FrameType } from "@/reducers/messageFrameReducer";
-import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
+import HelperContent from "./HelperContent";
+import { useWebsocketContext } from "@/context/WebsocketContext";
+import { useArtifact } from "@/context/ArtifactContext";
 
 function Header() {
   return (
@@ -14,15 +15,13 @@ function Header() {
   );
 }
 
-type UserAreaProps = {
-  frameList: FrameType[];
-  sendMessage: (data: WebsocketFrame) => void;
-  frameHandler: (frame: WebsocketFrame) => void;
-};
+type UserAreaProps = {};
 
-function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
+function UserArea({}: UserAreaProps) {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
+  const { frameList } = useWebsocketContext();
+  const { focus } = useArtifact();
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -40,18 +39,23 @@ function UserArea({ frameHandler, frameList, sendMessage }: UserAreaProps) {
     );
   };
   return (
-    <div className="flex w-full flex-col gap-2 h-full pr-2">
+    <div
+      className={`flex ${
+        focus.title ? "hidden md:flex md:w-1/2" : "w-full md:w-1/2"
+      } flex-col gap-2 h-full pr-2`}
+    >
       <Header />
       <MessageContainer
         setMaxTextareaHeight={setMaxTextareaHeight}
         frameList={frameList}
       />
+      {frameList.length > 0 && (
+        <HelperContent frame={frameList[frameList.length - 1]} />
+      )}
       <ExpandButton />
       <InputArea
         maxTextareaHeight={maxTextareaHeight}
         isExpanded={isExpanded}
-        sendMessage={sendMessage}
-        frameHandler={frameHandler}
       />
     </div>
   );
