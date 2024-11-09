@@ -302,7 +302,7 @@ class Agent:
             # "Short description of the job",
             "job description",
             "interview questions",
-            "rating rubric",
+            "rating rubric in table format",
         ]
         generated_items = await asyncio.gather(
             *[

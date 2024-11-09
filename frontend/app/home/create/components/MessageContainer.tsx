@@ -33,12 +33,16 @@ function MessageContainer(props: MessageContainerProps) {
     // Add a small delay to ensure the DOM has updated
     const scrollTimeout = setTimeout(() => {
       if (containerAreaRef.current) {
-        containerAreaRef.current.scrollTop = containerAreaRef.current.scrollHeight;
+        containerAreaRef.current.scrollTop =
+          containerAreaRef.current.scrollHeight;
       }
-    }, 0);
+    }, 50);
 
     return () => clearTimeout(scrollTimeout);
-  }, [props.frameList.length, props.frameList.map(frame => frame.frame?.content)]);
+  }, [
+    props.frameList.length,
+    ...props.frameList.map((frame) => frame.artifactFrames.length),
+  ]);
 
   return (
     <div

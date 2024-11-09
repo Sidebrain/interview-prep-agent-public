@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useArtifact } from "@/context/ArtifactContext";
 import Markdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -8,6 +8,7 @@ import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { X, Copy, Download, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWebsocketContext } from "@/context/WebsocketContext";
+import { cn } from "@/lib/utils";
 
 // Define the CodeProps type to fix the linter error
 type CodeProps = {
@@ -60,8 +61,9 @@ const TopButtonTray = ({ onClose, title }: TopButtonTrayProps) => {
 
 type BottomButtonTrayProps = {
   onCopy: () => void;
-  onDownload: () => void;
+  onDownload: (format: 'pdf' | 'md') => void;
   onRegenerate: () => void;
+  isRegenerating: boolean;
   numVersions: number;
   setIndex: (index: number) => void;
   index: number;
@@ -71,10 +73,26 @@ const BottomButtonTray = ({
   onCopy,
   onDownload,
   onRegenerate,
+  isRegenerating,
   numVersions,
   setIndex,
   index,
 }: BottomButtonTrayProps) => {
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle clicking outside the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDownloadMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <div className="flex justify-between items-center bg-gray-200">
       {
@@ -100,8 +118,11 @@ const BottomButtonTray = ({
           size="sm"
           onClick={onRegenerate}
           className="hover:bg-gray-300"
+          disabled={isRegenerating}
         >
-          <RefreshCcw className="h-4 w-4" />
+          <RefreshCcw
+            className={cn("h-4 w-4", isRegenerating && "animate-spin")}
+          />
         </Button>
         <Button
           variant="ghost"
@@ -111,14 +132,42 @@ const BottomButtonTray = ({
         >
           <Copy className="h-4 w-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDownload}
-          className="hover:bg-gray-300"
-        >
-          <Download className="h-4 w-4" />
-        </Button>
+        <div className="relative" ref={dropdownRef}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+            className="hover:bg-gray-300"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          {showDownloadMenu && (
+            <div className="absolute bottom-full right-0 mb-2 flex flex-col bg-white border rounded-md shadow-lg">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onDownload('pdf');
+                  setShowDownloadMenu(false);
+                }}
+                className="whitespace-nowrap px-4"
+              >
+                Download PDF
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onDownload('md');
+                  setShowDownloadMenu(false);
+                }}
+                className="whitespace-nowrap px-4"
+              >
+                Download Markdown
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -126,11 +175,33 @@ const BottomButtonTray = ({
 
 const ArtifactFrame = () => {
   const { sendMessage, createRegenerateSignalFrame } = useWebsocketContext();
-  const { artifactObject, focus, setFocus } = useArtifact();
+  const {
+    artifactObject,
+    focus,
+    setFocus,
+    regeneratingTitle,
+    setRegeneratingTitle,
+  } = useArtifact();
+  const prevArtifactCount = useRef(0);
+
+  // Track artifact count changes
+  useEffect(() => {
+    if (!regeneratingTitle) return;
+
+    const currentCount = artifactObject[regeneratingTitle]?.length || 0;
+    if (currentCount > prevArtifactCount.current) {
+      setRegeneratingTitle(null);
+    }
+    prevArtifactCount.current = currentCount;
+  }, [artifactObject, regeneratingTitle]);
 
   const handleRegenerate = () => {
-    if (!artifactObject[focus.title].length) return;
+    if (!artifactObject[focus.title]?.length) return;
     if (focus.index === null) return;
+
+    setRegeneratingTitle(focus.title);
+    prevArtifactCount.current = artifactObject[focus.title].length;
+
     const regenerateFrame = createRegenerateSignalFrame(
       artifactObject[focus.title][focus.index]
     );
@@ -149,43 +220,60 @@ const ArtifactFrame = () => {
     }
   };
 
-  const handleDownloadArtifact = async () => {
-    if (!artifactObject[focus.title].length) return;
-    if (focus.index === null) return;
+  const handleDownloadArtifact = async (format: 'pdf' | 'md') => {
+    if (!artifactObject[focus.title].length || focus.index === null) return;
+    
+    const content = artifactObject[focus.title][focus.index].content || "";
+    const title = artifactObject[focus.title][focus.index].title || "artifact";
+    
+    if (format === 'md') {
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return;
+    }
 
     try {
-      // Import browser-compatible PDF libraries
-      const { default: jsPDF } = await import('jspdf');
-      const { default: html2canvas } = await import('html2canvas');
-      
-      // Create a temporary div to render the markdown content
-      const tempDiv = document.createElement('div');
-      tempDiv.className = 'markdown-content';
-      const markdownIt = (await import('markdown-it')).default;
+      const { default: jsPDF } = await import("jspdf");
+      const markdownIt = (await import("markdown-it")).default;
       const md = new markdownIt();
-      tempDiv.innerHTML = md.render(artifactObject[focus.title][focus.index].content || "");
-      document.body.appendChild(tempDiv);
-
-      // Convert the rendered content to canvas
-      const canvas = await html2canvas(tempDiv);
-      document.body.removeChild(tempDiv);
+      
+      // Convert markdown to plain text
+      const plainText = md.render(content).replace(/<[^>]*>/g, '');
 
       // Create PDF
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: 'a4'
+      const pdf = new jsPDF();
+      const margin = 20;
+      const pageWidth = pdf.internal.pageSize.getWidth() - (2 * margin);
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const lineHeight = 7;
+      let cursorY = margin;
+
+      // Add title
+      pdf.setFontSize(16);
+      pdf.text(title, margin, cursorY);
+      cursorY += lineHeight * 2;
+
+      // Add content with pagination
+      pdf.setFontSize(12);
+      const splitText = pdf.splitTextToSize(plainText, pageWidth);
+      
+      splitText.forEach((line: string) => {
+        if (cursorY >= pageHeight - margin) {
+          pdf.addPage();
+          cursorY = margin;
+        }
+        pdf.text(line, margin, cursorY);
+        cursorY += lineHeight;
       });
 
-      // Add the canvas as image to PDF
-      const imgData = canvas.toDataURL('image/png');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
-      // Download the PDF
-      pdf.save('artifact.pdf');
-
+      pdf.save("artifact.pdf");
     } catch (err) {
       console.error("Failed to generate PDF:", err);
     }
@@ -220,10 +308,11 @@ const ArtifactFrame = () => {
           onCopy={handleCopyArtifact}
           onDownload={handleDownloadArtifact}
           onRegenerate={handleRegenerate}
+          isRegenerating={regeneratingTitle === focus.title}
         />
       </div>
     );
-  }, [artifactObject, focus, setFocus]);
+  }, [artifactObject, focus, setFocus, regeneratingTitle]);
 
   return <>{renderArtifactFrames()}</>;
 };
