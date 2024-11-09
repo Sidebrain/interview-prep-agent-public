@@ -149,23 +149,46 @@ const ArtifactFrame = () => {
     }
   };
 
-  const handleDownloadArtifact = () => {
+  const handleDownloadArtifact = async () => {
     if (!artifactObject[focus.title].length) return;
     if (focus.index === null) return;
-    const blob = new Blob(
-      [artifactObject[focus.title][focus.index].content || ""],
-      {
-        type: "text/markdown",
-      }
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "artifact.md";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    try {
+      // Import browser-compatible PDF libraries
+      const { default: jsPDF } = await import('jspdf');
+      const { default: html2canvas } = await import('html2canvas');
+      
+      // Create a temporary div to render the markdown content
+      const tempDiv = document.createElement('div');
+      tempDiv.className = 'markdown-content';
+      const markdownIt = (await import('markdown-it')).default;
+      const md = new markdownIt();
+      tempDiv.innerHTML = md.render(artifactObject[focus.title][focus.index].content || "");
+      document.body.appendChild(tempDiv);
+
+      // Convert the rendered content to canvas
+      const canvas = await html2canvas(tempDiv);
+      document.body.removeChild(tempDiv);
+
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: 'a4'
+      });
+
+      // Add the canvas as image to PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+      // Download the PDF
+      pdf.save('artifact.pdf');
+
+    } catch (err) {
+      console.error("Failed to generate PDF:", err);
+    }
   };
 
   const renderArtifactFrames = useCallback(() => {

@@ -30,11 +30,15 @@ function MessageContainer(props: MessageContainerProps) {
   }, []);
 
   useEffect(() => {
-    if (containerAreaRef.current) {
-      containerAreaRef.current.scrollTop =
-        containerAreaRef.current.scrollHeight;
-    }
-  }, [props.frameList]);
+    // Add a small delay to ensure the DOM has updated
+    const scrollTimeout = setTimeout(() => {
+      if (containerAreaRef.current) {
+        containerAreaRef.current.scrollTop = containerAreaRef.current.scrollHeight;
+      }
+    }, 0);
+
+    return () => clearTimeout(scrollTimeout);
+  }, [props.frameList.length, props.frameList.map(frame => frame.frame?.content)]);
 
   return (
     <div
