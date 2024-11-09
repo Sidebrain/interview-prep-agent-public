@@ -3,6 +3,7 @@ import { WebSocketHookOptions } from "@/types/websocketTypes";
 import { useEffect, useRef, useState, useCallback, useReducer } from "react";
 import clientLogger from "../app/lib/clientLogger";
 import {
+  CompletionFrameChunk,
   WebsocketFrame,
   WebsocketFrameSchema,
 } from "@/types/ScalableWebsocketTypes";
@@ -22,7 +23,6 @@ const useWebSocket = ({
   reconnectAttempts = 5,
   heartbeatInterval = 10000,
 }: WebSocketHookOptions): WebsocketInterface => {
-
   const [frameList, dispatch] = useReducer(messageFrameReducer, []);
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
   const [connectionStatus, setConnectionStatus] =
@@ -194,6 +194,16 @@ const useWebSocket = ({
     return senderRef.current.createHumanInputFrame(content);
   }, []);
 
+  const createRegenerateSignalFrame = useCallback(
+    (frameToRegenerate: CompletionFrameChunk) => {
+      if (!senderRef.current) {
+        throw new Error("No sender found");
+      }
+      return senderRef.current.createRegenerateSignalFrame(frameToRegenerate);
+    },
+    []
+  );
+
   return {
     sendMessage,
     frameList,
@@ -202,6 +212,7 @@ const useWebSocket = ({
     dispatch,
     frameHandler,
     createHumanInputFrame,
+    createRegenerateSignalFrame,
   };
 };
 

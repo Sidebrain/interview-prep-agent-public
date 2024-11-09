@@ -50,6 +50,7 @@ DEBUG_CONFIG = {
     "thinker": False,
     "interview": False,
     "agent": True,
+    "memory": True,
 }
 
 
@@ -184,6 +185,8 @@ class Thinker:
 
 
 class Memory:
+    debug = DEBUG_CONFIG["memory"]
+
     def __init__(self):
         self.memory: list[WebsocketFrame] = []
 
@@ -192,6 +195,46 @@ class Memory:
 
     def clear(self):
         self.memory = []
+
+    def parent_frame_for_completion_chunk(
+        self, completion_frame: CompletionFrameChunk, debug: bool = False
+    ) -> WebsocketFrame:
+        """
+        Find the parent frame for a completion frame chunk.
+        This is useful when a completion frame chunk is generated, and we need to find the parent frame.
+
+        Args:
+            completion_frame (CompletionFrameChunk): The completion frame chunk to find the parent frame for.
+
+        Returns:
+            WebsocketFrame: The parent frame for the completion frame chunk.
+        """
+        try:
+            parent_frame = next(
+                (
+                    frame
+                    for frame in self.memory[::-1]
+                    if frame.frame.id == completion_frame.id
+                )
+            )
+            if self.debug and debug:
+                logger.debug(
+                    f"Found parent frame: {parent_frame.model_dump_json(indent=4)}"
+                )
+            return parent_frame
+        except StopIteration:
+            if self.debug and debug:
+                logger.debug(
+                    f"No parent frame found for completion frame: {completion_frame.id}"
+                )
+                logger.debug("Available websocket frame, completion chunk ids")
+                logger.debug(
+                    [
+                        (frame.frame.id, frame.frame.content)
+                        for frame in self.memory[::-1]
+                    ]
+                )
+            return None
 
     def extract_memory_for_generation(
         self, custom_user_instruction: dict[str, str] = None
@@ -258,7 +301,7 @@ class Agent:
         artifacts_to_generate = [
             # "Short description of the job",
             "job description",
-            "high surface area interview questions, including coding questions with code snippets if applicable",
+            "interview questions",
             "rating rubric",
         ]
         generated_items = await asyncio.gather(
@@ -283,6 +326,7 @@ class Agent:
         websocket_frame = Dispatcher.package_and_transform_to_webframe(
             response, "artifact", frame_id, title=artifact.title()
         )
+        self.memory.add(websocket_frame)
         if self.debug and debug:
             # logger.debug(f"Artifact generated: {artifact}")
             # logger.debug(websocket_frame.model_dump_json(indent=4))
@@ -291,17 +335,33 @@ class Agent:
             )
         return websocket_frame, response
 
-    async def receive_message(self, debug: bool = False):
+    async def receive_message(self, debug: bool = True, verbose: bool = False):
         msg = await self.channel.receive_message()
         if msg is None:
             return
         frame_id = str(uuid4())
         try:
             parsed_message = WebsocketFrame.model_validate_json(msg, strict=False)
+
             if self.debug and debug:
                 logger.debug(
                     f"Message received: {parsed_message.model_dump_json(indent=4)}"
                 )
+
+            if parsed_message.type == "signal.regenerate":
+                # if messge is regenerate, then dont do anything and wait for the next message non signal regenerate message
+                parent_frame = self.memory.parent_frame_for_completion_chunk(
+                    parsed_message.frame
+                )
+                # generate a new artifact frame with the same id as the parent frame
+                new_artifact_frame, _ = await self.generate_single_artifact(
+                    parent_frame.frame.title, parent_frame.frame_id
+                )
+                self.memory.add(new_artifact_frame)
+                await self.channel.send_message(
+                    new_artifact_frame.model_dump_json(by_alias=True)
+                )
+                return
             self.memory.add(parsed_message)
             await self.interview(frame_id=frame_id)
         except json.JSONDecodeError:
@@ -310,7 +370,7 @@ class Agent:
         except IndexError:
             logger.error("Popping from empty concept list")
             (frames, responses) = await self.generate_all_artifacts(frame_id)
-            if self.debug and debug:
+            if self.debug and debug and verbose:
                 for frame in frames:
                     logger.debug(frame.model_dump_json(indent=4))
                     logger.debug(f"\n{'-'*30}\n")

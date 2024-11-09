@@ -8,6 +8,7 @@ import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { X, Copy, Download, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompletionFrameChunk } from "@/types/ScalableWebsocketTypes";
+import { useWebsocketContext } from "@/context/WebsocketContext";
 
 // Define the CodeProps type to fix the linter error
 type CodeProps = {
@@ -61,15 +62,20 @@ const TopButtonTray = ({ onClose, title }: TopButtonTrayProps) => {
 type BottomButtonTrayProps = {
   onCopy: () => void;
   onDownload: () => void;
+  onRegenerate: () => void;
 };
 
-const BottomButtonTray = ({ onCopy, onDownload }: BottomButtonTrayProps) => {
+const BottomButtonTray = ({
+  onCopy,
+  onDownload,
+  onRegenerate,
+}: BottomButtonTrayProps) => {
   return (
     <div className="flex justify-end gap-2 p-1 bg-gray-200 border-t sticky bottom-0 z-10">
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => console.log("regenerate clicked")}
+        onClick={onRegenerate}
         className="hover:bg-gray-300"
       >
         <RefreshCcw className="h-4 w-4" />
@@ -95,7 +101,14 @@ const BottomButtonTray = ({ onCopy, onDownload }: BottomButtonTrayProps) => {
 };
 
 const ArtifactFrame = () => {
+  const { sendMessage, createRegenerateSignalFrame } = useWebsocketContext();
   const { artifact, setArtifact } = useArtifact();
+
+  const handleRegenerate = () => {
+    if (!artifact) return;
+    const regenerateFrame = createRegenerateSignalFrame(artifact);
+    sendMessage(regenerateFrame);
+  };
 
   const handleCopyArtifact = async () => {
     if (!artifact) return;
@@ -145,6 +158,7 @@ const ArtifactFrame = () => {
           <BottomButtonTray
             onCopy={handleCopyArtifact}
             onDownload={handleDownloadArtifact}
+            onRegenerate={handleRegenerate}
           />
         </div>
       );

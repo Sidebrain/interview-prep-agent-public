@@ -1,4 +1,4 @@
-import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
+import { CompletionFrameChunk, WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { createTimestamp } from "@/app/lib/helperFunctions";
@@ -58,17 +58,16 @@ export class WebsocketMessageSender implements MessageSender {
     return false;
   }
 
-  // createRegenerateSignalFrame(frameToRegenerate: FrameType): WebsocketFrame {
-  //   return {
-  //     frameId: frameToRegenerate.frameId,
-  //     type: "input",
-  //     address: "human",
-  //     frame: {
-  //       object: "human.signal",
-  //       // ...frameToRegenerate.frame,
-  //     }
-  //   };
-  // }
+  createRegenerateSignalFrame(
+    frameToRegenerate: CompletionFrameChunk
+  ): WebsocketFrame {
+    return {
+      frameId: uuidv4(),
+      type: "signal.regenerate",
+      address: "human",
+      frame: frameToRegenerate,
+    };
+  }
 
   createHumanInputFrame(content: string): WebsocketFrame {
     return {

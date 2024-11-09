@@ -1,7 +1,6 @@
 "use client";
 import { InputProvider } from "@/context/InputContext";
 import UserArea from "./components/UserArea";
-import useWebSocket from "@/hooks/useWebsocketNew";
 import { useEffect, useState } from "react";
 import clientLogger from "@/app/lib/clientLogger";
 import GenerativeArea from "./components/GenerativeArea";
