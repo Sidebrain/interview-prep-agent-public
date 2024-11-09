@@ -4,8 +4,8 @@ import InputArea from "./InputArea";
 import MessageContainer from "./MessageContainer";
 import { Badge } from "@/components/ui/badge";
 import HelperContent from "./HelperContent";
-import { useArtifact } from "@/context/ArtifactContext";
 import { useWebsocketContext } from "@/context/WebsocketContext";
+import { useArtifact } from "@/context/ArtifactContext";
 
 function Header() {
   return (
@@ -21,7 +21,7 @@ function UserArea({}: UserAreaProps) {
   // this state is needed to pass the max height to the textarea
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
   const { frameList } = useWebsocketContext();
-  const { artifacts } = useArtifact();
+  const { focus } = useArtifact();
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -41,7 +41,7 @@ function UserArea({}: UserAreaProps) {
   return (
     <div
       className={`flex ${
-        artifacts ? "hidden md:flex md:w-1/2" : "w-full md:w-1/2"
+        focus.title ? "hidden md:flex md:w-1/2" : "w-full md:w-1/2"
       } flex-col gap-2 h-full pr-2`}
     >
       <Header />

@@ -7,7 +7,6 @@ import SyntaxHighlighter from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { X, Copy, Download, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CompletionFrameChunk } from "@/types/ScalableWebsocketTypes";
 import { useWebsocketContext } from "@/context/WebsocketContext";
 
 // Define the CodeProps type to fix the linter error
@@ -77,7 +76,7 @@ const BottomButtonTray = ({
   index,
 }: BottomButtonTrayProps) => {
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center bg-gray-200">
       {
         <div className="flex gap-1 p-1">
           {[...Array(numVersions)].map((_, i) => (
@@ -95,7 +94,7 @@ const BottomButtonTray = ({
           ))}
         </div>
       }
-      <div className="flex justify-end gap-2 p-1 bg-gray-200 border-t sticky bottom-0 z-10">
+      <div className="flex justify-end gap-2 p-1 border-t sticky bottom-0 z-10">
         <Button
           variant="ghost"
           size="sm"
@@ -126,36 +125,39 @@ const BottomButtonTray = ({
 };
 
 const ArtifactFrame = () => {
-  const { sendMessage, createRegenerateSignalFrame, frameList } =
-    useWebsocketContext();
-  const { artifacts, setArtifacts } = useArtifact();
-  const [index, setIndex] = useState(0);
-  const [numVersions, setNumVersions] = useState(0);
+  const { sendMessage, createRegenerateSignalFrame } = useWebsocketContext();
+  const { artifactObject, focus, setFocus } = useArtifact();
 
   const handleRegenerate = () => {
-    if (!artifacts.length) return;
-    const regenerateFrame = createRegenerateSignalFrame(artifacts[index]);
+    if (!artifactObject[focus.title].length) return;
+    if (focus.index === null) return;
+    const regenerateFrame = createRegenerateSignalFrame(
+      artifactObject[focus.title][focus.index]
+    );
     sendMessage(regenerateFrame);
   };
 
-  useEffect(() => {
-    setNumVersions(artifacts.length);
-  }, [artifacts, handleRegenerate]);
-
   const handleCopyArtifact = async () => {
-    if (!artifacts.length) return;
+    if (!artifactObject[focus.title].length) return;
+    if (focus.index === null) return;
     try {
-      await navigator.clipboard.writeText(artifacts[index].content || "");
+      await navigator.clipboard.writeText(
+        artifactObject[focus.title][focus.index].content || ""
+      );
     } catch (err) {
       console.error("Failed to copy:", err);
     }
   };
 
   const handleDownloadArtifact = () => {
-    if (!artifacts.length) return;
-    const blob = new Blob([artifacts[index].content || ""], {
-      type: "text/markdown",
-    });
+    if (!artifactObject[focus.title].length) return;
+    if (focus.index === null) return;
+    const blob = new Blob(
+      [artifactObject[focus.title][focus.index].content || ""],
+      {
+        type: "text/markdown",
+      }
+    );
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -166,43 +168,41 @@ const ArtifactFrame = () => {
     URL.revokeObjectURL(url);
   };
 
-  const renderArtifactFrames = useCallback(
-    (artifacts: CompletionFrameChunk[]) => {
-      return (
-        <div className="w-full bg-white rounded-lg shadow-lg max-w-4xl mx-auto my-2 flex flex-col h-full">
-          <TopButtonTray
-            onClose={() => setArtifacts([])}
-            title={artifacts[index].title || ""}
-          />
+  const renderArtifactFrames = useCallback(() => {
+    if (focus.index === null) return;
+    return (
+      <div className="w-full bg-white rounded-lg shadow-lg max-w-4xl mx-auto my-2 flex flex-col h-full">
+        <TopButtonTray
+          onClose={() => setFocus({ title: "", index: null })}
+          title={artifactObject[focus.title][focus.index].title || ""}
+        />
 
-          {/* Content - scrollable */}
-          <div className="flex-1 overflow-auto min-h-0">
-            <div className="p-6">
-              <Markdown
-                remarkPlugins={[remarkGfm]}
-                className="markdown-content break-words text-sm"
-                components={components}
-              >
-                {artifacts[index].content || ""}
-              </Markdown>
-            </div>
+        {/* Content - scrollable */}
+        <div className="flex-1 overflow-auto min-h-0">
+          <div className="p-6">
+            <Markdown
+              remarkPlugins={[remarkGfm]}
+              className="markdown-content break-words text-sm"
+              components={components}
+            >
+              {artifactObject[focus.title][focus.index].content || ""}
+            </Markdown>
           </div>
-
-          <BottomButtonTray
-            numVersions={numVersions}
-            setIndex={setIndex}
-            index={index}
-            onCopy={handleCopyArtifact}
-            onDownload={handleDownloadArtifact}
-            onRegenerate={handleRegenerate}
-          />
         </div>
-      );
-    },
-    [artifacts, setArtifacts, index, numVersions]
-  );
 
-  return <>{renderArtifactFrames(artifacts)}</>;
+        <BottomButtonTray
+          numVersions={artifactObject[focus.title].length}
+          setIndex={(index) => setFocus({ ...focus, index })}
+          index={focus.index}
+          onCopy={handleCopyArtifact}
+          onDownload={handleDownloadArtifact}
+          onRegenerate={handleRegenerate}
+        />
+      </div>
+    );
+  }, [artifactObject, focus, setFocus]);
+
+  return <>{renderArtifactFrames()}</>;
 };
 
 export default ArtifactFrame;
