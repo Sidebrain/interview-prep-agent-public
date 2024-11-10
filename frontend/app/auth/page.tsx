@@ -3,8 +3,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import AuthButtons from "./AuthButtons";
+import { useRouter } from "next/navigation";
+import { AuthContext } from "@/context/AuthContext";
+import { useContext } from "react";
 
 const AuthPage = () => {
+  // if user is logged in, redirect to home
+  const { user } = useContext(AuthContext);
+  const router = useRouter();
+  if (user) {
+    router.push("/home/create");
+    return null;
+  }
   return (
     <>
       <div className="md:hidden">
