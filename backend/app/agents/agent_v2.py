@@ -335,6 +335,27 @@ class Agent:
             )
         return websocket_frame, response
 
+    async def regenerate_artefact(
+        self, incoming_parsed_frame: WebsocketFrame, debug: bool = False
+    ):
+
+        try:
+            parent_frame = self.memory.parent_frame_for_completion_chunk(
+                incoming_parsed_frame.frame
+            )
+            # generate a new artifact frame with the same id as the parent frame
+            new_artifact_frame, _ = await self.generate_single_artifact(
+                parent_frame.frame.title, parent_frame.frame_id
+            )
+            self.memory.add(new_artifact_frame)
+            await self.channel.send_message(
+                new_artifact_frame.model_dump_json(by_alias=True)
+            )
+            return
+        except Exception as e:
+            logger.error(f"Failed to regenerate artifact: {str(e)}")
+            return
+
     async def receive_message(self, debug: bool = True, verbose: bool = False):
         msg = await self.channel.receive_message()
         if msg is None:
@@ -350,18 +371,9 @@ class Agent:
 
             if parsed_message.type == "signal.regenerate":
                 # if messge is regenerate, then dont do anything and wait for the next message non signal regenerate message
-                parent_frame = self.memory.parent_frame_for_completion_chunk(
-                    parsed_message.frame
-                )
-                # generate a new artifact frame with the same id as the parent frame
-                new_artifact_frame, _ = await self.generate_single_artifact(
-                    parent_frame.frame.title, parent_frame.frame_id
-                )
-                self.memory.add(new_artifact_frame)
-                await self.channel.send_message(
-                    new_artifact_frame.model_dump_json(by_alias=True)
-                )
+                await self.regenerate_artefact(parsed_message, debug)
                 return
+
             self.memory.add(parsed_message)
             await self.interview(frame_id=frame_id)
         except json.JSONDecodeError:
