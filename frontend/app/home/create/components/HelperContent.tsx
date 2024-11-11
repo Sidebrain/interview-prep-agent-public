@@ -15,7 +15,7 @@ const HelperContent = ({ frame }: HelperContentProps) => {
     return thoughts.map((thought, idx) => (
       <div key={`thought-${idx}`}>
         <Option option={thought.options} />
-        <Suggestion suggestion={thought.sample_answer} />
+        <Suggestion suggestion={thought.sampleAnswer} />
       </div>
     ));
   };

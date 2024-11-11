@@ -112,7 +112,7 @@ class Dispatcher:
             object="chat.completion",
             model=model,
             role="assistant",
-            content=response.model_dump_json(indent=4),
+            content=response.model_dump_json(indent=4, by_alias=True),
             delta=None,
             title=title,
             index=0,
