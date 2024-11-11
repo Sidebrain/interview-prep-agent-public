@@ -39,10 +39,7 @@ function MessageContainer(props: MessageContainerProps) {
     }, 50);
 
     return () => clearTimeout(scrollTimeout);
-  }, [
-    props.frameList.length,
-    ...props.frameList.map((frame) => frame.artifactFrames.length),
-  ]);
+  }, [props.frameList]);
 
   return (
     <div

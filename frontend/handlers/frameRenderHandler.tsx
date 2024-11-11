@@ -8,6 +8,7 @@ import typescript from "react-syntax-highlighter/dist/cjs/languages/prism/typesc
 import python from "react-syntax-highlighter/dist/cjs/languages/prism/python";
 import json from "react-syntax-highlighter/dist/cjs/languages/prism/json";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
+import { useMemo } from "react";
 
 SyntaxHighlighter.registerLanguage("javascript", javascript);
 SyntaxHighlighter.registerLanguage("typescript", typescript);
@@ -48,13 +49,14 @@ type RenderFrameType = {
 };
 
 export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
-  switch (address) {
-    case "thought":
-      return (
-        <>
-          {frame.thoughtFrames.map((tframe, idx) => (
-            <div className="border border-gray-400 p-2 m-2" key={idx}>
-              {/* <SyntaxHighlighter
+  return useMemo(() => {
+    switch (address) {
+      case "thought":
+        return (
+          <>
+            {frame.thoughtFrames.map((tframe, idx) => (
+              <div className="border border-gray-400 p-2 m-2" key={idx}>
+                {/* <SyntaxHighlighter
                 language="json"
                 style={oneDark}
                 PreTag={"div"}
@@ -65,53 +67,54 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
                 wrapLongLines={true}
                 key={`tframe-${idx}`}
               > */}
-              {`${tframe.content}`}
-              {/* </SyntaxHighlighter> */}
-            </div>
-          ))}
-        </>
-      );
-    case "artifact":
-      return (
-        <div className="flex flex-col gap-2">
-          {frame.artifactFrames.map((aframe, idx) => (
-            <div className="border border-gray-400 p-2 m-2" key={idx}>
+                {`${tframe.content}`}
+                {/* </SyntaxHighlighter> */}
+              </div>
+            ))}
+          </>
+        );
+      case "artifact":
+        return (
+          <div className="flex flex-col gap-2">
+            {frame.artifactFrames.map((aframe, idx) => (
+              <div className="border border-gray-400 p-2 m-2" key={idx}>
+                <Markdown
+                  remarkPlugins={[remarkGfm]}
+                  components={components}
+                  className="markdown-content break-words text-sm "
+                  key={`artifact-${idx}`}
+                >
+                  {aframe.content}
+                </Markdown>
+              </div>
+            ))}
+          </div>
+        );
+      case "content":
+      default:
+        return (
+          <div
+            className={`mb-4 ${
+              frame.contentFrame.role === "user" ? "text-left" : "text-left"
+            }`}
+          >
+            <span
+              className={`inline-block p-2 rounded-lg max-w-full ${
+                frame.contentFrame.role === "user"
+                  ? "bg-primary text-primary-foreground border border-gray-200"
+                  : "border border-input bg-background shadow-sm text-black"
+              }`}
+            >
               <Markdown
                 remarkPlugins={[remarkGfm]}
                 components={components}
-                className="markdown-content break-words text-sm "
-                key={`artifact-${idx}`}
+                className="markdown-content break-words "
               >
-                {aframe.content}
+                {frame.contentFrame.content?.trim()}
               </Markdown>
-            </div>
-          ))}
-        </div>
-      );
-    case "content":
-    default:
-      return (
-        <div
-          className={`mb-4 ${
-            frame.contentFrame.role === "user" ? "text-left" : "text-left"
-          }`}
-        >
-          <span
-            className={`inline-block p-2 rounded-lg max-w-full ${
-              frame.contentFrame.role === "user"
-                ? "bg-primary text-primary-foreground border border-gray-200"
-                : "border border-input bg-background shadow-sm text-black"
-            }`}
-          >
-            <Markdown
-              remarkPlugins={[remarkGfm]}
-              components={components}
-              className="markdown-content break-words "
-            >
-              {frame.contentFrame.content?.trim()}
-            </Markdown>
-          </span>
-        </div>
-      );
-  }
+            </span>
+          </div>
+        );
+    }
+  }, [frame, address]);
 };

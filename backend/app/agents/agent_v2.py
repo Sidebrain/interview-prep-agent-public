@@ -237,7 +237,9 @@ class Memory:
             return None
 
     def extract_memory_for_generation(
-        self, custom_user_instruction: dict[str, str] = None
+        self,
+        custom_user_instruction: dict[str, str] = None,
+        address_filter: list[AddressType] = [],
     ):
         with open("config/agent_v2.yaml", "r") as file:
             config = yaml.safe_load(file)
@@ -257,6 +259,7 @@ class Memory:
                     "content": message.frame.content,
                 }
                 for message in self.memory
+                if not address_filter or message.address in address_filter
             ]
             + ([custom_user_instruction] if custom_user_instruction else [])
         )
@@ -422,12 +425,16 @@ class Interview:
                 f"printing the current instruction: {info_to_extract_from_user}"
             )
         messages = self.memory.extract_memory_for_generation(
+            address_filter=[
+                "content",
+                "human",
+            ],  # so that the context does not include the in between thought frames
             custom_user_instruction={
                 "role": "user",
                 "content": """Ask a question to get the following information:\n{info_to_extract_from_user} """.format(
                     info_to_extract_from_user=" ".join(info_to_extract_from_user)
                 ),
-            }
+            },
         )
         q_and_a = await self.thinker.extract_structured_response(
             pydantic_structure_to_extract=QuestionAndAnswer,
