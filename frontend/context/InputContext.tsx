@@ -1,7 +1,7 @@
 "use client";
 
 import inputReducer, { InputActionType } from "@/reducers/inputReducer";
-import { createContext, ReactNode, useReducer } from "react";
+import { createContext, ReactNode, useContext, useReducer } from "react";
 
 type InputContextType = {
   state: string;
@@ -20,6 +20,14 @@ export const InputProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </InputContext.Provider>
   );
+};
+
+export const useInput = () => {
+  const context = useContext(InputContext);
+  if (context === undefined) {
+    throw new Error("useInput must be used within an InputProvider");
+  }
+  return context;
 };
 
 export default InputContext;

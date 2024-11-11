@@ -1,5 +1,6 @@
 from typing import Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 
 class Concept(BaseModel):
@@ -90,18 +91,22 @@ class InternalRequirements(Concept):
 
 hiring_requirements = [
     Role,
-    Designation,
-    Company,
+    # Designation,
+    # Company,
     Requirement,
-    Budget,
-    # Expected,
-    Backup,
-    CultureFit,
-    InternalRequirements,
+    # Budget,
+    # # Expected,
+    # Backup,
+    # CultureFit,
+    # InternalRequirements,
 ]
 
 
 class QuestionAndAnswer(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
     question: str = Field(
         ...,
         description="A question that the recruiter asks the hiring manager to get more information about the role",
@@ -109,7 +114,7 @@ class QuestionAndAnswer(BaseModel):
     )
     sample_answer: str = Field(
         ...,
-        description="A sample answer with a variety of possible answers generated based on the question and the context so far",
+        description="A sample answer with a variety of possible answers generated using world knowledge. This is used to help the hiring manager understand the question and to generate an answer. Use question and the context so far to generate the answer.",
         title="Expected answer",
     )
     options: str = Field(
@@ -117,6 +122,16 @@ class QuestionAndAnswer(BaseModel):
         description="Some options that the hiring manager can choose from",
         title="Correct answer",
     )
+    user_answer: str = Field(
+        # default="",
+        description="If the info given by the user has information that can be used to answer the question, then this is the partial answer derived from the user's messages.",
+        title="Hiring manager answer",
+    )
+
+
+# class Answer(BaseModel):
+#     answer: str = Field(..., description="User's parial answer to the question")
+#     score: float = Field(..., description="Whether the answer is correct")
 
 
 def main(): ...

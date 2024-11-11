@@ -28,8 +28,9 @@ const CompletionFrameChunkSchema = z.object({
 
 const ThoughtSchema = z.object({
   question: z.string(),
-  sample_answer: z.string(),
+  sampleAnswer: z.string(),
   options: z.string(),
+  userAnswer: z.string(),
 });
 
 export type Thought = z.infer<typeof ThoughtSchema>;

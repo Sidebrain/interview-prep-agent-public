@@ -22,6 +22,8 @@ type ArtifactContextType = {
   setFrameId: (frameId: string) => void;
   focus: FocusType;
   setFocus: (focus: FocusType) => void;
+  regeneratingTitle: string | null;
+  setRegeneratingTitle: (title: string | null) => void;
 };
 
 type FocusType = {
@@ -38,6 +40,8 @@ const ArtifactContext = createContext<ArtifactContextType>({
     index: null,
   },
   setFocus: () => {},
+  regeneratingTitle: null,
+  setRegeneratingTitle: () => {},
 });
 
 export const ArtifactProvider = ({ children }: { children: ReactNode }) => {
@@ -48,6 +52,7 @@ export const ArtifactProvider = ({ children }: { children: ReactNode }) => {
     title: "",
     index: null,
   });
+  const [regeneratingTitle, setRegeneratingTitle] = useState<string | null>(null);
 
   const buildArtifactObject = useCallback(() => {
     console.log("buildArtifactObject triggered");
@@ -81,7 +86,15 @@ export const ArtifactProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ArtifactContext.Provider
-      value={{ artifactObject, frameId, setFrameId, focus, setFocus }}
+      value={{ 
+        artifactObject, 
+        frameId, 
+        setFrameId, 
+        focus, 
+        setFocus,
+        regeneratingTitle,
+        setRegeneratingTitle
+      }}
     >
       {children}
     </ArtifactContext.Provider>

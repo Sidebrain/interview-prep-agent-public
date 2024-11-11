@@ -112,7 +112,7 @@ class Dispatcher:
             object="chat.completion",
             model=model,
             role="assistant",
-            content=response.model_dump_json(indent=4),
+            content=response.model_dump_json(indent=4, by_alias=True),
             delta=None,
             title=title,
             index=0,
@@ -237,7 +237,9 @@ class Memory:
             return None
 
     def extract_memory_for_generation(
-        self, custom_user_instruction: dict[str, str] = None
+        self,
+        custom_user_instruction: dict[str, str] = None,
+        address_filter: list[AddressType] = [],
     ):
         with open("config/agent_v2.yaml", "r") as file:
             config = yaml.safe_load(file)
@@ -257,6 +259,7 @@ class Memory:
                     "content": message.frame.content,
                 }
                 for message in self.memory
+                if not address_filter or message.address in address_filter
             ]
             + ([custom_user_instruction] if custom_user_instruction else [])
         )
@@ -302,7 +305,7 @@ class Agent:
             # "Short description of the job",
             "job description",
             "interview questions",
-            "rating rubric",
+            "rating rubric in table format",
         ]
         generated_items = await asyncio.gather(
             *[
@@ -335,6 +338,27 @@ class Agent:
             )
         return websocket_frame, response
 
+    async def regenerate_artefact(
+        self, incoming_parsed_frame: WebsocketFrame, debug: bool = False
+    ):
+
+        try:
+            parent_frame = self.memory.parent_frame_for_completion_chunk(
+                incoming_parsed_frame.frame
+            )
+            # generate a new artifact frame with the same id as the parent frame
+            new_artifact_frame, _ = await self.generate_single_artifact(
+                parent_frame.frame.title, parent_frame.frame_id
+            )
+            self.memory.add(new_artifact_frame)
+            await self.channel.send_message(
+                new_artifact_frame.model_dump_json(by_alias=True)
+            )
+            return
+        except Exception as e:
+            logger.error(f"Failed to regenerate artifact: {str(e)}")
+            return
+
     async def receive_message(self, debug: bool = True, verbose: bool = False):
         msg = await self.channel.receive_message()
         if msg is None:
@@ -350,18 +374,9 @@ class Agent:
 
             if parsed_message.type == "signal.regenerate":
                 # if messge is regenerate, then dont do anything and wait for the next message non signal regenerate message
-                parent_frame = self.memory.parent_frame_for_completion_chunk(
-                    parsed_message.frame
-                )
-                # generate a new artifact frame with the same id as the parent frame
-                new_artifact_frame, _ = await self.generate_single_artifact(
-                    parent_frame.frame.title, parent_frame.frame_id
-                )
-                self.memory.add(new_artifact_frame)
-                await self.channel.send_message(
-                    new_artifact_frame.model_dump_json(by_alias=True)
-                )
+                await self.regenerate_artefact(parsed_message, debug)
                 return
+
             self.memory.add(parsed_message)
             await self.interview(frame_id=frame_id)
         except json.JSONDecodeError:
@@ -410,12 +425,16 @@ class Interview:
                 f"printing the current instruction: {info_to_extract_from_user}"
             )
         messages = self.memory.extract_memory_for_generation(
+            address_filter=[
+                "content",
+                "human",
+            ],  # so that the context does not include the in between thought frames
             custom_user_instruction={
                 "role": "user",
                 "content": """Ask a question to get the following information:\n{info_to_extract_from_user} """.format(
                     info_to_extract_from_user=" ".join(info_to_extract_from_user)
                 ),
-            }
+            },
         )
         q_and_a = await self.thinker.extract_structured_response(
             pydantic_structure_to_extract=QuestionAndAnswer,

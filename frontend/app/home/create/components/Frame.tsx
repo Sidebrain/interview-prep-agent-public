@@ -3,16 +3,20 @@ import { frameRenderHandler } from "@/handlers/frameRenderHandler";
 import { useArtifact } from "@/context/ArtifactContext";
 import { Button } from "@/components/ui/button";
 import { useCallback, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { RefreshCcw } from "lucide-react";
 
 type FrameProps = {
   frame: FrameType;
 };
 
 const Frame = ({ frame }: FrameProps) => {
-  const { setFocus, setFrameId, artifactObject } = useArtifact();
+  const { setFocus, setFrameId, artifactObject, regeneratingTitle } = useArtifact();
 
   const renderArtifactButtons = useCallback(() => {
     return Object.entries(artifactObject).map(([title, frames], idx) => {
+      const isRegenerating = regeneratingTitle === title;
+      
       return (
         <Button
           className="bg-green-500 p-4 rounded-md relative"
@@ -20,13 +24,19 @@ const Frame = ({ frame }: FrameProps) => {
           onClick={() => setFocus({ title, index: 0 })}
         >
           {title}
-          <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {frames.length}
+          <span className={cn(
+            "absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+          )}>
+            {isRegenerating ? (
+              <RefreshCcw className="h-3 w-3 animate-spin" />
+            ) : (
+              frames.length
+            )}
           </span>
         </Button>
       );
     });
-  }, [artifactObject, setFocus]);
+  }, [artifactObject, setFocus, regeneratingTitle]);
 
   useEffect(() => {
     setFrameId(frame.frameId);

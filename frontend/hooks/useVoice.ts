@@ -42,6 +42,9 @@ const useVoice = (props: VoiceHookParams) => {
 
   const startRecording = useCallback(() => {
     if (streamRef.current) {
+      // Re-enable tracks before starting new recording
+      streamRef.current.getTracks().forEach((track) => (track.enabled = true));
+
       mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
         mimeType: "audio/webm",
       });
@@ -114,6 +117,12 @@ const useVoice = (props: VoiceHookParams) => {
               setAudioChunks((prev) => [...prev, event.data]);
             }
             mediaRecorderRef.current?.stop();
+
+            // Pause all tracks when stopping recording
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach((track) => track.stop());
+              streamRef.current = null; // clear the streamRef
+            }
             setIsRecording(false);
             clientLogger.debug("Recording stopped", audioChunks);
             resolve();

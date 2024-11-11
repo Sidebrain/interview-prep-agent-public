@@ -3,27 +3,38 @@
 import Image from "next/image";
 import Link from "next/link";
 import AuthButtons from "./AuthButtons";
+import { useRouter } from "next/navigation";
+import { AuthContext } from "@/context/AuthContext";
+import { useContext } from "react";
 
 const AuthPage = () => {
+  // if user is logged in, redirect to home
+  const { user } = useContext(AuthContext);
+  const router = useRouter();
+  if (user) {
+    console.log("user found", user);
+    router.push("/home/create");
+    return null;
+  }
   return (
-    <>
-      <div className="md:hidden">
+    <div className="flex flex-col h-screen">
+      <div className="sm:hidden relative h-1/3">
         <Image
           src="/examples/authentication-light.png"
-          width={1280}
-          height={843}
           alt="Authentication"
-          className="block dark:hidden"
+          className="block dark:hidden object-cover"
+          priority
+          fill
         />
         <Image
           src="/examples/authentication-dark.png"
-          width={1280}
-          height={843}
           alt="Authentication"
-          className="hidden dark:block"
+          className="hidden dark:block object-cover"
+          priority
+          fill
         />
       </div>
-      <div className="container relative hidden h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+      <div className="flex-1 container relative flex flex-col items-center justify-center lg:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
         <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
           <div className="absolute inset-0 bg-zinc-900" />
           <div className="relative z-20 flex items-center text-lg font-medium">
@@ -82,7 +93,7 @@ const AuthPage = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
