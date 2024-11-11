@@ -27,7 +27,7 @@ const AudioButton = () => {
       return (
         <div
           onClick={(e) => stopRecordingAndTranscribe(e)}
-          className="relative rounded-full p-2 inline-flex items-center justify-center"
+          className="relative rounded-full p-2 inline-flex items-center justify-center "
         >
           <>
             <span className="absolute inline-flex h-full w-full animate-ping opacity-75 rounded-full bg-red-600" />
@@ -38,7 +38,7 @@ const AudioButton = () => {
       );
     }
     return (
-      <div className="relative bg-gray-300 rounded-full p-2 inline-flex items-center justify-center">
+      <div className="relative bg-gray-300 rounded-full p-2 inline-flex items-center justify-center hover:cursor-pointer">
         <Icons.microphone
           onClick={getPermissionsAndStartRecording}
           className="h-4 w-4 "

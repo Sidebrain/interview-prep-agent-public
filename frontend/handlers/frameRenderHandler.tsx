@@ -99,8 +99,8 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
           <span
             className={`inline-block p-2 rounded-lg max-w-full ${
               frame.contentFrame.role === "user"
-                ? "bg-gray-100 text-gray-800 border border-gray-200"
-                : "bg-gray-300 text-black"
+                ? "bg-primary text-primary-foreground border border-gray-200"
+                : "border border-input bg-background shadow-sm text-black"
             }`}
           >
             <Markdown

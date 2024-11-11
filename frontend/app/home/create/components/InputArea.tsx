@@ -14,9 +14,9 @@ type InputAreaProps = {
   isExpanded: boolean;
 };
 
-
 export default function InputArea(props: InputAreaProps) {
-  const { sendMessage, frameHandler, createHumanInputFrame } = useWebsocketContext();
+  const { sendMessage, frameHandler, createHumanInputFrame } =
+    useWebsocketContext();
   const { state: inputValue, dispatch: dispatchInputValue } =
     useContext(InputContext);
 
@@ -40,7 +40,7 @@ export default function InputArea(props: InputAreaProps) {
   }
 
   return (
-    <div className="flex text-white bg-gray-500 rounded-sm flex-col border border-gray-300 gap-2 items-end w-full ">
+    <div className="flex text-primary rounded-sm flex-col border border-gray-300 gap-2 items-end w-full ">
       <TextareaResizable
         maxTextareaHeight={props.maxTextareaHeight}
         ref={textareaRef}
