@@ -48,9 +48,9 @@ model = "gpt-4o-mini-2024-07-18"
 DEBUG_CONFIG = {
     "dispatcher": False,
     "thinker": False,
-    "interview": False,
-    "agent": True,
-    "memory": True,
+    "interview": True,
+    "agent": False,
+    "memory": False,
 }
 
 
@@ -240,7 +240,7 @@ class Memory:
         self,
         custom_user_instruction: dict[str, str] = None,
         address_filter: list[AddressType] = [],
-    ):
+    ) -> list[dict[str, str]]:
         with open("config/agent_v2.yaml", "r") as file:
             config = yaml.safe_load(file)
             system = [
@@ -410,7 +410,7 @@ class Interview:
         pass
 
     async def generate_q_and_a_for_concept(
-        self, concept: BaseModel, frame_id: str, debug: bool = False
+        self, concept: BaseModel, frame_id: str, debug: bool = True
     ) -> Tuple[WebsocketFrame, QuestionAndAnswer]:
         if self.debug and debug:
             logger.debug(f"printing the concept that is being interviewed: {concept}")
@@ -436,6 +436,13 @@ class Interview:
                 ),
             },
         )
+
+        if self.debug and debug:
+            logger.debug(f"messages that form context for question generation: ")
+            for m in messages:
+                logger.debug(f"{m.items()}")
+                logger.debug(f"\n{'-'*30}\n")
+
         q_and_a = await self.thinker.extract_structured_response(
             pydantic_structure_to_extract=QuestionAndAnswer,
             messages=messages,
