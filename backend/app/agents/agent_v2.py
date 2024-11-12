@@ -8,9 +8,9 @@ from openai import AsyncClient
 from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
 import yaml
+from pubsub import pub
+
 from app.services.llms.openai_client import openai_async_client
-
-
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
     hiring_requirements,
@@ -48,9 +48,9 @@ model = "gpt-4o-mini-2024-07-18"
 DEBUG_CONFIG = {
     "dispatcher": False,
     "thinker": False,
-    "interview": True,
-    "agent": False,
-    "memory": False,
+    "interview": False,
+    "agent": True,
+    "memory": True,
 }
 
 
@@ -187,11 +187,13 @@ class Thinker:
 class Memory:
     debug = DEBUG_CONFIG["memory"]
 
-    def __init__(self):
+    def __init__(self, memory_topic: str):
         self.memory: list[WebsocketFrame] = []
+        self.memory_topic = memory_topic
 
     def add(self, frame: WebsocketFrame):
         self.memory.append(frame)
+        pub.sendMessage(self.memory_topic, frame=frame)
 
     def clear(self):
         self.memory = []
@@ -272,10 +274,32 @@ class Agent:
     debug = DEBUG_CONFIG["agent"]
 
     def __init__(self, channel: Channel):
+        self.agent_id = str(uuid4())
         self.thinker = Thinker()
-        self.memory = Memory()
+        # define topic for the agent's memory
+        self.memory_topic = f"agent.{self.agent_id}.memory"
+        self.memory = Memory(self.memory_topic)
         self.channel = channel
         self.interview = Interview(self.thinker, self.memory, self.channel)
+        self.setup()
+
+    def cleanup(self, debug: bool = True):
+        """Cleanup method to unsubscribe from the memory topic"""
+        pub.unsubscribe(self._on_memory_update, self.memory_topic)
+        if self.debug and debug:
+            logger.debug(f"Unsubscribed from memory topic: {self.memory_topic}")
+
+    def setup(self, debug: bool = True):
+        """Setup method to subscribe to the memory topic"""
+        pub.subscribe(self._on_memory_update, self.memory_topic)
+        if self.debug and debug:
+            logger.debug(f"Subscribed to memory topic: {self.memory_topic}")
+
+    def _on_memory_update(self, frame: WebsocketFrame):
+        if self.debug:
+            logger.debug(f"\n{'-'*30}\n")
+            logger.debug(f"Agent {self.agent_id} memory update received")
+            logger.debug(f"Memory updated: {frame.frame.content[:100]}...")
 
     async def think(self) -> None:
         """This function is called as soon as the websocket is connected.

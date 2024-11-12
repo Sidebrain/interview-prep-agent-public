@@ -165,3 +165,4 @@ cython_debug/
 secrets
 docs/sample
 logs
+**/commit_details.txt

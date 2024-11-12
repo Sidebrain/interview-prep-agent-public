@@ -20,4 +20,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+        agent.cleanup()
         print(f"Client #{client_id} diconnected")
