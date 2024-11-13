@@ -41,7 +41,7 @@ function UserArea({}: UserAreaProps) {
   return (
     <div
       className={`flex ${
-        focus.title ? "hidden md:flex md:w-1/2" : "w-full md:w-1/2"
+        focus.title ? "hidden md:flex md:w-1/3" : "w-full md:w-1/2"
       } flex-col gap-2 h-full pr-2`}
     >
       <Header />

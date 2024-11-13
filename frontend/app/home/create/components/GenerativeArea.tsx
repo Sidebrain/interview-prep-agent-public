@@ -7,7 +7,7 @@ const GenerativeArea = () => {
   return (
     <div
       className={`bg-gray-100 h-full flex flex-col items-center p-4 ${
-        focus.title ? "w-full md:w-1/2" : "hidden"
+        focus.title ? "w-full md:w-2/3" : "hidden"
       }`}
     >
       <ArtifactFrame />

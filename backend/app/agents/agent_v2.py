@@ -270,6 +270,62 @@ class Memory:
         return self.memory
 
 
+class ListeningAgent:
+    """Purpose is to have a purpose, and to be plugged into a knowledgebase
+    The knowledgebase is the ongoing conversation.
+    When a new message comes in, the agent should be able to react
+    The reaction through absorbing the information contextualized to its purpose.
+    The prompt that will allow it to do this is:
+    """
+
+    def __init__(self, purpose: str, parent_agent_id: str):
+        self.agent_id = str(uuid4())
+        self.purpose = purpose
+        self.parent_agent_id = parent_agent_id
+        self.memory_topic = f"agent.{self.parent_agent_id}.memory"
+        self.thinker = Thinker()
+        self.knowledgebase = []
+
+    def _sync_react_wrapper(self, frame: WebsocketFrame, debug: bool = True):
+        asyncio.create_task(self.react(frame, debug))
+
+    def setup(self, debug: bool = True):
+        pub.subscribe(self._sync_react_wrapper, self.memory_topic)
+        if debug:
+            logger.debug(f"Subscribed to memory topic: {self.memory_topic}")
+
+    async def react(self, frame: WebsocketFrame, debug: bool = True):
+        response = await self.thinker.generate(
+            messages=[
+                {
+                    "role": "system",
+                    "content": self.prompt.format(
+                        purpose=self.purpose, message=frame.frame.content
+                    ),
+                }
+            ]
+        )
+        self.knowledgebase.append(response.choices[0].message.content)
+
+        if debug:
+            logger.debug(f"\n{'^'*30}\n")
+            logger.debug(f"Listening agent {self.agent_id} new message received:")
+            logger.debug(frame.frame.content)
+            logger.debug(f"\n{'*'*30}\n")
+            logger.debug(f"Listening agent {self.agent_id} response:")
+            logger.debug(response.choices[0].message.content)
+            logger.debug(f"\n{'^'*30}\n")
+
+    @property
+    def prompt(self):
+        return """
+        You are an agent that is listening to the ongoing conversation.
+        Your purpose is: {purpose}
+        The incoming message is: {message}
+        Your job is to absorb the information contextualized to your purpose.
+        """
+
+
 class Agent:
     debug = DEBUG_CONFIG["agent"]
 
@@ -283,6 +339,18 @@ class Agent:
         self.interview = Interview(self.thinker, self.memory, self.channel)
         self.setup()
 
+    def setup_listening_agents(self, debug: bool = True) -> list[ListeningAgent]:
+        return [
+            ListeningAgent(
+                purpose="To collect the information about the emotional qualities we are looking for in the hire",
+                parent_agent_id=self.agent_id,
+            ),
+            ListeningAgent(
+                purpose="To collect the information about the physical qualities we are looking for in the hire",
+                parent_agent_id=self.agent_id,
+            ),
+        ]
+
     def cleanup(self, debug: bool = True):
         """Cleanup method to unsubscribe from the memory topic"""
         pub.unsubscribe(self._on_memory_update, self.memory_topic)
@@ -294,6 +362,9 @@ class Agent:
         pub.subscribe(self._on_memory_update, self.memory_topic)
         if self.debug and debug:
             logger.debug(f"Subscribed to memory topic: {self.memory_topic}")
+        self.listening_agents = self.setup_listening_agents(debug)
+        for listening_agent in self.listening_agents:
+            listening_agent.setup(debug)
 
     def _on_memory_update(self, frame: WebsocketFrame):
         if self.debug:
