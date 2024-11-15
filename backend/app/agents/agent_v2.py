@@ -12,6 +12,7 @@ from pubsub import pub
 
 from app.services.llms.openai_client import openai_async_client
 from app.types.interview_concept_types import (
+    MockInterviewQuestion,
     QuestionAndAnswer,
     hiring_requirements,
 )
@@ -20,25 +21,10 @@ from app.websocket_handler import Channel
 
 import logging
 
-# Create a child logger instance
+# Create a logger instance
 logger = logging.getLogger(__name__)
 
-# Add handlers to the child logger
-file_handler = logging.FileHandler("logs/app.jsonl", mode="a")  # 'a' mode for appending
-stream_handler = logging.StreamHandler()
-
-# Set the logging level and format for the handlers
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-file_handler.setFormatter(formatter)
-stream_handler.setFormatter(formatter)
-
-# Add the handlers to the logger
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
-
-# Optionally set the logging level for the child logger
-logger.setLevel(logging.DEBUG)
-logger.propagate = False
+# globally unify the model
 
 # globally unify the model
 model = "gpt-4o-mini-2024-07-18"
