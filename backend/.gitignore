@@ -166,3 +166,4 @@ secrets
 docs/sample
 logs
 **/commit_details.txt
+docs/ai_*

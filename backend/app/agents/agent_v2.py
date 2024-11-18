@@ -10,6 +10,8 @@ from pydantic import BaseModel
 import yaml
 from pubsub import pub
 
+from app.agents.memory.factory import create_memory_store
+from app.agents.memory.protocols import MemoryStore
 from app.services.llms.openai_client import openai_async_client
 from app.types.interview_concept_types import (
     MockInterviewQuestion,
@@ -170,92 +172,6 @@ class Thinker:
         return response
 
 
-class Memory:
-    debug = DEBUG_CONFIG["memory"]
-
-    def __init__(self, memory_topic: str):
-        self.memory: list[WebsocketFrame] = []
-        self.memory_topic = memory_topic
-
-    def add(self, frame: WebsocketFrame):
-        self.memory.append(frame)
-        pub.sendMessage(self.memory_topic, frame=frame)
-
-    def clear(self):
-        self.memory = []
-
-    def parent_frame_for_completion_chunk(
-        self, completion_frame: CompletionFrameChunk, debug: bool = False
-    ) -> WebsocketFrame:
-        """
-        Find the parent frame for a completion frame chunk.
-        This is useful when a completion frame chunk is generated, and we need to find the parent frame.
-
-        Args:
-            completion_frame (CompletionFrameChunk): The completion frame chunk to find the parent frame for.
-
-        Returns:
-            WebsocketFrame: The parent frame for the completion frame chunk.
-        """
-        try:
-            parent_frame = next(
-                (
-                    frame
-                    for frame in self.memory[::-1]
-                    if frame.frame.id == completion_frame.id
-                )
-            )
-            if self.debug and debug:
-                logger.debug(
-                    f"Found parent frame: {parent_frame.model_dump_json(indent=4)}"
-                )
-            return parent_frame
-        except StopIteration:
-            if self.debug and debug:
-                logger.debug(
-                    f"No parent frame found for completion frame: {completion_frame.id}"
-                )
-                logger.debug("Available websocket frame, completion chunk ids")
-                logger.debug(
-                    [
-                        (frame.frame.id, frame.frame.content)
-                        for frame in self.memory[::-1]
-                    ]
-                )
-            return None
-
-    def extract_memory_for_generation(
-        self,
-        custom_user_instruction: dict[str, str] = None,
-        address_filter: list[AddressType] = [],
-    ) -> list[dict[str, str]]:
-        with open("config/agent_v2.yaml", "r") as file:
-            config = yaml.safe_load(file)
-            system = [
-                {
-                    "role": "system",
-                    "content": config["interview_agent"]["system_prompt"],
-                }
-            ]
-            # print("system", system)
-
-        return (
-            system
-            + [
-                {
-                    "role": message.frame.role,
-                    "content": message.frame.content,
-                }
-                for message in self.memory
-                if not address_filter or message.address in address_filter
-            ]
-            + ([custom_user_instruction] if custom_user_instruction else [])
-        )
-
-    def get(self):
-        return self.memory
-
-
 class ListeningAgent:
     """Purpose is to have a purpose, and to be plugged into a knowledgebase
     The knowledgebase is the ongoing conversation.
@@ -320,7 +236,7 @@ class Agent:
         self.thinker = Thinker()
         # define topic for the agent's memory
         self.memory_topic = f"agent.{self.agent_id}.memory"
-        self.memory = Memory(self.memory_topic)
+        self.memory = create_memory_store(self.memory_topic)
         self.channel = channel
         self.interview = Interview(self.thinker, self.memory, self.channel)
         self.setup()
@@ -480,10 +396,42 @@ class Agent:
             return
 
 
+class MockInterview:
+    def __init__(self, thinker: Thinker, memory: MemoryStore):
+        self.thinker = thinker
+        self.memory = memory
+
+    async def __call__(self, frame_id: str):
+        # extract questions from the interview questions document and rubric params that it is associated with
+        mock_interview_questions = await self.extract_questions_and_rubric_params()
+        # generate a sample answer for each question - {sample_answer, sample_answer_framework, sample_answer_concepts}
+        # package it in a websocket frame and send it to the user as a thought
+        # wait for the user to answer
+        # check if the answer covers the areas in the rating rubric
+        pass
+
+    async def extract_questions_and_rubric_params(self, file_path: str):
+        # extract questions from the interview questions document and rubric params that it is associated with
+        # return a list of MockInterviewQuestion
+        with open(file_path, "r") as file:
+            yaml_content = yaml.safe_load(file)
+
+        questions = yaml_content["artifacts"]["interview_questions"]
+        response = await self.thinker.extract_structured_response(
+            pydantic_structure_to_extract=list[MockInterviewQuestion],
+            messages=[{"role": "user", "content": questions}],
+        )
+        with open("logs/mock_interview_questions.jsonl", "a") as file:
+            for ans in response:
+                file.write(ans.model_dump_json(indent=4))
+                file.write("\n--------------------------------\n")
+        return response
+
+
 class Interview:
     debug = DEBUG_CONFIG["interview"]
 
-    def __init__(self, thinker: Thinker, memory: Memory, channel: Channel):
+    def __init__(self, thinker: Thinker, memory: MemoryStore, channel: Channel):
         self.concepts = hiring_requirements.copy()
         self.thinker = thinker
         self.memory = memory

@@ -1,12 +1,14 @@
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+
 
 class Context(BaseModel):
     context: str = Field(
         ...,
         description="The context for the interview",
     )
+
 
 class Concept(BaseModel):
     reward: Literal["excellent", "acceptable", "lacking"] = Field(
@@ -133,6 +135,27 @@ class QuestionAndAnswer(BaseModel):
         description="If the info given by the user has information that can be used to answer the question, then this is the partial answer derived from the user's messages.",
         title="Hiring manager answer",
     )
+
+
+################################################################################
+######################## Mock interview Types ##################################
+
+
+class MockInterviewQuestion(BaseModel):
+    question: str = Field(..., description="question to ask the candidate")
+    rubric_params: list[str] = Field(
+        ..., description="rubric params that the question is associated with"
+    )
+    sample_answer: list[str] = Field(
+        ..., description="Possible sample answers to the question"
+    )
+    sample_answer_framework: list[str] = Field(
+        ...,
+        description="Possible frameworks for a good answer, this would be used to evaluate the structure that the candidate uses to answer the question",
+    )
+
+
+################################################################################
 
 
 def main(): ...

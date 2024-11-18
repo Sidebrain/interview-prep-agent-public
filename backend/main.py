@@ -6,6 +6,7 @@ import os, sys
 
 from app.api.v1.router import router as api_v1_router
 from app.api.v2.router import router as api_v2_router
+from app.services import setup_logging
 
 
 def verify_secrets():
@@ -25,8 +26,8 @@ verify_secrets()
 
 app = FastAPI()
 
-# Set up basic logging
-logging.basicConfig(level=logging.ERROR)
+# Set up logging
+setup_logging(debug=True)
 logger = logging.getLogger(__name__)
 
 
