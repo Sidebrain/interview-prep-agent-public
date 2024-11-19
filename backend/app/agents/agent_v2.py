@@ -10,8 +10,8 @@ from pydantic import BaseModel
 import yaml
 from pubsub import pub
 
-from app.agents.memory.factory import create_memory_store
-from app.agents.memory.protocols import MemoryStore
+from app.event_agents.memory.factory import create_memory_store
+from app.event_agents.memory.protocols import MemoryStore
 from app.services.llms.openai_client import openai_async_client
 from app.types.interview_concept_types import (
     MockInterviewQuestion,

@@ -29,13 +29,25 @@ def setup_logging(debug: bool = False):
         "loggers": {
             "": {
                 "handlers": ["default"],
-                "level": "DEBUG" if debug else "INFO",
+                "level": "WARNING",
                 "propagate": True,
             },
-            "app.agents.memory": {
-                "handlers": ["default", "file"],
+            "app": {
+                "handlers": ["default"],
                 "level": "DEBUG" if debug else "INFO",
                 "propagate": False,
+            },
+            "urllib3": {
+                "level": "WARNING",
+            },
+            "asyncio": {
+                "level": "WARNING",
+            },
+            "websockets": {
+                "level": "WARNING",
+            },
+            "httpx": {
+                "level": "WARNING",
             },
         },
     }
