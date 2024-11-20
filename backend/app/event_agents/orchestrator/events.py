@@ -29,7 +29,10 @@ class ThinkEvent(BaseEvent):
     messages: list[dict[str, str]] = Field(default_factory=list)
 
 
-class MemoryUpdateEvent(BaseEvent):
+class AddToMemoryEvent(BaseEvent):
     session_id: UUID
-    client_id: UUID
-    memory: list[WebsocketFrame] 
+    frame: WebsocketFrame
+
+class MessageReceivedEvent(BaseEvent):
+    message: str
+    session_id: UUID

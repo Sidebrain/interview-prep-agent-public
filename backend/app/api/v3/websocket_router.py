@@ -14,7 +14,7 @@ async def websocket_endpoint(websocket: WebSocket):
     agent = await manager.connect(websocket=websocket, token=client_id)
     try:
         while True:
-            await agent.receive_message()
+            await agent.channel.receive_message()
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)

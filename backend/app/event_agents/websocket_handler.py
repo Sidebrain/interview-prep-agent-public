@@ -1,10 +1,16 @@
+import logging
 from typing import TYPE_CHECKING
 
 from fastapi import WebSocket
 
+from app.event_agents.orchestrator.events import MessageReceivedEvent
+
 
 if TYPE_CHECKING:
     from app.event_agents.orchestrator.broker import Agent
+
+
+logger = logging.getLogger(__name__)
 
 
 class Channel:
@@ -22,8 +28,14 @@ class Channel:
                 await self.process_heartbeat()
                 return None
             case _:
+                event = MessageReceivedEvent(
+                    message=message_from_client,
+                    session_id=self.agent.session_id,
+                )
+                logger.info(f"Publishing message received event: {event}")
+                await self.agent.broker.publish(event)
                 #! TODO: I dont know why i am sending the message back to the client
-                await self.send_message(message_from_client)
+                # await self.send_message(message_from_client)
                 return message_from_client
 
     async def route_message(self, message: str):

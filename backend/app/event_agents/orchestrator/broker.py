@@ -1,5 +1,6 @@
 import asyncio
 from collections import defaultdict
+import json
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel
@@ -7,7 +8,11 @@ from pydantic import BaseModel
 from app.event_agents.orchestrator.thinker import Thinker
 from app.event_agents.memory.factory import create_memory_store
 from app.agents.dispatcher import Dispatcher
-from app.event_agents.orchestrator.events import StartEvent
+from app.event_agents.orchestrator.events import (
+    AddToMemoryEvent,
+    MessageReceivedEvent,
+    StartEvent,
+)
 from app.event_agents.websocket_handler import Channel
 
 import logging
@@ -93,6 +98,10 @@ class Agent:
 
     async def setup_subscribers(self):
         await self.broker.subscribe(StartEvent, self.handle_start_event)
+        await self.broker.subscribe(
+            MessageReceivedEvent, self.handle_message_received_event
+        )
+        await self.broker.subscribe(AddToMemoryEvent, self.memory.add)
 
     async def handle_start_event(self, event: StartEvent):
         """
@@ -108,9 +117,20 @@ class Agent:
         )
         await self.channel.send_message(websocket_frame.model_dump_json(by_alias=True))
 
-    async def receive_message(self):
+    async def handle_message_received_event(self, event: MessageReceivedEvent):
         """
-        Receive a message from the channel.
+        Handle the message received event.
         """
-        message = await self.channel.receive_message()
-        print(f"Received message: {message}")
+        message = event.message
+        if message == None:
+            return
+        try:
+            parsed_message = WebsocketFrame.model_validate_json(message, strict=False)
+            logger.info(
+                f"Received message, parsed into websocket frame: {parsed_message}"
+            )
+            event = AddToMemoryEvent(frame=parsed_message)
+            await self.broker.publish(event)
+        except json.JSONDecodeError:
+            logger.error("Failed to decode the message")
+            return

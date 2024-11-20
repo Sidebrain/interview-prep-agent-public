@@ -31,8 +31,9 @@ class InMemoryStore:
         self.message_publisher = message_publisher
         self.debug = debug
 
-    def add(self, frame: WebsocketFrame) -> None:
+    async def add(self, frame: WebsocketFrame) -> None:
         """Add a frame to memory and publish update."""
+        logger.info(f"Adding frame to memory: {frame.model_dump_json(indent=4)}")
         self.memory.append(frame)
         # self.message_publisher.publish(self.memory_topic, frame)
 
