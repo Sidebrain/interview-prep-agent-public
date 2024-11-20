@@ -61,7 +61,7 @@ const TopButtonTray = ({ onClose, title }: TopButtonTrayProps) => {
 
 type BottomButtonTrayProps = {
   onCopy: () => void;
-  onDownload: (format: 'pdf' | 'md') => void;
+  onDownload: (format: "pdf" | "md") => void;
   onRegenerate: () => void;
   isRegenerating: boolean;
   numVersions: number;
@@ -84,19 +84,22 @@ const BottomButtonTray = ({
   // Handle clicking outside the dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowDownloadMenu(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
     <div className="flex justify-between items-center bg-gray-200">
       {
-        <div className="flex gap-1 p-1">
+        <div className="flex gap-1 p-1 pl-2">
           {[...Array(numVersions)].map((_, i) => (
             <Button
               key={i}
@@ -147,7 +150,7 @@ const BottomButtonTray = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  onDownload('pdf');
+                  onDownload("pdf");
                   setShowDownloadMenu(false);
                 }}
                 className="whitespace-nowrap px-4"
@@ -158,7 +161,7 @@ const BottomButtonTray = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  onDownload('md');
+                  onDownload("md");
                   setShowDownloadMenu(false);
                 }}
                 className="whitespace-nowrap px-4"
@@ -220,16 +223,16 @@ const ArtifactFrame = () => {
     }
   };
 
-  const handleDownloadArtifact = async (format: 'pdf' | 'md') => {
+  const handleDownloadArtifact = async (format: "pdf" | "md") => {
     if (!artifactObject[focus.title].length || focus.index === null) return;
-    
+
     const content = artifactObject[focus.title][focus.index].content || "";
     const title = artifactObject[focus.title][focus.index].title || "artifact";
-    
-    if (format === 'md') {
-      const blob = new Blob([content], { type: 'text/markdown' });
+
+    if (format === "md") {
+      const blob = new Blob([content], { type: "text/markdown" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `${title}.md`;
       document.body.appendChild(a);
@@ -243,14 +246,14 @@ const ArtifactFrame = () => {
       const { default: jsPDF } = await import("jspdf");
       const markdownIt = (await import("markdown-it")).default;
       const md = new markdownIt();
-      
+
       // Convert markdown to plain text
-      const plainText = md.render(content).replace(/<[^>]*>/g, '');
+      const plainText = md.render(content).replace(/<[^>]*>/g, "");
 
       // Create PDF
       const pdf = new jsPDF();
       const margin = 20;
-      const pageWidth = pdf.internal.pageSize.getWidth() - (2 * margin);
+      const pageWidth = pdf.internal.pageSize.getWidth() - 2 * margin;
       const pageHeight = pdf.internal.pageSize.getHeight();
       const lineHeight = 7;
       let cursorY = margin;
@@ -263,7 +266,7 @@ const ArtifactFrame = () => {
       // Add content with pagination
       pdf.setFontSize(12);
       const splitText = pdf.splitTextToSize(plainText, pageWidth);
-      
+
       splitText.forEach((line: string) => {
         if (cursorY >= pageHeight - margin) {
           pdf.addPage();
@@ -282,7 +285,7 @@ const ArtifactFrame = () => {
   const renderArtifactFrames = useCallback(() => {
     if (focus.index === null) return;
     return (
-      <div className="w-full bg-white rounded-lg shadow-lg max-w-4xl mx-auto my-2 flex flex-col h-full">
+      <div className="w-full bg-white rounded-lg shadow-lg max-w-4xl mx-auto flex flex-col h-full">
         <TopButtonTray
           onClose={() => setFocus({ title: "", index: null })}
           title={artifactObject[focus.title][focus.index].title || ""}
@@ -290,7 +293,7 @@ const ArtifactFrame = () => {
 
         {/* Content - scrollable */}
         <div className="flex-1 overflow-auto min-h-0">
-          <div className="p-6">
+          <div className="p-4">
             <Markdown
               remarkPlugins={[remarkGfm]}
               className="markdown-content break-words text-sm"

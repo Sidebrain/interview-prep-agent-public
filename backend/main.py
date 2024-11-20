@@ -6,6 +6,8 @@ import os, sys
 
 from app.api.v1.router import router as api_v1_router
 from app.api.v2.router import router as api_v2_router
+from app.api.v3.router import router as api_v3_router
+from app.services import setup_logging
 
 
 def verify_secrets():
@@ -23,11 +25,12 @@ def verify_secrets():
 
 verify_secrets()
 
-app = FastAPI()
 
-# Set up basic logging
-logging.basicConfig(level=logging.ERROR)
+# Set up logging
+setup_logging(debug=True)
 logger = logging.getLogger(__name__)
+
+app = FastAPI()
 
 
 @app.middleware("http")
@@ -52,6 +55,7 @@ app.add_middleware(
 
 app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
 app.include_router(api_v2_router, prefix="/api/v2", tags=["v2"])
+app.include_router(api_v3_router, prefix="/api/v3", tags=["v3"])
 
 
 @app.get("/")

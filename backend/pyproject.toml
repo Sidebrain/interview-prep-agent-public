@@ -1,0 +1,8 @@
+[project]
+name = "ai-interviewer"
+version = "0.1.0"
+description = "AI Interviewer Backend"
+
+[tool.pytest.ini_options]
+pythonpath = "."
+testpaths = ["tests"] 

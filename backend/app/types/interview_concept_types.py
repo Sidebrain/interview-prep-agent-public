@@ -1,6 +1,13 @@
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+
+
+class Context(BaseModel):
+    context: str = Field(
+        ...,
+        description="The context for the interview",
+    )
 
 
 class Concept(BaseModel):
@@ -96,8 +103,8 @@ hiring_requirements = [
     Requirement,
     # Budget,
     # # Expected,
-    # Backup,
-    # CultureFit,
+    Backup,
+    CultureFit,
     # InternalRequirements,
 ]
 
@@ -114,7 +121,7 @@ class QuestionAndAnswer(BaseModel):
     )
     sample_answer: str = Field(
         ...,
-        description="A sample answer with a variety of possible answers generated using world knowledge. This is used to help the hiring manager understand the question and to generate an answer. Use question and the context so far to generate the answer.",
+        description="A sample answer using world knowledge and the context so far to answer the question. This is used to help the hiring manager have a good starting point that they can build on.",
         title="Expected answer",
     )
     options: str = Field(
@@ -124,14 +131,31 @@ class QuestionAndAnswer(BaseModel):
     )
     user_answer: str = Field(
         # default="",
+        ...,
         description="If the info given by the user has information that can be used to answer the question, then this is the partial answer derived from the user's messages.",
         title="Hiring manager answer",
     )
 
 
-# class Answer(BaseModel):
-#     answer: str = Field(..., description="User's parial answer to the question")
-#     score: float = Field(..., description="Whether the answer is correct")
+################################################################################
+######################## Mock interview Types ##################################
+
+
+class MockInterviewQuestion(BaseModel):
+    question: str = Field(..., description="question to ask the candidate")
+    rubric_params: list[str] = Field(
+        ..., description="rubric params that the question is associated with"
+    )
+    sample_answer: list[str] = Field(
+        ..., description="Possible sample answers to the question"
+    )
+    sample_answer_framework: list[str] = Field(
+        ...,
+        description="Possible frameworks for a good answer, this would be used to evaluate the structure that the candidate uses to answer the question",
+    )
+
+
+################################################################################
 
 
 def main(): ...

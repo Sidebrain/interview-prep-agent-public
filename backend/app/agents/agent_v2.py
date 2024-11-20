@@ -8,10 +8,15 @@ from openai import AsyncClient
 from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
 import yaml
+from pubsub import pub
+
+from app.agents.dispatcher import Dispatcher
+from app.constants import DEBUG_CONFIG
+from app.event_agents.memory.factory import create_memory_store
+from app.event_agents.memory.protocols import MemoryStore
 from app.services.llms.openai_client import openai_async_client
-
-
 from app.types.interview_concept_types import (
+    MockInterviewQuestion,
     QuestionAndAnswer,
     hiring_requirements,
 )
@@ -20,117 +25,15 @@ from app.websocket_handler import Channel
 
 import logging
 
-# Create a child logger instance
+# Create a logger instance
 logger = logging.getLogger(__name__)
 
-# Add handlers to the child logger
-file_handler = logging.FileHandler("logs/app.jsonl", mode="a")  # 'a' mode for appending
-stream_handler = logging.StreamHandler()
-
-# Set the logging level and format for the handlers
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-file_handler.setFormatter(formatter)
-stream_handler.setFormatter(formatter)
-
-# Add the handlers to the logger
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
-
-# Optionally set the logging level for the child logger
-logger.setLevel(logging.DEBUG)
-logger.propagate = False
+# globally unify the model
 
 # globally unify the model
 model = "gpt-4o-mini-2024-07-18"
 
 # After the imports, before the logger setup
-
-DEBUG_CONFIG = {
-    "dispatcher": False,
-    "thinker": False,
-    "interview": False,
-    "agent": True,
-    "memory": True,
-}
-
-
-class Dispatcher:
-    debug = DEBUG_CONFIG["dispatcher"]
-
-    @singledispatch
-    def package_and_transform_to_webframe(
-        response,
-        address: AddressType,
-        frame_id: str,
-        title: str = None,
-        debug: bool = False,
-    ) -> WebsocketFrame: ...
-
-    @package_and_transform_to_webframe.register(ChatCompletion)
-    def _(
-        response,
-        address: AddressType,
-        frame_id: str,
-        title: str = None,
-        debug: bool = False,
-    ):
-
-        completion_frame = CompletionFrameChunk(
-            id=response.id,
-            object=response.object,
-            model=response.model,
-            role=response.choices[0].message.role,
-            content=response.choices[0].message.content,
-            delta=None,
-            title=title,
-            index=response.choices[0].index,
-            finish_reason=response.choices[0].finish_reason,
-        )
-
-        websocket_frame = WebsocketFrame(
-            frame_id=frame_id,
-            type="completion",
-            address=address,
-            frame=completion_frame,
-        )
-
-        if Dispatcher.debug and debug:
-            logger.debug(websocket_frame.model_dump_json(indent=4))
-
-        return websocket_frame
-
-    @package_and_transform_to_webframe.register(BaseModel)
-    def _(
-        response,
-        address: AddressType,
-        frame_id: str,
-        title: str = None,
-        debug: bool = False,
-    ):
-        completion_frame = CompletionFrameChunk(
-            id=str(uuid4()),
-            object="chat.completion",
-            model=model,
-            role="assistant",
-            content=response.model_dump_json(indent=4, by_alias=True),
-            delta=None,
-            title=title,
-            index=0,
-            finish_reason="stop",
-        )
-
-        websocket_frame = WebsocketFrame(
-            frame_id=frame_id,
-            type="completion",
-            address=address,
-            frame=completion_frame,
-        )
-
-        if Dispatcher.debug and debug:
-            logger.debug(websocket_frame.model_dump_json(indent=4))
-
-        return websocket_frame
-
 
 class Thinker:
     debug = DEBUG_CONFIG["thinker"]
@@ -184,98 +87,107 @@ class Thinker:
         return response
 
 
-class Memory:
-    debug = DEBUG_CONFIG["memory"]
+class ListeningAgent:
+    """Purpose is to have a purpose, and to be plugged into a knowledgebase
+    The knowledgebase is the ongoing conversation.
+    When a new message comes in, the agent should be able to react
+    The reaction through absorbing the information contextualized to its purpose.
+    The prompt that will allow it to do this is:
+    """
 
-    def __init__(self):
-        self.memory: list[WebsocketFrame] = []
+    def __init__(self, purpose: str, parent_agent_id: str):
+        self.agent_id = str(uuid4())
+        self.purpose = purpose
+        self.parent_agent_id = parent_agent_id
+        self.memory_topic = f"agent.{self.parent_agent_id}.memory"
+        self.thinker = Thinker()
+        self.knowledgebase = []
 
-    def add(self, frame: WebsocketFrame):
-        self.memory.append(frame)
+    def _sync_react_wrapper(self, frame: WebsocketFrame, debug: bool = True):
+        asyncio.create_task(self.react(frame, debug))
 
-    def clear(self):
-        self.memory = []
+    def setup(self, debug: bool = True):
+        pub.subscribe(self._sync_react_wrapper, self.memory_topic)
+        if debug:
+            logger.debug(f"Subscribed to memory topic: {self.memory_topic}")
 
-    def parent_frame_for_completion_chunk(
-        self, completion_frame: CompletionFrameChunk, debug: bool = False
-    ) -> WebsocketFrame:
-        """
-        Find the parent frame for a completion frame chunk.
-        This is useful when a completion frame chunk is generated, and we need to find the parent frame.
-
-        Args:
-            completion_frame (CompletionFrameChunk): The completion frame chunk to find the parent frame for.
-
-        Returns:
-            WebsocketFrame: The parent frame for the completion frame chunk.
-        """
-        try:
-            parent_frame = next(
-                (
-                    frame
-                    for frame in self.memory[::-1]
-                    if frame.frame.id == completion_frame.id
-                )
-            )
-            if self.debug and debug:
-                logger.debug(
-                    f"Found parent frame: {parent_frame.model_dump_json(indent=4)}"
-                )
-            return parent_frame
-        except StopIteration:
-            if self.debug and debug:
-                logger.debug(
-                    f"No parent frame found for completion frame: {completion_frame.id}"
-                )
-                logger.debug("Available websocket frame, completion chunk ids")
-                logger.debug(
-                    [
-                        (frame.frame.id, frame.frame.content)
-                        for frame in self.memory[::-1]
-                    ]
-                )
-            return None
-
-    def extract_memory_for_generation(
-        self,
-        custom_user_instruction: dict[str, str] = None,
-        address_filter: list[AddressType] = [],
-    ):
-        with open("config/agent_v2.yaml", "r") as file:
-            config = yaml.safe_load(file)
-            system = [
+    async def react(self, frame: WebsocketFrame, debug: bool = True):
+        response = await self.thinker.generate(
+            messages=[
                 {
                     "role": "system",
-                    "content": config["interview_agent"]["system_prompt"],
+                    "content": self.prompt.format(
+                        purpose=self.purpose, message=frame.frame.content
+                    ),
                 }
             ]
-            # print("system", system)
-
-        return (
-            system
-            + [
-                {
-                    "role": message.frame.role,
-                    "content": message.frame.content,
-                }
-                for message in self.memory
-                if not address_filter or message.address in address_filter
-            ]
-            + ([custom_user_instruction] if custom_user_instruction else [])
         )
+        self.knowledgebase.append(response.choices[0].message.content)
 
-    def get(self):
-        return self.memory
+        if debug:
+            logger.debug(f"\n{'^'*30}\n")
+            logger.debug(f"Listening agent {self.agent_id} new message received:")
+            logger.debug(frame.frame.content)
+            logger.debug(f"\n{'*'*30}\n")
+            logger.debug(f"Listening agent {self.agent_id} response:")
+            logger.debug(response.choices[0].message.content)
+            logger.debug(f"\n{'^'*30}\n")
+
+    @property
+    def prompt(self):
+        return """
+        You are an agent that is listening to the ongoing conversation.
+        Your purpose is: {purpose}
+        The incoming message is: {message}
+        Your job is to absorb the information contextualized to your purpose.
+        """
 
 
 class Agent:
     debug = DEBUG_CONFIG["agent"]
 
     def __init__(self, channel: Channel):
+        self.agent_id = str(uuid4())
         self.thinker = Thinker()
-        self.memory = Memory()
+        # define topic for the agent's memory
+        self.memory_topic = f"agent.{self.agent_id}.memory"
+        self.memory = create_memory_store(self.memory_topic)
         self.channel = channel
         self.interview = Interview(self.thinker, self.memory, self.channel)
+        self.setup()
+
+    def setup_listening_agents(self, debug: bool = True) -> list[ListeningAgent]:
+        return [
+            ListeningAgent(
+                purpose="To collect the information about the emotional qualities we are looking for in the hire",
+                parent_agent_id=self.agent_id,
+            ),
+            ListeningAgent(
+                purpose="To collect the information about the physical qualities we are looking for in the hire",
+                parent_agent_id=self.agent_id,
+            ),
+        ]
+
+    def cleanup(self, debug: bool = True):
+        """Cleanup method to unsubscribe from the memory topic"""
+        pub.unsubscribe(self._on_memory_update, self.memory_topic)
+        if self.debug and debug:
+            logger.debug(f"Unsubscribed from memory topic: {self.memory_topic}")
+
+    def setup(self, debug: bool = True):
+        """Setup method to subscribe to the memory topic"""
+        pub.subscribe(self._on_memory_update, self.memory_topic)
+        if self.debug and debug:
+            logger.debug(f"Subscribed to memory topic: {self.memory_topic}")
+        self.listening_agents = self.setup_listening_agents(debug)
+        for listening_agent in self.listening_agents:
+            listening_agent.setup(debug)
+
+    def _on_memory_update(self, frame: WebsocketFrame):
+        if self.debug:
+            logger.debug(f"\n{'-'*30}\n")
+            logger.debug(f"Agent {self.agent_id} memory update received")
+            logger.debug(f"Memory updated: {frame.frame.content[:100]}...")
 
     async def think(self) -> None:
         """This function is called as soon as the websocket is connected.
@@ -399,10 +311,42 @@ class Agent:
             return
 
 
+class MockInterview:
+    def __init__(self, thinker: Thinker, memory: MemoryStore):
+        self.thinker = thinker
+        self.memory = memory
+
+    async def __call__(self, frame_id: str):
+        # extract questions from the interview questions document and rubric params that it is associated with
+        mock_interview_questions = await self.extract_questions_and_rubric_params()
+        # generate a sample answer for each question - {sample_answer, sample_answer_framework, sample_answer_concepts}
+        # package it in a websocket frame and send it to the user as a thought
+        # wait for the user to answer
+        # check if the answer covers the areas in the rating rubric
+        pass
+
+    async def extract_questions_and_rubric_params(self, file_path: str):
+        # extract questions from the interview questions document and rubric params that it is associated with
+        # return a list of MockInterviewQuestion
+        with open(file_path, "r") as file:
+            yaml_content = yaml.safe_load(file)
+
+        questions = yaml_content["artifacts"]["interview_questions"]
+        response = await self.thinker.extract_structured_response(
+            pydantic_structure_to_extract=list[MockInterviewQuestion],
+            messages=[{"role": "user", "content": questions}],
+        )
+        with open("logs/mock_interview_questions.jsonl", "a") as file:
+            for ans in response:
+                file.write(ans.model_dump_json(indent=4))
+                file.write("\n--------------------------------\n")
+        return response
+
+
 class Interview:
     debug = DEBUG_CONFIG["interview"]
 
-    def __init__(self, thinker: Thinker, memory: Memory, channel: Channel):
+    def __init__(self, thinker: Thinker, memory: MemoryStore, channel: Channel):
         self.concepts = hiring_requirements.copy()
         self.thinker = thinker
         self.memory = memory
@@ -410,7 +354,7 @@ class Interview:
         pass
 
     async def generate_q_and_a_for_concept(
-        self, concept: BaseModel, frame_id: str, debug: bool = False
+        self, concept: BaseModel, frame_id: str, debug: bool = True
     ) -> Tuple[WebsocketFrame, QuestionAndAnswer]:
         if self.debug and debug:
             logger.debug(f"printing the concept that is being interviewed: {concept}")
@@ -436,6 +380,13 @@ class Interview:
                 ),
             },
         )
+
+        if self.debug and debug:
+            logger.debug(f"messages that form context for question generation: ")
+            for m in messages:
+                logger.debug(f"{m.items()}")
+                logger.debug(f"\n{'-'*30}\n")
+
         q_and_a = await self.thinker.extract_structured_response(
             pydantic_structure_to_extract=QuestionAndAnswer,
             messages=messages,

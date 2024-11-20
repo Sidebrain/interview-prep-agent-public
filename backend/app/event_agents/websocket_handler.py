@@ -4,7 +4,7 @@ from fastapi import WebSocket
 
 
 if TYPE_CHECKING:
-    from app.agents.agent_v2 import Agent
+    from app.event_agents.orchestrator.broker import Agent
 
 
 class Channel:
@@ -17,12 +17,12 @@ class Channel:
 
     async def receive_message(self) -> str | None:
         message_from_client = await self.websocket.receive_text()
-        print(f"Received message: {message_from_client}")
         match message_from_client:
             case "ping":
                 await self.process_heartbeat()
                 return None
             case _:
+                #! TODO: I dont know why i am sending the message back to the client
                 await self.send_message(message_from_client)
                 return message_from_client
 
