@@ -5,9 +5,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 
+from app.event_agents.orchestrator.interview_manager import InterviewManager
 from app.event_agents.orchestrator.thinker import Thinker
 from app.event_agents.memory.factory import create_memory_store
-from app.agents.dispatcher import Dispatcher
 from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
     MessageReceivedEvent,
@@ -17,7 +17,7 @@ from app.event_agents.websocket_handler import Channel
 
 import logging
 
-from app.types.websocket_types import CompletionFrameChunk, WebsocketFrame
+from app.types.websocket_types import WebsocketFrame
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +88,9 @@ class Agent:
         self.channel = channel
         self.thinker = Thinker()
         self.memory = create_memory_store()
+        self.interview_manager = InterviewManager(
+            broker=self.broker, thinker=self.thinker
+        )
 
     async def start(self):
         """
@@ -102,20 +105,16 @@ class Agent:
             MessageReceivedEvent, self.handle_message_received_event
         )
         await self.broker.subscribe(AddToMemoryEvent, self.memory.add)
+        await self.broker.subscribe(WebsocketFrame, self.handle_websocket_frame)
+        await self.interview_manager.subscribe()
 
     async def handle_start_event(self, event: StartEvent):
         """
-        Handle the start event.
+        Here you would gather the questions from the Question list
         """
         logger.info(f"Starting agent {self.agent_id} for session {event.session_id}")
 
-        frame_id = str(uuid4())
-        messages = self.memory.extract_memory_for_generation()
-        response = await self.thinker.generate(messages=messages, debug=True)
-        websocket_frame = Dispatcher.package_and_transform_to_webframe(
-            response, "content", frame_id
-        )
-        await self.channel.send_message(websocket_frame.model_dump_json(by_alias=True))
+        await self.interview_manager.initialize(session_id=event.session_id)
 
     async def handle_message_received_event(self, event: MessageReceivedEvent):
         """
@@ -134,3 +133,10 @@ class Agent:
         except json.JSONDecodeError:
             logger.error("Failed to decode the message")
             return
+
+    async def handle_websocket_frame(self, event: WebsocketFrame):
+        """
+        Handle the websocket frame.
+        """
+        logger.info(f"Sending websocket frame via channel")
+        await self.channel.send_message(event.model_dump_json(by_alias=True))

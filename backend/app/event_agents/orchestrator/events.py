@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from app.types.interview_concept_types import QuestionAndAnswer
 from app.types.websocket_types import WebsocketFrame
 
 
@@ -23,16 +24,15 @@ class WebsocketMessageEvent(BaseEvent):
     client_id: UUID
 
 
-class ThinkEvent(BaseEvent):
-    session_id: UUID
-    client_id: UUID
-    messages: list[dict[str, str]] = Field(default_factory=list)
-
-
 class AddToMemoryEvent(BaseEvent):
     session_id: UUID
     frame: WebsocketFrame
 
+
 class MessageReceivedEvent(BaseEvent):
     message: str
+    session_id: UUID
+
+class QuestionsGatheredEvent(BaseEvent):
+    questions: list[QuestionAndAnswer]
     session_id: UUID
