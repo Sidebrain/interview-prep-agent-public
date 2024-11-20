@@ -10,6 +10,8 @@ from pydantic import BaseModel
 import yaml
 from pubsub import pub
 
+from app.agents.dispatcher import Dispatcher
+from app.constants import DEBUG_CONFIG
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.memory.protocols import MemoryStore
 from app.services.llms.openai_client import openai_async_client
@@ -32,93 +34,6 @@ logger = logging.getLogger(__name__)
 model = "gpt-4o-mini-2024-07-18"
 
 # After the imports, before the logger setup
-
-DEBUG_CONFIG = {
-    "dispatcher": False,
-    "thinker": False,
-    "interview": False,
-    "agent": True,
-    "memory": True,
-}
-
-
-class Dispatcher:
-    debug = DEBUG_CONFIG["dispatcher"]
-
-    @singledispatch
-    def package_and_transform_to_webframe(
-        response,
-        address: AddressType,
-        frame_id: str,
-        title: str = None,
-        debug: bool = False,
-    ) -> WebsocketFrame: ...
-
-    @package_and_transform_to_webframe.register(ChatCompletion)
-    def _(
-        response,
-        address: AddressType,
-        frame_id: str,
-        title: str = None,
-        debug: bool = False,
-    ):
-
-        completion_frame = CompletionFrameChunk(
-            id=response.id,
-            object=response.object,
-            model=response.model,
-            role=response.choices[0].message.role,
-            content=response.choices[0].message.content,
-            delta=None,
-            title=title,
-            index=response.choices[0].index,
-            finish_reason=response.choices[0].finish_reason,
-        )
-
-        websocket_frame = WebsocketFrame(
-            frame_id=frame_id,
-            type="completion",
-            address=address,
-            frame=completion_frame,
-        )
-
-        if Dispatcher.debug and debug:
-            logger.debug(websocket_frame.model_dump_json(indent=4))
-
-        return websocket_frame
-
-    @package_and_transform_to_webframe.register(BaseModel)
-    def _(
-        response,
-        address: AddressType,
-        frame_id: str,
-        title: str = None,
-        debug: bool = False,
-    ):
-        completion_frame = CompletionFrameChunk(
-            id=str(uuid4()),
-            object="chat.completion",
-            model=model,
-            role="assistant",
-            content=response.model_dump_json(indent=4, by_alias=True),
-            delta=None,
-            title=title,
-            index=0,
-            finish_reason="stop",
-        )
-
-        websocket_frame = WebsocketFrame(
-            frame_id=frame_id,
-            type="completion",
-            address=address,
-            frame=completion_frame,
-        )
-
-        if Dispatcher.debug and debug:
-            logger.debug(websocket_frame.model_dump_json(indent=4))
-
-        return websocket_frame
-
 
 class Thinker:
     debug = DEBUG_CONFIG["thinker"]

@@ -1,10 +1,13 @@
 import asyncio
 from collections import defaultdict
-from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
+from app.event_agents.orchestrator.thinker import Thinker
+from app.event_agents.memory.factory import create_memory_store
+from app.agents.dispatcher import Dispatcher
+from app.event_agents.orchestrator.events import StartEvent
 from app.event_agents.websocket_handler import Channel
 
 import logging
@@ -12,23 +15,6 @@ import logging
 from app.types.websocket_types import CompletionFrameChunk, WebsocketFrame
 
 logger = logging.getLogger(__name__)
-
-
-class BaseEvent(BaseModel):
-    event_id: UUID = Field(default_factory=uuid4)
-    timestamp: int = Field(default_factory=lambda: int(datetime.now().timestamp()))
-    correlation_id: UUID = Field(default_factory=uuid4)  # to track related events
-
-
-class StartEvent(BaseEvent):
-    session_id: UUID
-    client_id: UUID
-
-
-class WebsocketMessageEvent(BaseEvent):
-    frame: WebsocketFrame
-    session_id: UUID
-    client_id: UUID
 
 
 class Broker:
@@ -95,40 +81,30 @@ class Agent:
         self.session_id: UUID = uuid4()
         self.broker: Broker = Broker()
         self.channel = channel
+        self.thinker = Thinker()
+        self.memory = create_memory_store()
 
     async def start(self):
         """
         Start the agent and subscribe to the start event.
         """
-        await self.broker.subscribe(StartEvent, self.handle_start_event)
+        await self.setup_subscribers()
         await self.broker.start()
+
+    async def setup_subscribers(self):
+        await self.broker.subscribe(StartEvent, self.handle_start_event)
 
     async def handle_start_event(self, event: StartEvent):
         """
         Handle the start event.
         """
         logger.info(f"Starting agent {self.agent_id} for session {event.session_id}")
-        print(f"Starting agent {self.agent_id} for session {event.session_id}")
-        frame_id = str(uuid4())
-        completion_frame = CompletionFrameChunk(
-            id=str(uuid4()),
-            object="chat.completion",
-            model="gpt-4-turbo",
-            role="assistant",
-            content="Hello! I'm your AI interviewer. I'll be asking you some questions to understand your qualifications better. Let's begin with your background.",
-            delta=None,
-            index=0,
-            finish_reason="stop",
-        )
 
-        websocket_frame = WebsocketFrame(
-            frame_id=frame_id,
-            type="completion",
-            address="content",
-            frame=completion_frame,
-        )
-        logger.info(
-            f"Sending completion frame: {websocket_frame.model_dump_json(indent=4)}"
+        frame_id = str(uuid4())
+        messages = self.memory.extract_memory_for_generation()
+        response = await self.thinker.generate(messages=messages, debug=True)
+        websocket_frame = Dispatcher.package_and_transform_to_webframe(
+            response, "content", frame_id
         )
         await self.channel.send_message(websocket_frame.model_dump_json(by_alias=True))
 

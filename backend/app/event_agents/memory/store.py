@@ -20,13 +20,13 @@ class InMemoryStore:
 
     def __init__(
         self,
-        memory_topic: str,
+        # memory_topic: str,
         config_provider: ConfigProvider,
         message_publisher: MessagePublisher,
         debug: bool = False,
     ):
         self.memory: List[WebsocketFrame] = []
-        self.memory_topic = memory_topic
+        # self.memory_topic = memory_topic
         self.config_provider = config_provider
         self.message_publisher = message_publisher
         self.debug = debug
@@ -34,7 +34,7 @@ class InMemoryStore:
     def add(self, frame: WebsocketFrame) -> None:
         """Add a frame to memory and publish update."""
         self.memory.append(frame)
-        self.message_publisher.publish(self.memory_topic, frame)
+        # self.message_publisher.publish(self.memory_topic, frame)
 
     def clear(self) -> None:
         """Clear all frames from memory."""
