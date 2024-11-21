@@ -95,7 +95,7 @@ class Agent:
         self.thinker = Thinker()
         self.memory = create_memory_store()
         self.interview_manager = InterviewManager(
-            broker=self.broker, thinker=self.thinker
+            broker=self.broker, thinker=self.thinker, session_id=self.session_id
         )
 
     async def start(self):
@@ -118,20 +118,25 @@ class Agent:
         """
         Here you would gather the questions from the Question list
         """
-        logger.info(f"Starting agent {self.agent_id} for session {event.session_id}")
-
-        asyncio.create_task(
-            self.interview_manager.initialize(session_id=event.session_id)
-        )
+        try:
+            logger.info(
+                f"Starting agent {self.agent_id} for session {event.session_id}"
+            )
+            # doing this because otherwise the event loop is blocked
+            # the status updates in the QuestionsGatheringEvent were not being published
+            asyncio.create_task(self.interview_manager.initialize())
+        except Exception as e:
+            logger.error(f"Error in handle_start_event: {str(e)}")
+            raise
 
     async def handle_message_received_event(self, event: MessageReceivedEvent):
         """
         Handle the message received event.
         """
-        message = event.message
-        if message == None:
-            return
         try:
+            message = event.message
+            if message == None:
+                return
             parsed_message = WebsocketFrame.model_validate_json(message, strict=False)
             logger.info(
                 f"Received message, parsed into websocket frame: {parsed_message}"
@@ -141,10 +146,17 @@ class Agent:
         except json.JSONDecodeError:
             logger.error("Failed to decode the message")
             return
+        except Exception as e:
+            logger.error(f"Error in handle_message_received_event: {str(e)}")
+            raise
 
     async def handle_websocket_frame(self, event: WebsocketFrame):
         """
         Handle the websocket frame.
         """
-        logger.info(f"Sending websocket frame via channel")
-        await self.channel.send_message(event.model_dump_json(by_alias=True))
+        try:
+            logger.info(f"Sending websocket frame via channel")
+            await self.channel.send_message(event.model_dump_json(by_alias=True))
+        except Exception as e:
+            logger.error(f"Error in handle_websocket_frame: {str(e)}")
+            raise

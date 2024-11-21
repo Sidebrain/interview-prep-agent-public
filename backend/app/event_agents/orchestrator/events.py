@@ -46,3 +46,8 @@ class QuestionsGatheringEvent(BaseEvent):
     status: Status
     questions: list[QuestionAndAnswer]
     session_id: UUID
+
+
+class UserReadyEvent(BaseEvent):
+    session_id: UUID
+    questions: list[QuestionAndAnswer]
