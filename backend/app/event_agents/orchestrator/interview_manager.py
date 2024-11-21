@@ -1,9 +1,10 @@
+import asyncio
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 from pydantic import BaseModel
 import yaml
 from app.agents.dispatcher import Dispatcher
-from app.event_agents.orchestrator.events import QuestionsGatheredEvent
+from app.event_agents.orchestrator.events import QuestionsGatheringEvent, Status
 import logging
 
 from app.types.interview_concept_types import QuestionAndAnswer
@@ -22,36 +23,69 @@ class InterviewManager:
 
     async def subscribe(self):
         await self.broker.subscribe(
-            QuestionsGatheredEvent, self.handle_questions_gathered_event
+            QuestionsGatheringEvent, self.handle_questions_gathering_event
         )
 
     async def initialize(self, session_id: UUID) -> list[QuestionAndAnswer]:
-        questions = await self.gather_questions()
-        questions_gathered_event = QuestionsGatheredEvent(
-            questions=questions, session_id=session_id
+        logger.info(f"Initializing interview session {session_id}")
+        
+        # First event
+        in_progress_event = QuestionsGatheringEvent(
+            status=Status.in_progress,
+            questions=[],
+            session_id=session_id,
         )
-        await self.broker.publish(questions_gathered_event)
+        
+        await self.broker.publish(in_progress_event)
+        logger.debug(f"Published in_progress event for session {session_id}")
+        
+        questions = await self.gather_questions()
+        logger.debug(f"Gathered {len(questions)} questions for session {session_id}")
+        
+        # Second event
+        completed_event = QuestionsGatheringEvent(
+            status=Status.completed,
+            questions=questions,
+            session_id=session_id,
+        )
+        
+        await self.broker.publish(completed_event)
+        logger.debug(f"Published completed event for session {session_id}")
+        
+        return questions
 
-    async def handle_questions_gathered_event(self, event: QuestionsGatheredEvent):
+    def gathering_status_string(self, status: Status) -> str:
+        match status:
+            case Status.in_progress:
+                return "Questions gathering in progress."
+            case Status.completed:
+                return "Questions gathering completed."
+            case Status.failed:
+                return "Questions gathering failed."
+            case Status.idle:
+                return "Questions gathering idle."
+
+    async def handle_questions_gathering_event(self, event: QuestionsGatheringEvent):
         """
         Handle the questions gathered event.
         """
-        logger.info(
-            f"\nQuestions gathering complete. {len(event.questions)} questions gathered.\n"
-        )
+        status_message = self.gathering_status_string(event.status)
+        logger.debug(f"Questions gathering status: {status_message}")
+        
         websocket_frame = Dispatcher.package_and_transform_to_webframe(
-            "Completed questions gathering.",
+            status_message,
             "content",
             frame_id=str(uuid4()),
         )
-        logger.info(f"websocket_frame: {websocket_frame.model_dump_json(indent=4)}")
+        logger.debug(f"Sending websocket frame for session {event.session_id}")
         await self.broker.publish(websocket_frame)
 
     async def gather_questions(self) -> list[QuestionAndAnswer]:
         with open("config/artifacts.yaml", "r") as f:
             artifacts = yaml.safe_load(f)
         question_string = artifacts["artifacts"]["interview_questions"]
-        logger.info(f"question_string: {question_string[:100]}")
+        logger.debug(f"Loaded question template (first 100 chars): {question_string[:100]}")
+        
         messages = [
             {"role": "user", "content": question_string},
         ]

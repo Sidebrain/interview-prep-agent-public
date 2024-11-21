@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -33,6 +34,15 @@ class MessageReceivedEvent(BaseEvent):
     message: str
     session_id: UUID
 
-class QuestionsGatheredEvent(BaseEvent):
+
+class Status(Enum):
+    in_progress = "in_progress"
+    completed = "completed"
+    failed = "failed"
+    idle = "idle"
+
+
+class QuestionsGatheringEvent(BaseEvent):
+    status: Status
     questions: list[QuestionAndAnswer]
     session_id: UUID

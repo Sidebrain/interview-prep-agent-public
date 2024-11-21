@@ -61,7 +61,13 @@ class Broker:
             handlers.extend(self._subscribers.get("*", []))
             logger.info(f"handlers including *: {handlers}")
 
-            await asyncio.gather(*[handler(event) for handler in handlers])
+            # await asyncio.gather(*[handler(event) for handler in handlers])
+            for handler in handlers:
+                logger.debug(f"Running handler: {handler} for event: {event_type}")
+                await handler(event)
+                logger.debug(
+                    f"Finished running handler: {handler} for event: {event_type}"
+                )
 
     async def stop(self):
         """
@@ -114,7 +120,9 @@ class Agent:
         """
         logger.info(f"Starting agent {self.agent_id} for session {event.session_id}")
 
-        await self.interview_manager.initialize(session_id=event.session_id)
+        asyncio.create_task(
+            self.interview_manager.initialize(session_id=event.session_id)
+        )
 
     async def handle_message_received_event(self, event: MessageReceivedEvent):
         """
