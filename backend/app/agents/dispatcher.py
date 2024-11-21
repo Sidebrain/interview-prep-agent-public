@@ -24,6 +24,40 @@ class Dispatcher:
         debug: bool = False,
     ) -> WebsocketFrame: ...
 
+    @package_and_transform_to_webframe.register(str)
+    def _(
+        response,
+        address: AddressType,
+        frame_id: str,
+        title: str = None,
+        debug: bool = False,
+    ):
+
+        completion_frame = CompletionFrameChunk(
+            id=str(uuid4()),
+            object="chat.completion",
+            model=model,
+            role="assistant",
+            content=response,
+            delta=None,
+            title=title,
+            index=0,
+            finish_reason="stop",
+        )
+
+        websocket_frame = WebsocketFrame(
+            frame_id=frame_id,
+            type="completion",
+            address=address,
+            frame=completion_frame,
+        )
+
+        if Dispatcher.debug and debug:
+            logger.debug(websocket_frame.model_dump_json(indent=4))
+
+        return websocket_frame
+
+
     @package_and_transform_to_webframe.register(ChatCompletion)
     def _(
         response,

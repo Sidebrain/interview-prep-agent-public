@@ -129,12 +129,6 @@ class QuestionAndAnswer(BaseModel):
         description="Some options that the hiring manager can choose from",
         title="Correct answer",
     )
-    user_answer: str = Field(
-        # default="",
-        ...,
-        description="If the info given by the user has information that can be used to answer the question, then this is the partial answer derived from the user's messages.",
-        title="Hiring manager answer",
-    )
 
 
 ################################################################################

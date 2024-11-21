@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
+from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from app.types.interview_concept_types import QuestionAndAnswer
 from app.types.websocket_types import WebsocketFrame
 
 
@@ -23,13 +25,29 @@ class WebsocketMessageEvent(BaseEvent):
     client_id: UUID
 
 
-class ThinkEvent(BaseEvent):
+class AddToMemoryEvent(BaseEvent):
     session_id: UUID
-    client_id: UUID
-    messages: list[dict[str, str]] = Field(default_factory=list)
+    frame: WebsocketFrame
 
 
-class MemoryUpdateEvent(BaseEvent):
+class MessageReceivedEvent(BaseEvent):
+    message: str
     session_id: UUID
-    client_id: UUID
-    memory: list[WebsocketFrame] 
+
+
+class Status(Enum):
+    in_progress = "in_progress"
+    completed = "completed"
+    failed = "failed"
+    idle = "idle"
+
+
+class QuestionsGatheringEvent(BaseEvent):
+    status: Status
+    questions: list[QuestionAndAnswer]
+    session_id: UUID
+
+
+class UserReadyEvent(BaseEvent):
+    session_id: UUID
+    questions: list[QuestionAndAnswer]
