@@ -10,6 +10,9 @@ from app.event_agents.orchestrator.thinker import Thinker
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
+    AskQuestionEvent,
+    InterviewEndEvent,
+    InterviewEndReason,
     MessageReceivedEvent,
     StartEvent,
 )
@@ -141,8 +144,26 @@ class Agent:
             logger.info(
                 f"Received message, parsed into websocket frame: {parsed_message}"
             )
-            event = AddToMemoryEvent(frame=parsed_message)
+            event = AddToMemoryEvent(
+                frame=parsed_message,
+                session_id=self.session_id,
+            )
             await self.broker.publish(event)
+
+            # ask the next question if there are any
+            if self.interview_manager.questions:
+                ask_question_event = AskQuestionEvent(
+                    question=self.interview_manager.questions.pop(0),
+                    session_id=self.session_id,
+                )
+                await self.broker.publish(ask_question_event)
+            else:
+                logger.info(f"No questions left to ask for session {self.session_id}")
+                interview_end_event = InterviewEndEvent(
+                    reason=InterviewEndReason.questions_exhausted,
+                    session_id=self.session_id,
+                )
+                await self.broker.publish(interview_end_event)
         except json.JSONDecodeError:
             logger.error("Failed to decode the message")
             return

@@ -44,10 +44,22 @@ class Status(Enum):
 
 class QuestionsGatheringEvent(BaseEvent):
     status: Status
-    questions: list[QuestionAndAnswer]
     session_id: UUID
 
 
-class UserReadyEvent(BaseEvent):
+class AskQuestionEvent(BaseEvent):
+    question: QuestionAndAnswer
     session_id: UUID
-    questions: list[QuestionAndAnswer]
+
+
+class InterviewEndReason(Enum):
+    questions_exhausted = "questions_exhausted"
+    user_ended = "user_ended"
+    error = "error"
+    timeout = "timeout"
+
+
+class InterviewEndEvent(BaseEvent):
+    reason: InterviewEndReason
+    session_id: UUID
+    timestamp: int = Field(default_factory=lambda: int(datetime.now().timestamp()))

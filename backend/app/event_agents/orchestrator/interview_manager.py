@@ -5,9 +5,11 @@ from pydantic import BaseModel
 import yaml
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.orchestrator.events import (
+    AskQuestionEvent,
+    InterviewEndEvent,
+    InterviewEndReason,
     QuestionsGatheringEvent,
     Status,
-    UserReadyEvent,
 )
 import logging
 
@@ -25,6 +27,9 @@ class InterviewManager:
         self.broker = broker
         self.thinker = thinker
         self.session_id = session_id
+        self.questions: list[QuestionAndAnswer] = []
+        self.max_time_allowed = 10
+        self.time_elapsed = 0
 
     async def subscribe(self):
         logger.debug(
@@ -33,35 +38,45 @@ class InterviewManager:
         await self.broker.subscribe(
             QuestionsGatheringEvent, self.handle_questions_gathering_event
         )
-        logger.debug(f"Subscribing to user ready event for session {self.session_id}")
-        await self.broker.subscribe(UserReadyEvent, self.handle_user_ready_event)
+        await self.broker.subscribe(AskQuestionEvent, self.handle_ask_question)
+        await self.broker.subscribe(InterviewEndEvent, self.handle_interview_end)
 
-    async def handle_user_ready_event(self, event: UserReadyEvent):
-        """
-        Handle the user ready event.
-        """
-        try:
-            logger.debug(f"User ready event received for session {event.session_id}")
-            await self.ask_question(event)
-        except Exception as e:
-            logger.error(f"Error handling user ready event: {e}", exc_info=True)
-            # You might want to publish an error event here if needed
+    async def handle_interview_end(self, event: InterviewEndEvent):
+        logger.info(f"Interview ended for session {self.session_id}")
+        match event.reason:
+            case InterviewEndReason.questions_exhausted:
+                logger.info(f"Questions exhausted for session {self.session_id}")
+                end_interview_message = Dispatcher.package_and_transform_to_webframe(
+                    "Questions exhausted. Interview ended.",
+                    "content",
+                    frame_id=str(uuid4()),
+                )
+                await self.broker.publish(end_interview_message)
+            case InterviewEndReason.timeout:
+                logger.info(f"Timeout for session {self.session_id}")
+                end_interview_message = Dispatcher.package_and_transform_to_webframe(
+                    "Timeout. Interview ended.",
+                    "content",
+                    frame_id=str(uuid4()),
+                )
+                await self.broker.publish(end_interview_message)
+            case _:
+                logger.info(f"Interview ended for session {self.session_id}")
 
-    async def ask_question(self, event: UserReadyEvent):
+    async def handle_ask_question(self, event: AskQuestionEvent):
         """
         Ask the next question.
         """
         frame_id = str(uuid4())
-        question = event.questions.pop(0)
         question_thought_frame = Dispatcher.package_and_transform_to_webframe(
-            question,
+            event.question,
             "thought",
             frame_id=frame_id,
         )
         await self.broker.publish(question_thought_frame)
 
         question_frame = Dispatcher.package_and_transform_to_webframe(
-            question.question,
+            event.question.question,
             "content",
             frame_id=frame_id,
         )
@@ -74,34 +89,44 @@ class InterviewManager:
         # First event
         in_progress_event = QuestionsGatheringEvent(
             status=Status.in_progress,
-            questions=[],
             session_id=self.session_id,
         )
 
         await self.broker.publish(in_progress_event)
         logger.debug(f"Published in_progress event for session {self.session_id}")
 
+        # gather questions and store them in the instance variable
         questions = await self.gather_questions()
+        self.questions = questions
+
         logger.debug(
             f"Gathered {len(questions)} questions for session {self.session_id}"
         )
 
         # Second event
-        completed_event = QuestionsGatheringEvent(
+        completed_question_gathering_event = QuestionsGatheringEvent(
             status=Status.completed,
-            questions=questions,
             session_id=self.session_id,
         )
 
-        await self.broker.publish(completed_event)
+        await self.broker.publish(completed_question_gathering_event)
         logger.debug(f"Published completed event for session {self.session_id}")
 
-        user_ready_event = UserReadyEvent(
-            questions=questions,
+        # Start time tracking in the background
+        asyncio.create_task(self.check_time_limit())
+
+        let_user_know_timer_started_event = Dispatcher.package_and_transform_to_webframe(
+            f"Timer started. You have {self.max_time_allowed} {'seconds' if self.max_time_allowed <= 60 else 'minutes'} to answer the questions.",
+            "content",
+            frame_id=str(uuid4()),
+        )
+        await self.broker.publish(let_user_know_timer_started_event)
+
+        ask_question_event = AskQuestionEvent(
+            question=self.questions.pop(0),
             session_id=self.session_id,
         )
-
-        await self.broker.publish(user_ready_event)
+        await self.broker.publish(ask_question_event)
 
         return questions
 
@@ -156,3 +181,21 @@ class InterviewManager:
             Questions, messages=messages, debug=True
         )
         return response.questions
+
+    async def check_time_limit(self):
+        """
+        Continuously checks if the interview has exceeded the maximum allowed time.
+        If exceeded, emits an InterviewEndEvent with timeout reason.
+        """
+        while True:
+            await asyncio.sleep(5)  # Check every 5 seconds
+            self.time_elapsed += 5
+
+            if self.time_elapsed >= self.max_time_allowed:
+                logger.info(f"Interview timeout reached for session {self.session_id}")
+                timeout_event = InterviewEndEvent(
+                    reason=InterviewEndReason.timeout,
+                    session_id=self.session_id,
+                )
+                await self.broker.publish(timeout_event)
+                break
