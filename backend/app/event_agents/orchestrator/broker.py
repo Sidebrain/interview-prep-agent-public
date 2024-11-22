@@ -157,7 +157,6 @@ class Agent:
         Handle the websocket frame.
         """
         try:
-            logger.info(f"Sending websocket frame via channel")
             await self.channel.send_message(event.model_dump_json(by_alias=True))
         except Exception as e:
             logger.error(f"Error in handle_websocket_frame: {str(e)}")
