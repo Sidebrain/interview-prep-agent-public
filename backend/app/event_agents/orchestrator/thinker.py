@@ -17,11 +17,10 @@ from openai import AsyncClient
 class Thinker:
     debug = DEBUG_CONFIG["thinker"]
 
-    def __init__(self, client: AsyncClient = None, debug: bool = True):
+    def __init__(self, client: AsyncClient = None):
         if client is None:
             client = openai_async_client
         self.client = client
-        self.debug = debug
 
     async def generate(
         self, messages: list[dict[str, str]], debug: bool = False

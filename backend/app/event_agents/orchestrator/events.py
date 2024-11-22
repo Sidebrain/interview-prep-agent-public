@@ -63,3 +63,6 @@ class InterviewEndEvent(BaseEvent):
     reason: InterviewEndReason
     session_id: UUID
     timestamp: int = Field(default_factory=lambda: int(datetime.now().timestamp()))
+
+class AnswerReceivedEvent(MessageReceivedEvent):
+    question: QuestionAndAnswer

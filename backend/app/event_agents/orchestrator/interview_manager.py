@@ -12,6 +12,7 @@ from app.event_agents.orchestrator.events import (
     Status,
 )
 import logging
+from functools import singledispatchmethod
 
 from app.types.interview_concept_types import QuestionAndAnswer
 
@@ -28,6 +29,7 @@ class InterviewManager:
         self.thinker = thinker
         self.session_id = session_id
         self.questions: list[QuestionAndAnswer] = []
+        self.current_question: QuestionAndAnswer | None = None
         self.max_time_allowed = 10
         self.time_elapsed = 0
 
@@ -40,6 +42,43 @@ class InterviewManager:
         )
         await self.broker.subscribe(AskQuestionEvent, self.handle_ask_question)
         await self.broker.subscribe(InterviewEndEvent, self.handle_interview_end)
+
+    async def ask_next_question(self, question: QuestionAndAnswer | None = None):
+        logger.debug(
+            f"\033[33mAsking next question for session {self.session_id}\033[0m"
+        )
+        logger.debug(f"\033[33mQuestions left: {len(self.questions)}\033[0m")
+        logger.debug(f"\033[33mCurrent question: {self.current_question}\033[0m")
+
+        if question is not None:
+            # Handle case where question is provided
+            self.current_question = question
+            ask_question_event = AskQuestionEvent(
+                question=question,
+                session_id=self.session_id,
+            )
+            await self.broker.publish(ask_question_event)
+        else:
+            # Handle case where no question is provided
+            try:
+                self.current_question = self.questions.pop(0)
+                logger.debug(
+                    f"\033[31mAsking question: {self.current_question.question} for session {self.session_id}\033[0m"
+                )
+            except IndexError:
+                logger.info(f"No questions left to ask for session {self.session_id}")
+                interview_end_event = InterviewEndEvent(
+                    reason=InterviewEndReason.questions_exhausted,
+                    session_id=self.session_id,
+                )
+                await self.broker.publish(interview_end_event)
+                return
+
+            ask_question_event = AskQuestionEvent(
+                question=self.current_question,
+                session_id=self.session_id,
+            )
+            await self.broker.publish(ask_question_event)
 
     async def handle_interview_end(self, event: InterviewEndEvent):
         logger.info(f"Interview ended for session {self.session_id}")
@@ -122,11 +161,8 @@ class InterviewManager:
         )
         await self.broker.publish(let_user_know_timer_started_event)
 
-        ask_question_event = AskQuestionEvent(
-            question=self.questions.pop(0),
-            session_id=self.session_id,
-        )
-        await self.broker.publish(ask_question_event)
+        # Start asking questions
+        await self.ask_next_question()
 
         return questions
 

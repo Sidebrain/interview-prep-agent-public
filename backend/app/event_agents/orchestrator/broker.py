@@ -37,7 +37,6 @@ class Broker:
         Subscribe to an event type with a handler function.
         """
         self._subscribers[event_type.__name__].append(handler)
-        logger.info(f"subscribers: {self._subscribers}")
 
     async def unsubscribe(self, event_type: BaseModel, handler: callable):
         """
@@ -60,17 +59,11 @@ class Broker:
             event_type = event.__class__.__name__
 
             handlers = self._subscribers.get(event_type, [])
-            logger.info(f"handlers: {handlers}")
             handlers.extend(self._subscribers.get("*", []))
-            logger.info(f"handlers including *: {handlers}")
 
             # await asyncio.gather(*[handler(event) for handler in handlers])
             for handler in handlers:
-                logger.debug(f"Running handler: {handler} for event: {event_type}")
                 await handler(event)
-                logger.debug(
-                    f"Finished running handler: {handler} for event: {event_type}"
-                )
 
     async def stop(self):
         """
@@ -151,19 +144,7 @@ class Agent:
             await self.broker.publish(event)
 
             # ask the next question if there are any
-            if self.interview_manager.questions:
-                ask_question_event = AskQuestionEvent(
-                    question=self.interview_manager.questions.pop(0),
-                    session_id=self.session_id,
-                )
-                await self.broker.publish(ask_question_event)
-            else:
-                logger.info(f"No questions left to ask for session {self.session_id}")
-                interview_end_event = InterviewEndEvent(
-                    reason=InterviewEndReason.questions_exhausted,
-                    session_id=self.session_id,
-                )
-                await self.broker.publish(interview_end_event)
+            await self.interview_manager.ask_next_question()
         except json.JSONDecodeError:
             logger.error("Failed to decode the message")
             return
