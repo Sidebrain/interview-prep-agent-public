@@ -1,34 +1,47 @@
 import asyncio
+import logging
+
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 from pydantic import BaseModel
 import yaml
 from app.agents.dispatcher import Dispatcher
+from app.event_agents.evaluations.manager import (
+    EvaluationManager,
+)
 from app.event_agents.orchestrator.events import (
+    AddToMemoryEvent,
     AskQuestionEvent,
     InterviewEndEvent,
     InterviewEndReason,
     QuestionsGatheringEvent,
     Status,
 )
-import logging
 
-from app.types.interview_concept_types import QuestionAndAnswer
+from app.types.interview_concept_types import (
+    QuestionAndAnswer,
+)
 from app.types.websocket_types import WebsocketFrame
 
 if TYPE_CHECKING:
-    from app.event_agents.orchestrator.thinker import Thinker
+    from app.event_agents.orchestrator.thinker import (
+        Thinker,
+    )
     from app.event_agents.orchestrator.broker import Broker
-
+    from app.event_agents.memory.protocols import (
+        MemoryStore,
+    )
 logger = logging.getLogger(__name__)
 
 
 class InterviewManager:
     def __init__(
         self,
+        session_id: UUID,
         broker: "Broker",
         thinker: "Thinker",
-        session_id: UUID,
+        memory_store: "MemoryStore",
+        eval_manager: EvaluationManager,
         max_time_allowed: int | None = None,
     ):
         self.broker = broker
@@ -37,27 +50,100 @@ class InterviewManager:
         self.max_time_allowed = (
             max_time_allowed if max_time_allowed else 2 * 60
         )  # 2 minutes default
-        self.time_manager = TimeManager(broker, session_id, self.max_time_allowed)
-        self.interview_event_handler = InterviewEventHandler(broker, session_id)
+        self.time_manager = TimeManager(
+            broker, session_id, self.max_time_allowed
+        )
+        self.interview_event_handler = (
+            InterviewEventHandler(broker, session_id)
+        )
         self.question_manager = QuestionManager(thinker)
+        self.eval_manager = eval_manager
+        self.memory_store = memory_store
 
-    async def subscribe(self):
+    async def subscribe(self) -> None:
+        """
+        Subscribe to interview-related events.
+
+        Subscribes to:
+        - QuestionsGatheringEvent
+        - AskQuestionEvent
+        - InterviewEndEvent
+        """
         logger.debug(
-            f"Subscribing to questions gathering event for session {self.session_id}"
+            "Subscribing to questions gathering event for session %s",
+            self.session_id,
         )
         await self.broker.subscribe(
             QuestionsGatheringEvent,
             self.interview_event_handler.handle_questions_gathering_event,
         )
         await self.broker.subscribe(
-            AskQuestionEvent, self.interview_event_handler.handle_ask_question
+            AskQuestionEvent,
+            self.interview_event_handler.handle_ask_question,
         )
         await self.broker.subscribe(
-            InterviewEndEvent, self.interview_event_handler.handle_interview_end
+            InterviewEndEvent,
+            self.interview_event_handler.handle_interview_end,
+        )
+        await self.broker.subscribe(
+            AddToMemoryEvent,
+            self.handle_add_to_memory_event,
         )
 
+    async def handle_add_to_memory_event(
+        self, new_memory_event: AddToMemoryEvent
+    ) -> None:
+        """
+        Handle the addition of a new memory event.
+        """
+        logger.info(
+            "\033[33mHandling add to memory event for session %s\033[0m",
+            self.session_id,
+        )
+        logger.info(
+            f"\033[33mAdding to memory: {new_memory_event.frame.model_dump_json(indent=4)}\033[0m"
+        )
+        try:
+            # add the frame to memory
+            await self.memory_store.add(
+                new_memory_event.frame
+            )
+            # reflection through evaluation
+            evaluations = await self.eval_manager.handle_evaluation(
+                questions=[
+                    self.question_manager.current_question
+                ]
+            )
+            # send these evaluations to the websocket
+            for evaluation in evaluations:
+                await self.broker.publish(evaluation)
+            # dont need the memory here, the memory has already been added to the store
+            await self.ask_next_question()
+        except Exception as e:
+            logger.error(
+                "Error handling add to memory event: %s",
+                e,
+                exc_info=True,
+            )
+
     async def initialize(self) -> list[QuestionAndAnswer]:
-        logger.info(f"Initializing interview session {self.session_id}")
+        """
+        Initialize the interview session and start the question gathering process.
+
+        This method:
+        1. Publishes initial questions gathering event
+        2. Gathers questions using the question manager
+        3. Publishes completion event
+        4. Starts the interview timer
+        5. Initiates the first question
+
+        Returns:
+            list[QuestionAndAnswer]: List of gathered questions for the interview
+        """
+        logger.info(
+            "Initializing interview session %s",
+            self.session_id,
+        )
 
         # First event
         in_progress_event = QuestionsGatheringEvent(
@@ -68,17 +154,24 @@ class InterviewManager:
         await self.broker.publish(in_progress_event)
 
         # gather questions and store them in the instance variable
-        questions = await self.question_manager.gather_questions()
-
-        # Second event
-        completed_question_gathering_event = QuestionsGatheringEvent(
-            status=Status.completed,
-            session_id=self.session_id,
+        questions = (
+            await self.question_manager.gather_questions()
         )
 
-        await self.broker.publish(completed_question_gathering_event)
+        # Second event
+        completed_question_gathering_event = (
+            QuestionsGatheringEvent(
+                status=Status.completed,
+                session_id=self.session_id,
+            )
+        )
+
+        await self.broker.publish(
+            completed_question_gathering_event
+        )
         logger.debug(
-            f"\033[33m\nCompleted gathering {len(self.question_manager.questions)} questions. Published event.\n\033[0m"
+            "\033[33m\nCompleted gathering %d questions. Published event.\n\033[0m",
+            len(self.question_manager.questions),
         )
 
         # Start time tracking in the background
@@ -89,30 +182,49 @@ class InterviewManager:
             "content",
             frame_id=str(uuid4()),
         )
-        await self.broker.publish(let_user_know_timer_started_event)
+        await self.broker.publish(
+            let_user_know_timer_started_event
+        )
 
         # Start asking questions
         try:
             await self.ask_next_question()
         except Exception as e:
-            logger.error(f"Error asking next question: {e}", exc_info=True)
+            logger.error(
+                f"Error asking next question: {e}",
+                exc_info=True,
+            )
 
         return questions
 
     async def ask_next_question(self) -> None:
+        """
+        Request the next question from the question manager and publish it.
+
+        If no questions remain, publishes an InterviewEndEvent.
+        If a question is available, publishes an AskQuestionEvent.
+        """
         logger.debug(
-            f"\033[33mAsking next question for session {self.session_id}\033[0m"
+            "\033[33mAsking next question for session %s\033[0m",
+            self.session_id,
         )
         logger.debug(
-            f"\033[33mQuestions left: {len(self.question_manager.questions)}\033[0m"
+            "\033[33mQuestions left: %d\033[0m",
+            len(self.question_manager.questions),
         )
         logger.debug(
-            f"\033[33mCurrent question: {self.question_manager.current_question}\033[0m"
+            "\033[33mCurrent question: %s\033[0m",
+            self.question_manager.current_question,
         )
 
-        next_question = await self.question_manager.get_next_question()
+        next_question = (
+            await self.question_manager.get_next_question()
+        )
         if next_question is None:
-            logger.info(f"No questions left to ask for session {self.session_id}")
+            logger.info(
+                "No questions left to ask for session %s",
+                self.session_id,
+            )
             interview_end_event = InterviewEndEvent(
                 reason=InterviewEndReason.questions_exhausted,
                 session_id=self.session_id,
@@ -128,7 +240,12 @@ class InterviewManager:
 
 
 class TimeManager:
-    def __init__(self, broker: "Broker", session_id: UUID, max_time_allowed: int):
+    def __init__(
+        self,
+        broker: "Broker",
+        session_id: UUID,
+        max_time_allowed: int,
+    ):
         self.broker = broker
         self.session_id = session_id
         self.max_time_allowed = max_time_allowed
@@ -136,15 +253,18 @@ class TimeManager:
 
     async def start_timer(self) -> None:
         """
+        Start the interview timer that monitors interview duration.
+
         Continuously checks if the interview has exceeded the maximum allowed time.
         If exceeded, emits an InterviewEndEvent with timeout reason.
+        Checks every 5 seconds until timeout or interview completion.
         """
         while True:
             await asyncio.sleep(5)  # Check every 5 seconds
             self.time_elapsed += 5
 
             if self.time_elapsed >= self.max_time_allowed:
-                logger.info(f"Interview timeout reached ")
+                logger.info("Interview timeout reached")
                 timeout_event = InterviewEndEvent(
                     reason=InterviewEndReason.timeout,
                     session_id=self.session_id,
@@ -157,14 +277,30 @@ class QuestionManager:
     def __init__(self, thinker: "Thinker"):
         self.thinker = thinker
         self.questions: list[QuestionAndAnswer] = []
-        self.current_question: QuestionAndAnswer | None = None
+        self.current_question: QuestionAndAnswer | None = (
+            None
+        )
 
-    async def gather_questions(self) -> list[QuestionAndAnswer]:
+    async def gather_questions(
+        self,
+    ) -> list[QuestionAndAnswer]:
+        """
+        Load and process interview questions from the configuration file.
+
+        Reads questions template from config/artifacts.yaml,
+        processes it through the thinker to generate structured questions.
+
+        Returns:
+            list[QuestionAndAnswer]: List of structured interview questions
+        """
         with open("config/artifacts.yaml", "r") as f:
             artifacts = yaml.safe_load(f)
-        question_string = artifacts["artifacts"]["interview_questions"]
+        question_string = artifacts["artifacts"][
+            "interview_questions"
+        ]
         logger.debug(
-            f"Loaded question template (first 100 chars): {question_string[:100]}"
+            "Loaded question template (first 100 chars): %s",
+            question_string[:100],
         )
 
         messages = [
@@ -174,21 +310,31 @@ class QuestionManager:
         class Questions(BaseModel):
             questions: list[QuestionAndAnswer]
 
-        response: Questions = await self.thinker.extract_structured_response(
-            Questions, messages=messages, debug=True
+        response: Questions = (
+            await self.thinker.extract_structured_response(
+                Questions, messages=messages, debug=True
+            )
         )
         self.questions = response.questions
         return response.questions
 
     async def get_next_question(self) -> QuestionAndAnswer:
+        """
+        Retrieve the next question from the question queue.
+
+        Returns:
+            QuestionAndAnswer: The next question to be asked
+            None: If no questions remain
+        """
         try:
             self.current_question = self.questions.pop(0)
             logger.debug(
-                f"\033[31mAsking question: {self.current_question.question} \033[0m"
+                "\033[31mAsking question: %s \033[0m",
+                self.current_question.question,
             )
             return self.current_question
         except IndexError:
-            logger.info(f"No questions left to ask")
+            logger.info("No questions left to ask")
             return None
 
 
@@ -197,55 +343,98 @@ class InterviewEventHandler:
         self.broker = broker
         self.session_id = session_id
 
-    async def handle_interview_end(self, event: InterviewEndEvent):
-        logger.info(f"Interview ended for session {self.session_id}")
+    async def handle_interview_end(
+        self, event: InterviewEndEvent
+    ):
+        """
+        Handle the end of an interview session.
+
+        Args:
+            event (InterviewEndEvent): Event containing the reason for interview end
+                (timeout or questions_exhausted)
+
+        Publishes appropriate end message to the websocket based on the end reason.
+        """
+        logger.info(
+            "Interview ended for session %s",
+            self.session_id,
+        )
         match event.reason:
             case InterviewEndReason.questions_exhausted:
-                logger.info(f"Questions exhausted for session {self.session_id}")
+                logger.info(
+                    "Questions exhausted for session %s",
+                    self.session_id,
+                )
                 end_interview_message = Dispatcher.package_and_transform_to_webframe(
                     "Questions exhausted. Interview ended.",
                     "content",
                     frame_id=str(uuid4()),
                 )
-                await self.broker.publish(end_interview_message)
+                await self.broker.publish(
+                    end_interview_message
+                )
             case InterviewEndReason.timeout:
-                logger.info(f"Timeout for session {self.session_id}")
+                logger.info(
+                    "Timeout for session %s",
+                    self.session_id,
+                )
                 end_interview_message = Dispatcher.package_and_transform_to_webframe(
                     "Timeout. Interview ended.",
                     "content",
                     frame_id=str(uuid4()),
                 )
-                await self.broker.publish(end_interview_message)
+                await self.broker.publish(
+                    end_interview_message
+                )
             case _:
-                logger.info(f"Interview ended for session {self.session_id}")
+                logger.info(
+                    "Interview ended for session %s",
+                    self.session_id,
+                )
 
-    async def handle_ask_question(self, event: AskQuestionEvent) -> WebsocketFrame:
+    async def handle_ask_question(
+        self, event: AskQuestionEvent
+    ) -> WebsocketFrame:
         """
-        Ask the next question.
+        Process and publish a question to be asked during the interview.
+
+        Args:
+            event (AskQuestionEvent): Event containing the question to be asked
+
+        Returns:
+            WebsocketFrame: The formatted question frame sent to the client
+
+        Publishes both a thought frame and content frame for the question.
         """
         frame_id = str(uuid4())
-        question_thought_frame = Dispatcher.package_and_transform_to_webframe(
-            event.question,
-            "thought",
-            frame_id=frame_id,
+        question_thought_frame = (
+            Dispatcher.package_and_transform_to_webframe(
+                event.question,
+                "thought",
+                frame_id=frame_id,
+            )
         )
         await self.broker.publish(question_thought_frame)
 
-        question_frame = Dispatcher.package_and_transform_to_webframe(
-            event.question.question,
-            "content",
-            frame_id=frame_id,
+        question_frame = (
+            Dispatcher.package_and_transform_to_webframe(
+                event.question.question,
+                "content",
+                frame_id=frame_id,
+            )
         )
         await self.broker.publish(question_frame)
         return question_frame
 
-    async def handle_questions_gathering_event(self, event: QuestionsGatheringEvent):
-        """
-        Handle the questions gathered event.
-        """
+    async def handle_questions_gathering_event(
+        self, event: QuestionsGatheringEvent
+    ) -> None:
         try:
-            status_message = self.gathering_status_string(event.status)
-            logger.debug(f"Questions gathering status: {status_message}")
+            status_message = event.status.value
+            logger.debug(
+                "Questions gathering status: %s",
+                status_message,
+            )
 
             websocket_frame = Dispatcher.package_and_transform_to_webframe(
                 status_message,
@@ -256,17 +445,7 @@ class InterviewEventHandler:
             await self.broker.publish(websocket_frame)
         except Exception as e:
             logger.error(
-                f"Error handling questions gathering event: {e}", exc_info=True
+                "Error handling questions gathering event: %s",
+                e,
+                exc_info=True,
             )
-            # You might want to publish an error event here
-
-    def gathering_status_string(self, status: Status) -> str:
-        match status:
-            case Status.in_progress:
-                return "Questions gathering in progress."
-            case Status.completed:
-                return "Questions gathering completed."
-            case Status.failed:
-                return "Questions gathering failed."
-            case Status.idle:
-                return "Questions gathering idle."

@@ -1,6 +1,10 @@
 from typing import Optional, List, Dict
 from .protocols import ConfigProvider, MessagePublisher
-from app.types.websocket_types import WebsocketFrame, CompletionFrameChunk, AddressType
+from app.types.websocket_types import (
+    WebsocketFrame,
+    CompletionFrameChunk,
+    AddressType,
+)
 
 import logging
 
@@ -32,8 +36,24 @@ class InMemoryStore:
         self.debug = debug
 
     async def add(self, frame: WebsocketFrame) -> None:
-        """Add a frame to memory and publish update."""
-        logger.info(f"Adding frame to memory: {frame.model_dump_json(indent=4)}")
+        """
+        Add a frame to memory and publish update.
+
+        Args:
+            frame: The WebsocketFrame to add to memory
+
+        Raises:
+            TypeError: If frame is not an instance of WebsocketFrame
+        """
+        logger.debug(
+            f"\033[32mAdding frame to memory: {frame.model_dump_json(indent=4)}\033[0m"
+        )
+
+        if not isinstance(frame, WebsocketFrame):
+            raise TypeError(
+                f"Expected WebsocketFrame but got {type(frame).__name__}"
+            )
+
         self.memory.append(frame)
         # self.message_publisher.publish(self.memory_topic, frame)
 
@@ -43,10 +63,12 @@ class InMemoryStore:
 
     def get(self) -> List[WebsocketFrame]:
         """Get all frames from memory."""
-        return self.memory.copy()  # Return copy to prevent external modification
+        return self.memory
 
     def find_parent_frame(
-        self, completion_frame: CompletionFrameChunk, debug: bool = False
+        self,
+        completion_frame: CompletionFrameChunk,
+        debug: bool = False,
     ) -> Optional[WebsocketFrame]:
         """Find parent frame for a completion chunk."""
         try:
@@ -67,10 +89,15 @@ class InMemoryStore:
                 logger.debug(
                     f"No parent frame found for completion frame: {completion_frame.id}"
                 )
-                logger.debug("Available websocket frame, completion chunk ids")
+                logger.debug(
+                    "Available websocket frame, completion chunk ids"
+                )
                 logger.debug(
                     [
-                        (frame.frame.id, frame.frame.content)
+                        (
+                            frame.frame.id,
+                            frame.frame.content,
+                        )
                         for frame in reversed(self.memory)
                     ]
                 )
@@ -78,7 +105,9 @@ class InMemoryStore:
 
     def extract_memory_for_generation(
         self,
-        custom_user_instruction: Optional[Dict[str, str]] = None,
+        custom_user_instruction: Optional[
+            Dict[str, str]
+        ] = None,
         address_filter: List[AddressType] = [],
     ) -> List[Dict[str, str]]:
         """Extract memory in format needed for generation."""
@@ -90,10 +119,16 @@ class InMemoryStore:
                 "content": message.frame.content,
             }
             for message in self.memory
-            if not address_filter or message.address in address_filter
+            if not address_filter
+            or message.address in address_filter
         ]
 
         if custom_user_instruction:
-            memory_content.append(custom_user_instruction)
+            memory_content.append(
+                {
+                    "role": "user",
+                    "content": custom_user_instruction,
+                }
+            )
 
         return system + memory_content

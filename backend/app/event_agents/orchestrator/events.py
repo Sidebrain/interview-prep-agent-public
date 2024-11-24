@@ -36,10 +36,10 @@ class MessageReceivedEvent(BaseEvent):
 
 
 class Status(Enum):
-    in_progress = "in_progress"
-    completed = "completed"
-    failed = "failed"
-    idle = "idle"
+    in_progress = "Questions gathering in progress."
+    completed = "Questions gathering completed."
+    failed = "Questions gathering failed."
+    idle = "Questions gathering idle."
 
 
 class QuestionsGatheringEvent(BaseEvent):
