@@ -21,7 +21,13 @@ from app.types.websocket_types import (
 logger = logging.getLogger(__name__)
 
 
-class EvaluatorBase:
+class EvaluatorBase(ABC):
+
+    def __init__(
+        self,
+        evaluation_instruction: str = "check the relevance of the answer to the question",
+    ):
+        self.evaluation_instruction = evaluation_instruction
 
     async def evaluate(
         self,
@@ -34,11 +40,11 @@ class EvaluatorBase:
         Evaluate an answer.
         """
         logger.debug("\033[32mEvaluating answer\033[0m")
-        context_messages = (
-            await self.retreive_context_messages(
-                questions,
-                memory_store,
-            )
+        context_messages = await self.retreive_and_build_context_messages(
+            questions=questions,
+            memory_store=memory_store,
+            address_filter=[],
+            custom_user_instruction=self.evaluation_instruction,
         )
         if debug:
             logger.debug(
@@ -65,18 +71,20 @@ class EvaluatorBase:
             )
         return evaluation_frame
 
-    async def retreive_context_messages(
+    async def retreive_and_build_context_messages(
         self,
         questions: List[QuestionAndAnswer],
         memory_store: "MemoryStore",
-        debug: bool = True,
+        address_filter: List[AddressType],
+        custom_user_instruction: str,
+        debug: bool = False,
     ) -> List[dict[str, str]]:
         """
         Retreive context from memory store.
         """
         messages = memory_store.extract_memory_for_generation(
-            address_filter=[],
-            custom_user_instruction="check the relevance of the answer to the question",
+            address_filter=address_filter,
+            custom_user_instruction=custom_user_instruction,
         )
         if debug:
             logger.debug(

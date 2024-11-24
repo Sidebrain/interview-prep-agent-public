@@ -6,8 +6,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 
-from app.event_agents.evaluations.evaluator_base import (
-    EvaluatorBase,
+from app.event_agents.evaluations.evaluators import (
+    relevance_evaluator,
+    exaggeration_evaluator,
+    embellishment_evaluator,
+    structured_thinking_evaluator,
 )
 from app.event_agents.orchestrator.interview_manager import (
     EvaluationManager,
@@ -144,8 +147,12 @@ class Agent:
             session_id=self.session_id,
             thinker=self.thinker,
             memory_store=self.memory_store,
-            #! TODO: add evaluators
-            evaluators=[EvaluatorBase()],
+            evaluators=[
+                relevance_evaluator,
+                exaggeration_evaluator,
+                embellishment_evaluator,
+                structured_thinking_evaluator,
+            ],
         )
         self.interview_manager = InterviewManager(
             session_id=self.session_id,
