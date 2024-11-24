@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from app.event_agents.evaluations.evaluators import (
     relevance_evaluator,
     exaggeration_evaluator,
-    embellishment_evaluator,
     structured_thinking_evaluator,
 )
 from app.event_agents.orchestrator.interview_manager import (
@@ -150,7 +149,6 @@ class Agent:
             evaluators=[
                 relevance_evaluator,
                 exaggeration_evaluator,
-                embellishment_evaluator,
                 structured_thinking_evaluator,
             ],
         )

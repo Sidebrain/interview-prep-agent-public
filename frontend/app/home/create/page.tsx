@@ -10,7 +10,7 @@ export default function InteractionArea() {
     <div className="w-full flex p-2 justify-center">
       <WebsocketProvider
         options={{
-          url: process.env.NEXT_PUBLIC_WS_URL_V2 || "",
+          url: process.env.NEXT_PUBLIC_WS_URL_V3 || "",
           enabled: true,
         }}
       >

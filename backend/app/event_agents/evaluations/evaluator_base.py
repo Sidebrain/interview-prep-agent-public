@@ -1,7 +1,8 @@
 import logging
-from typing import List
+from typing import List, TypeVar
 from uuid import uuid4
 from openai.types.chat import ChatCompletion
+from pydantic import BaseModel
 
 from app.agents import dispatcher
 from app.event_agents.memory.protocols import MemoryStore
@@ -20,14 +21,16 @@ from app.types.websocket_types import (
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T", str, BaseModel)
+
 
 class EvaluatorBase(ABC):
 
     def __init__(
         self,
-        evaluation_instruction: str = "check the relevance of the answer to the question",
+        evaluation_schema: T,
     ):
-        self.evaluation_instruction = evaluation_instruction
+        self.evaluation_schema = evaluation_schema
 
     async def evaluate(
         self,
@@ -40,11 +43,19 @@ class EvaluatorBase(ABC):
         Evaluate an answer.
         """
         logger.debug("\033[32mEvaluating answer\033[0m")
-        context_messages = await self.retreive_and_build_context_messages(
-            questions=questions,
-            memory_store=memory_store,
-            address_filter=[],
-            custom_user_instruction=self.evaluation_instruction,
+        context_messages = (
+            await self.retreive_and_build_context_messages(
+                questions=questions,
+                memory_store=memory_store,
+                address_filter=[],
+                custom_user_instruction=(
+                    self.evaluation_schema
+                    if isinstance(
+                        self.evaluation_schema, str
+                    )
+                    else None
+                ),
+            )
         )
         if debug:
             logger.debug(
@@ -100,6 +111,7 @@ class EvaluatorBase(ABC):
             )
         return messages
 
+    @abstractmethod
     async def ask_thinker_for_evaluation(
         self,
         messages: List[
@@ -115,16 +127,26 @@ class EvaluatorBase(ABC):
         )
         return response
 
-    # async def package_and_publish_evaluation(
-    #     self, evaluation: ChatCompletion
-    # ) -> None:
-    #     """
-    #     Package and publish the evaluation.
-    #     """
-    #     frame_to_publish = Dispatcher.package_and_transform_to_webframe(
-    #         evaluation,
-    #         address=AddressTypeEnum.THOUGHT,
-    #         #! for now new frame id, figuire out what to do later
-    #         frame_id=str(uuid4()),
-    #     )
-    #     raise NotImplementedError
+
+class EvaluatorSimple(EvaluatorBase):
+    async def ask_thinker_for_evaluation(
+        self,
+        messages: List[dict[str, str]],
+        thinker: "Thinker",
+    ) -> ChatCompletion:
+        return await super().ask_thinker_for_evaluation(
+            messages, thinker
+        )
+
+
+class EvaluatorStructured(EvaluatorBase):
+    async def ask_thinker_for_evaluation(
+        self,
+        messages: List[dict[str, str]],
+        thinker: "Thinker",
+    ) -> ChatCompletion:
+        structured_evaluation_response = await thinker.extract_structured_response(
+            messages=messages,
+            pydantic_structure_to_extract=self.evaluation_schema,
+        )
+        return structured_evaluation_response

@@ -35,7 +35,7 @@ class Dispatcher:
         frame_id: str,
         title: str = None,
         debug: bool = False,
-    ):
+    ) -> WebsocketFrame:
         """
             Base dispatch method for transforming responses into WebSocket frames.
             This method serves as the base for type-specific implementations.
@@ -88,7 +88,7 @@ class Dispatcher:
         frame_id: str,
         title: str = None,
         debug: bool = False,
-    ):
+    ) -> WebsocketFrame:
 
         completion_frame = CompletionFrameChunk(
             id=response.id,
