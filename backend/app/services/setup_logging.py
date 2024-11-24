@@ -8,7 +8,7 @@ def setup_logging(debug: bool = False):
         "disable_existing_loggers": False,
         "formatters": {
             "standard": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                "format": "%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s",
             },
         },
         "handlers": {

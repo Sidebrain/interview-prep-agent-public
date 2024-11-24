@@ -48,7 +48,7 @@ type RenderFrameType = {
   address: WebsocketFrame["address"];
 };
 
-export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
+export const FrameRenderHandler = ({ frame, address }: RenderFrameType) => {
   return useMemo(() => {
     switch (address) {
       case "thought":
@@ -105,13 +105,23 @@ export const frameRenderHandler = ({ frame, address }: RenderFrameType) => {
                   : "border border-input bg-background shadow-sm text-black"
               }`}
             >
-              <Markdown
-                remarkPlugins={[remarkGfm]}
-                components={components}
-                className="markdown-content break-words "
-              >
-                {frame.contentFrame.content?.trim()}
-              </Markdown>
+              {frame.contentFrame.content?.startsWith("{") ? (
+                <pre className="whitespace-pre">
+                  {JSON.stringify(
+                    JSON.parse(frame.contentFrame.content),
+                    null,
+                    2
+                  )}
+                </pre>
+              ) : (
+                <Markdown
+                  remarkPlugins={[remarkGfm]}
+                  components={components}
+                  className="markdown-content break-words"
+                >
+                  {frame.contentFrame.content?.trim()}
+                </Markdown>
+              )}
             </span>
           </div>
         );

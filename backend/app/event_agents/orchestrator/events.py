@@ -36,18 +36,33 @@ class MessageReceivedEvent(BaseEvent):
 
 
 class Status(Enum):
-    in_progress = "in_progress"
-    completed = "completed"
-    failed = "failed"
-    idle = "idle"
+    in_progress = "Questions gathering in progress."
+    completed = "Questions gathering completed."
+    failed = "Questions gathering failed."
+    idle = "Questions gathering idle."
 
 
 class QuestionsGatheringEvent(BaseEvent):
     status: Status
-    questions: list[QuestionAndAnswer]
     session_id: UUID
 
 
-class UserReadyEvent(BaseEvent):
+class AskQuestionEvent(BaseEvent):
+    question: QuestionAndAnswer
     session_id: UUID
-    questions: list[QuestionAndAnswer]
+
+
+class InterviewEndReason(Enum):
+    questions_exhausted = "questions_exhausted"
+    user_ended = "user_ended"
+    error = "error"
+    timeout = "timeout"
+
+
+class InterviewEndEvent(BaseEvent):
+    reason: InterviewEndReason
+    session_id: UUID
+    timestamp: int = Field(default_factory=lambda: int(datetime.now().timestamp()))
+
+class AnswerReceivedEvent(MessageReceivedEvent):
+    question: QuestionAndAnswer

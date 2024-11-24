@@ -1,11 +1,13 @@
 from datetime import datetime
+from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 from pydantic.json_schema import GenerateJsonSchema
 from typing import Literal, List, Optional
 
-AddressType = Literal["content", "artifact", "human", "thought"]
-
+AddressType = Literal[
+    "content", "artifact", "human", "thought"
+]
 
 class CompletionFrameChunk(BaseModel):
     model_config = ConfigDict(
@@ -22,7 +24,11 @@ class CompletionFrameChunk(BaseModel):
     role: Literal["assistant", "user"]
     content: str | None
     delta: str | None
-    created_ts: int = Field(default_factory=lambda: int(datetime.now().timestamp()))
+    created_ts: int = Field(
+        default_factory=lambda: int(
+            datetime.now().timestamp()
+        )
+    )
     title: str | None = None
     index: int = 0
     finish_reason: Literal[
@@ -34,7 +40,9 @@ class CompletionFrameChunk(BaseModel):
     ]
 
     def get_human_readable_created_ts(self) -> str:
-        return datetime.fromtimestamp(self.created_ts).strftime("%Y-%m-%d %H:%M:%S")
+        return datetime.fromtimestamp(
+            self.created_ts
+        ).strftime("%Y-%m-%d %H:%M:%S")
 
 
 class WebsocketFrame(BaseModel):
@@ -44,7 +52,12 @@ class WebsocketFrame(BaseModel):
     )
     frame_id: str
     type: Literal[
-        "completion", "streaming", "heartbeat", "error", "input", "signal.regenerate"
+        "completion",
+        "streaming",
+        "heartbeat",
+        "error",
+        "input",
+        "signal.regenerate",
     ]
     address: AddressType
     frame: CompletionFrameChunk
@@ -55,7 +68,13 @@ class WebsocketFrame(BaseModel):
 
 class WebSocketStreamResponse(BaseModel):
     id: int
-    type: Literal["chunk", "complete", "error", "heartbeat", "structured"]
+    type: Literal[
+        "chunk",
+        "complete",
+        "error",
+        "heartbeat",
+        "structured",
+    ]
     index: int = 0
     content: str | None
     sender: str = "bot"
