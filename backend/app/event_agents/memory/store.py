@@ -35,6 +35,16 @@ class InMemoryStore:
         self.message_publisher = message_publisher
         self.debug = debug
 
+    def __repr__(self) -> str:
+        return (
+            f"InMemoryStore(\n"
+            f"  config_provider={self.config_provider},\n"
+            f"  message_publisher={self.message_publisher},\n"
+            f"  debug={self.debug},\n"
+            f"  memory_frames={len(self.memory)},\n"
+            f")"
+        )
+
     async def add(self, frame: WebsocketFrame) -> None:
         """
         Add a frame to memory and publish update.

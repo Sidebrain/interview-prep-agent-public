@@ -3,10 +3,14 @@ from typing import List, TypeVar
 from uuid import uuid4
 from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
+import json
+from dataclasses import dataclass
+from typing import Any, Optional
 
 from app.agents import dispatcher
 from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.orchestrator.thinker import Thinker
+from app.event_agents.memory.store import InMemoryStore
 
 from abc import ABC, abstractmethod
 
@@ -24,6 +28,24 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T", str, BaseModel)
 
 
+@dataclass
+class EvaluationLogContext:
+    questions_count: int
+    memory_store_size: Optional[int]
+    evaluation_schema_type: str
+    question_samples: Optional[list] = None
+    context_length: Optional[int] = None
+    evaluation_type: Optional[str] = None
+    frame_id: Optional[str] = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            k: v
+            for k, v in self.__dict__.items()
+            if v is not None
+        }
+
+
 class EvaluatorBase(ABC):
 
     def __init__(
@@ -32,22 +54,64 @@ class EvaluatorBase(ABC):
     ):
         self.evaluation_schema = evaluation_schema
 
+    def __repr__(self) -> str:
+        return json.dumps(
+            {
+                "type": self.__class__.__name__,
+                "evaluation_schema": (
+                    self.evaluation_schema.__class__.__name__
+                    if not isinstance(
+                        self.evaluation_schema, str
+                    )
+                    else "string schema"
+                ),
+            },
+            indent=2,
+        )
+
     async def evaluate(
         self,
         questions: List[QuestionAndAnswer],
-        memory_store: "MemoryStore",
+        memory_store: InMemoryStore,
         thinker: "Thinker",
         debug: bool = False,
     ) -> WebsocketFrame:
         """
         Evaluate an answer.
         """
-        logger.debug("\033[32mEvaluating answer\033[0m")
+        # Create input log context
+        input_context = EvaluationLogContext(
+            questions_count=len(questions),
+            question_samples=(
+                [q.model_dump() for q in questions[:2]]
+                if questions
+                else None
+            ),
+            memory_store_size=(
+                len(memory_store.memory)
+                if hasattr(memory_store, "memory")
+                else None
+            ),
+            evaluation_schema_type=(
+                self.evaluation_schema.__class__.__name__
+                if not isinstance(
+                    self.evaluation_schema, str
+                )
+                else "string schema"
+            ),
+        )
+
+        if debug:
+            logger.debug(
+                "Evaluation Input",
+                extra={"context": input_context.to_dict()},
+            )
+
         context_messages = (
             await self.retreive_and_build_context_messages(
                 questions=questions,
                 memory_store=memory_store,
-                address_filter=[],
+                address_filter=["human"],
                 custom_user_instruction=(
                     self.evaluation_schema
                     if isinstance(
@@ -57,18 +121,12 @@ class EvaluatorBase(ABC):
                 ),
             )
         )
-        if debug:
-            logger.debug(
-                f"\033[32mContext messages: {context_messages}\033[0m"
-            )
+
         evaluation = await self.ask_thinker_for_evaluation(
             messages=context_messages,
             thinker=thinker,
         )
-        if debug:
-            logger.debug(
-                f"\033[32mEvaluation: {evaluation}\033[0m"
-            )
+
         evaluation_frame = (
             Dispatcher.package_and_transform_to_webframe(
                 evaluation,
@@ -76,10 +134,27 @@ class EvaluatorBase(ABC):
                 frame_id=str(uuid4()),
             )
         )
+
         if debug:
-            logger.debug(
-                f"\033[32mEvaluation frame: {evaluation_frame.model_dump_json(indent=4)}\033[0m"
+            # Create result log context
+            result_context = EvaluationLogContext(
+                questions_count=len(questions),
+                context_length=len(context_messages),
+                evaluation_type=type(evaluation).__name__,
+                frame_id=evaluation_frame.frame_id,
+                evaluation_schema_type=(
+                    self.evaluation_schema.__class__.__name__
+                    if not isinstance(
+                        self.evaluation_schema, str
+                    )
+                    else "string schema"
+                ),
             )
+            logger.debug(
+                "Evaluation Result",
+                extra={"context": result_context.to_dict()},
+            )
+
         return evaluation_frame
 
     async def retreive_and_build_context_messages(
@@ -97,10 +172,25 @@ class EvaluatorBase(ABC):
             address_filter=address_filter,
             custom_user_instruction=custom_user_instruction,
         )
+
         if debug:
             logger.debug(
-                f"\033[32mContext messages: {messages}\033[0m"
+                "Memory store messages",
+                extra={
+                    "context": {
+                        "message_count": len(messages),
+                        "first_message": (
+                            messages[0]
+                            if messages
+                            else None
+                        ),
+                        "address_filter": address_filter,
+                        "has_custom_instruction": custom_user_instruction
+                        is not None,
+                    }
+                },
             )
+
         for question in questions:
             messages.insert(
                 -2,  # insert before the answer
@@ -140,6 +230,10 @@ class EvaluatorSimple(EvaluatorBase):
 
 
 class EvaluatorStructured(EvaluatorBase):
+    """
+    Evaluator that extracts a structured response from the thinker.
+    """
+
     async def ask_thinker_for_evaluation(
         self,
         messages: List[dict[str, str]],
