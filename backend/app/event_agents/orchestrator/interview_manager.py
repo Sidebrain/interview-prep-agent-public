@@ -1,5 +1,8 @@
 import asyncio
 import logging
+import json
+from dataclasses import asdict, dataclass
+from typing import Any, Dict
 
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
@@ -34,6 +37,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class LogContext:
+    """Base class for structured logging context"""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            k: v
+            for k, v in asdict(self).items()
+            if v is not None
+        }
+
+
 class InterviewManager:
     def __init__(
         self,
@@ -59,6 +74,28 @@ class InterviewManager:
         self.question_manager = QuestionManager(thinker)
         self.eval_manager = eval_manager
         self.memory_store = memory_store
+
+    def __repr__(self) -> str:
+        return json.dumps(
+            {
+                "type": "InterviewManager",
+                "session": self.session_id.hex[:8],
+                "time_remaining": self.max_time_allowed
+                - self.time_manager.time_elapsed,
+                "questions_remaining": len(
+                    self.question_manager.questions
+                ),
+                "current_question": (
+                    self.question_manager.current_question.question[
+                        :30
+                    ]
+                    + "..."
+                    if self.question_manager.current_question
+                    else None
+                ),
+            },
+            indent=2,
+        )
 
     async def subscribe(self) -> None:
         """
@@ -93,38 +130,47 @@ class InterviewManager:
     async def handle_add_to_memory_event(
         self, new_memory_event: AddToMemoryEvent
     ) -> None:
-        """
-        Handle the addition of a new memory event.
-        """
+        """Handle new memory event and trigger next question."""
         logger.info(
-            "\033[33mHandling add to memory event for session %s\033[0m",
-            self.session_id,
+            "Processing answer: %s",
+            {
+                "manager": self,
+                "answer_length": (
+                    len(
+                        new_memory_event.frame.frame.content
+                    )
+                    if new_memory_event.frame.frame.content
+                    else 0
+                ),
+            },
         )
-        logger.info(
-            f"\033[33mAdding to memory: {new_memory_event.frame.model_dump_json(indent=4)}\033[0m"
-        )
+
         try:
-            # add the frame to memory
             await self.memory_store.add(
                 new_memory_event.frame
             )
-            # reflection through evaluation
             evaluations = await self.eval_manager.handle_evaluation(
                 questions=[
                     self.question_manager.current_question
                 ]
             )
-            # send these evaluations to the websocket
+            logger.info(
+                "Answer processed: %s",
+                {
+                    "manager": self,
+                    "evaluation_count": len(evaluations),
+                },
+            )
+
             for evaluation in evaluations:
                 await self.broker.publish(evaluation)
-            # dont need the memory here, the memory has already been added to the store
             await self.ask_next_question()
         except Exception as e:
             logger.error(
-                "Error handling add to memory event: %s",
-                e,
-                exc_info=True,
+                "Answer processing failed: %s",
+                {"manager": self, "error": str(e)},
             )
+            raise
 
     async def initialize(self) -> list[QuestionAndAnswer]:
         """
@@ -141,8 +187,19 @@ class InterviewManager:
             list[QuestionAndAnswer]: List of gathered questions for the interview
         """
         logger.info(
-            "Initializing interview session %s",
-            self.session_id,
+            "Starting new interview session: %s", self
+        )
+
+        # Gather questions
+        questions = (
+            await self.question_manager.gather_questions()
+        )
+        logger.info(
+            "Questions gathered: %s",
+            {
+                "session": self.session_id.hex[:8],
+                "question_count": len(questions),
+            },
         )
 
         # First event
@@ -174,8 +231,9 @@ class InterviewManager:
             len(self.question_manager.questions),
         )
 
-        # Start time tracking in the background
+        # Start time tracking in the background# Start timer
         asyncio.create_task(self.time_manager.start_timer())
+        logger.info("Timer started: %s", self.time_manager)
 
         let_user_know_timer_started_event = Dispatcher.package_and_transform_to_webframe(
             f"Timer started. You have {self.max_time_allowed} {'seconds' if self.max_time_allowed <= 60 else 'minutes'} to answer the questions.",
@@ -191,52 +249,40 @@ class InterviewManager:
             await self.ask_next_question()
         except Exception as e:
             logger.error(
-                f"Error asking next question: {e}",
+                "Failed to ask first question",
+                extra={
+                    "session_id": self.session_id,
+                    "manager_state": repr(self),
+                    "error": str(e),
+                },
                 exc_info=True,
             )
 
         return questions
 
     async def ask_next_question(self) -> None:
-        """
-        Request the next question from the question manager and publish it.
-
-        If no questions remain, publishes an InterviewEndEvent.
-        If a question is available, publishes an AskQuestionEvent.
-        """
-        logger.debug(
-            "\033[33mAsking next question for session %s\033[0m",
-            self.session_id,
-        )
-        logger.debug(
-            "\033[33mQuestions left: %d\033[0m",
-            len(self.question_manager.questions),
-        )
-        logger.debug(
-            "\033[33mCurrent question: %s\033[0m",
-            self.question_manager.current_question,
-        )
-
+        """Request and publish next question."""
         next_question = (
             await self.question_manager.get_next_question()
         )
+
         if next_question is None:
-            logger.info(
-                "No questions left to ask for session %s",
-                self.session_id,
-            )
+            logger.info("Interview complete: %s", self)
             interview_end_event = InterviewEndEvent(
                 reason=InterviewEndReason.questions_exhausted,
                 session_id=self.session_id,
             )
             await self.broker.publish(interview_end_event)
-            return
         else:
-            ask_question_event = AskQuestionEvent(
-                question=next_question,
-                session_id=self.session_id,
+            logger.info(
+                "Asking question: %s", self.question_manager
             )
-            await self.broker.publish(ask_question_event)
+            await self.broker.publish(
+                AskQuestionEvent(
+                    question=next_question,
+                    session_id=self.session_id,
+                )
+            )
 
 
 class TimeManager:
@@ -250,6 +296,18 @@ class TimeManager:
         self.session_id = session_id
         self.max_time_allowed = max_time_allowed
         self.time_elapsed = 0
+
+    def __repr__(self) -> str:
+        return json.dumps(
+            {
+                "type": "TimeManager",
+                "session": self.session_id.hex[:8],
+                "elapsed": self.time_elapsed,
+                "remaining": self.max_time_allowed
+                - self.time_elapsed,
+            },
+            indent=2,
+        )
 
     async def start_timer(self) -> None:
         """
@@ -281,6 +339,21 @@ class QuestionManager:
             None
         )
 
+    def __repr__(self) -> str:
+        return json.dumps(
+            {
+                "type": "QuestionManager",
+                "questions_remaining": len(self.questions),
+                "current_question": (
+                    self.current_question.question[:30]
+                    + "..."
+                    if self.current_question
+                    else None
+                ),
+            },
+            indent=2,
+        )
+
     async def gather_questions(
         self,
     ) -> list[QuestionAndAnswer]:
@@ -293,15 +366,28 @@ class QuestionManager:
         Returns:
             list[QuestionAndAnswer]: List of structured interview questions
         """
+        logger.info(
+            "Gathering questions",
+            extra={
+                "context": {
+                    "questions_remaining": len(
+                        self.questions
+                    ),
+                    "current_question": (
+                        self.current_question.question[:30]
+                        + "..."
+                        if self.current_question
+                        else None
+                    ),
+                }
+            },
+        )
+
         with open("config/artifacts.yaml", "r") as f:
             artifacts = yaml.safe_load(f)
         question_string = artifacts["artifacts"][
             "interview_questions"
         ]
-        logger.debug(
-            "Loaded question template (first 100 chars): %s",
-            question_string[:100],
-        )
 
         messages = [
             {"role": "user", "content": question_string},
@@ -316,6 +402,8 @@ class QuestionManager:
             )
         )
         self.questions = response.questions
+
+        logger.info("Questions prepared: %s", self)
         return response.questions
 
     async def get_next_question(self) -> QuestionAndAnswer:
@@ -328,13 +416,10 @@ class QuestionManager:
         """
         try:
             self.current_question = self.questions.pop(0)
-            logger.debug(
-                "\033[31mAsking question: %s \033[0m",
-                self.current_question.question,
-            )
+            logger.info("Next question ready: %s", self)
             return self.current_question
         except IndexError:
-            logger.info("No questions left to ask")
+            logger.info("No more questions: %s", self)
             return None
 
 
@@ -342,6 +427,15 @@ class InterviewEventHandler:
     def __init__(self, broker: "Broker", session_id: UUID):
         self.broker = broker
         self.session_id = session_id
+
+    def __repr__(self) -> str:
+        return json.dumps(
+            {
+                "type": "InterviewEventHandler",
+                "session": self.session_id.hex[:8],
+            },
+            indent=2,
+        )
 
     async def handle_interview_end(
         self, event: InterviewEndEvent
@@ -356,15 +450,18 @@ class InterviewEventHandler:
         Publishes appropriate end message to the websocket based on the end reason.
         """
         logger.info(
-            "Interview ended for session %s",
-            self.session_id,
+            "Interview ended",
+            extra={
+                "context": {
+                    "session": self.session_id.hex[:8],
+                    "reason": event.reason.value,
+                    "handler_type": "InterviewEventHandler",
+                }
+            },
         )
+
         match event.reason:
             case InterviewEndReason.questions_exhausted:
-                logger.info(
-                    "Questions exhausted for session %s",
-                    self.session_id,
-                )
                 end_interview_message = Dispatcher.package_and_transform_to_webframe(
                     "Questions exhausted. Interview ended.",
                     "content",
@@ -374,10 +471,6 @@ class InterviewEventHandler:
                     end_interview_message
                 )
             case InterviewEndReason.timeout:
-                logger.info(
-                    "Timeout for session %s",
-                    self.session_id,
-                )
                 end_interview_message = Dispatcher.package_and_transform_to_webframe(
                     "Timeout. Interview ended.",
                     "content",
@@ -388,8 +481,11 @@ class InterviewEventHandler:
                 )
             case _:
                 logger.info(
-                    "Interview ended for session %s",
-                    self.session_id,
+                    "Interview ended with unknown reason: %s",
+                    {
+                        "handler": self,
+                        "reason": event.reason,
+                    },
                 )
 
     async def handle_ask_question(
@@ -406,6 +502,16 @@ class InterviewEventHandler:
 
         Publishes both a thought frame and content frame for the question.
         """
+        logger.info(
+            "Publishing question: %s",
+            {
+                "handler": self,
+                "question_length": len(
+                    event.question.question
+                ),
+            },
+        )
+
         frame_id = str(uuid4())
         question_thought_frame = (
             Dispatcher.package_and_transform_to_webframe(
@@ -431,9 +537,9 @@ class InterviewEventHandler:
     ) -> None:
         try:
             status_message = event.status.value
-            logger.debug(
+            logger.info(
                 "Questions gathering status: %s",
-                status_message,
+                {"handler": self, "status": status_message},
             )
 
             websocket_frame = Dispatcher.package_and_transform_to_webframe(
@@ -445,7 +551,6 @@ class InterviewEventHandler:
             await self.broker.publish(websocket_frame)
         except Exception as e:
             logger.error(
-                "Error handling questions gathering event: %s",
-                e,
-                exc_info=True,
+                "Questions gathering failed: %s",
+                {"handler": self, "error": str(e)},
             )

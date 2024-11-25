@@ -18,6 +18,9 @@ class Channel:
         self.websocket = websocket
         self.agent = agent
 
+    def __repr__(self) -> str:
+        return f"Channel(agent_id={self.agent.session_id if self.agent else None})"
+
     async def send_message(self, message: str):
         await self.websocket.send_text(message)
 
@@ -32,10 +35,12 @@ class Channel:
                     message=message_from_client,
                     session_id=self.agent.session_id,
                 )
-                logger.info(f"Publishing message received event: {event}")
+                logger.debug({
+                    "event": "message_received",
+                    "session_id": str(self.agent.session_id),
+                    "message": message_from_client
+                })
                 await self.agent.broker.publish(event)
-                #! TODO: I dont know why i am sending the message back to the client
-                # await self.send_message(message_from_client)
                 return message_from_client
 
     async def route_message(self, message: str):

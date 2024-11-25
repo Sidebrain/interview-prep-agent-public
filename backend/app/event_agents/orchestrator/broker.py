@@ -10,6 +10,7 @@ from app.event_agents.evaluations.evaluators import (
     relevance_evaluator,
     exaggeration_evaluator,
     structured_thinking_evaluator,
+    communication_evaluator,
 )
 from app.event_agents.orchestrator.interview_manager import (
     EvaluationManager,
@@ -150,6 +151,7 @@ class Agent:
                 relevance_evaluator,
                 exaggeration_evaluator,
                 structured_thinking_evaluator,
+                communication_evaluator,
             ],
         )
         self.interview_manager = InterviewManager(

@@ -1,5 +1,28 @@
 import logging
 import logging.config
+import json
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_data = {
+            "timestamp": self.formatTime(record),
+            "logger": record.name,
+            "level": record.levelname,
+            "file": record.filename,
+            "line": record.lineno,
+            "message": record.msg
+        }
+
+        # Add extra context if available
+        if hasattr(record, "context"):
+            log_data["context"] = record.context
+
+        # Handle exceptions
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+
+        return json.dumps(log_data, indent=2, default=str)
 
 
 def setup_logging(debug: bool = False):
