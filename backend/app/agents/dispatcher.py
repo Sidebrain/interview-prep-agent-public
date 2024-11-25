@@ -24,6 +24,7 @@ class Dispatcher:
         response,
         address: AddressType,
         frame_id: str,
+        correlation_id: str | None = None,
         title: str = None,
         debug: bool = False,
     ) -> WebsocketFrame: ...
@@ -33,6 +34,7 @@ class Dispatcher:
         response,
         address: AddressType,
         frame_id: str,
+        correlation_id: str | None = None,
         title: str = None,
         debug: bool = False,
     ) -> WebsocketFrame:
@@ -65,8 +67,12 @@ class Dispatcher:
             finish_reason="stop",
         )
 
+        if correlation_id is None:
+            correlation_id = str(uuid4())
+
         websocket_frame = WebsocketFrame(
             frame_id=frame_id,
+            correlation_id=correlation_id,
             type="completion",
             address=address,
             frame=completion_frame,
@@ -86,6 +92,7 @@ class Dispatcher:
         response,
         address: AddressType,
         frame_id: str,
+        correlation_id: str | None = None,
         title: str = None,
         debug: bool = False,
     ) -> WebsocketFrame:
@@ -102,8 +109,12 @@ class Dispatcher:
             finish_reason=response.choices[0].finish_reason,
         )
 
+        if correlation_id is None:
+            correlation_id = str(uuid4())
+
         websocket_frame = WebsocketFrame(
             frame_id=frame_id,
+            correlation_id=correlation_id,
             type="completion",
             address=address,
             frame=completion_frame,
@@ -121,6 +132,7 @@ class Dispatcher:
         response,
         address: AddressType,
         frame_id: str,
+        correlation_id: str | None = None,
         title: str = None,
         debug: bool = False,
     ) -> WebsocketFrame:
@@ -138,8 +150,12 @@ class Dispatcher:
             finish_reason="stop",
         )
 
+        if correlation_id is None:
+            correlation_id = str(uuid4())
+
         websocket_frame = WebsocketFrame(
             frame_id=frame_id,
+            correlation_id=correlation_id,
             type="completion",
             address=address,
             frame=completion_frame,

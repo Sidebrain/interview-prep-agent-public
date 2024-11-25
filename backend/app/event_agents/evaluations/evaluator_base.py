@@ -7,7 +7,6 @@ import json
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from app.agents import dispatcher
 from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.orchestrator.thinker import Thinker
 from app.event_agents.memory.store import InMemoryStore
@@ -30,6 +29,7 @@ T = TypeVar("T", str, BaseModel)
 
 @dataclass
 class EvaluationLogContext:
+    correlation_id: str
     questions_count: int
     memory_store_size: Optional[int]
     evaluation_schema_type: str
@@ -79,8 +79,14 @@ class EvaluatorBase(ABC):
         """
         Evaluate an answer.
         """
+        # Get the correlation id from the last message in the memory store
+        # this is the user input
+        correlation_id = memory_store.memory[
+            -1
+        ].correlation_id
         # Create input log context
         input_context = EvaluationLogContext(
+            correlation_id=correlation_id,
             questions_count=len(questions),
             question_samples=(
                 [q.model_dump() for q in questions[:2]]
@@ -132,12 +138,14 @@ class EvaluatorBase(ABC):
                 evaluation,
                 address="content",
                 frame_id=str(uuid4()),
+                correlation_id=correlation_id,
             )
         )
 
         if debug:
             # Create result log context
             result_context = EvaluationLogContext(
+                correlation_id=correlation_id,
                 questions_count=len(questions),
                 context_length=len(context_messages),
                 evaluation_type=type(evaluation).__name__,
