@@ -132,8 +132,8 @@ class InterviewManager:
     ) -> None:
         """Handle new memory event and trigger next question."""
         logger.info(
-            "Processing answer: %s",
-            {
+            "Processing answer",
+            extra={
                 "manager": self,
                 "answer_length": (
                     len(
@@ -155,8 +155,8 @@ class InterviewManager:
                 ]
             )
             logger.info(
-                "Answer processed: %s",
-                {
+                "Answer processed",
+                extra={
                     "manager": self,
                     "evaluation_count": len(evaluations),
                 },
@@ -167,8 +167,11 @@ class InterviewManager:
             await self.ask_next_question()
         except Exception as e:
             logger.error(
-                "Answer processing failed: %s",
-                {"manager": self, "error": str(e)},
+                "Answer processing failed",
+                extra={
+                    "manager": self,
+                    "error": str(e),
+                },
             )
             raise
 
@@ -216,8 +219,8 @@ class InterviewManager:
         )
 
         logger.info(
-            "Questions gathered: %s",
-            {
+            "Questions gathered",
+            extra={
                 "session": self.session_id.hex[:8],
                 "question_count": len(questions),
             },
@@ -511,8 +514,8 @@ class InterviewEventHandler:
         Publishes both a thought frame and content frame for the question.
         """
         logger.info(
-            "Publishing question: %s",
-            {
+            "Publishing question",
+            extra={
                 "handler": self,
                 "question_length": len(
                     event.question.question
