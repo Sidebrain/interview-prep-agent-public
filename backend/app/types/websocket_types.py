@@ -1,13 +1,13 @@
 from datetime import datetime
-from enum import Enum
+from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
-from pydantic.json_schema import GenerateJsonSchema
-from typing import Literal, List, Optional
+from typing import Literal
 
 AddressType = Literal[
     "content", "artifact", "human", "thought"
 ]
+
 
 class CompletionFrameChunk(BaseModel):
     model_config = ConfigDict(
@@ -51,6 +51,9 @@ class WebsocketFrame(BaseModel):
         populate_by_name=True,
     )
     frame_id: str
+    correlation_id: str = Field(
+        default_factory=lambda: str(uuid4())
+    )
     type: Literal[
         "completion",
         "streaming",

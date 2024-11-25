@@ -1,9 +1,11 @@
-import { CompletionFrameChunk, WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
+import {
+  CompletionFrameChunk,
+  WebsocketFrameSchema,
+} from "@/types/ScalableWebsocketTypes";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { createTimestamp } from "@/app/lib/helperFunctions";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
-import { FrameType } from "@/types/reducerTypes";
 
 // Base interface for all the message formatters
 interface MessageFormatter<T> {
@@ -63,6 +65,7 @@ export class WebsocketMessageSender implements MessageSender {
   ): WebsocketFrame {
     return {
       frameId: uuidv4(),
+      correlationId: uuidv4(),
       type: "signal.regenerate",
       address: "human",
       frame: frameToRegenerate,
@@ -72,6 +75,7 @@ export class WebsocketMessageSender implements MessageSender {
   createHumanInputFrame(content: string): WebsocketFrame {
     return {
       frameId: uuidv4(),
+      correlationId: uuidv4(),
       type: "input",
       address: "human",
       frame: {

@@ -39,6 +39,7 @@ type CompletionFrameChunk = z.infer<typeof CompletionFrameChunkSchema>;
 const WebsocketFrameSchema = z.object({
   // track changes: added "input" to type, added "human" to address
   frameId: z.string(),
+  correlationId: z.string(),
   type: z.enum([
     "completion",
     "streaming",
