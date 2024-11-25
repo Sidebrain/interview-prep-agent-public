@@ -190,17 +190,17 @@ class InterviewManager:
             "Starting new interview session: %s", self
         )
 
-        # Gather questions
-        questions = (
-            await self.question_manager.gather_questions()
-        )
-        logger.info(
-            "Questions gathered: %s",
-            {
-                "session": self.session_id.hex[:8],
-                "question_count": len(questions),
-            },
-        )
+        # # Gather questions
+        # questions = (
+        #     await self.question_manager.gather_questions()
+        # )
+        # logger.info(
+        #     "Questions gathered: %s",
+        #     {
+        #         "session": self.session_id.hex[:8],
+        #         "question_count": len(questions),
+        #     },
+        # )
 
         # First event
         in_progress_event = QuestionsGatheringEvent(
@@ -213,6 +213,14 @@ class InterviewManager:
         # gather questions and store them in the instance variable
         questions = (
             await self.question_manager.gather_questions()
+        )
+
+        logger.info(
+            "Questions gathered: %s",
+            {
+                "session": self.session_id.hex[:8],
+                "question_count": len(questions),
+            },
         )
 
         # Second event
