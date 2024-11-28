@@ -1,0 +1,94 @@
+"use client";
+import clientLogger from "@/app/lib/clientLogger";
+import WebsocketConnection from "@/infrastructure/WebsocketConnection";
+import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
+import { WebSocketHookOptions } from "@/types/websocketTypes";
+import { useEffect, useReducer, useRef } from "react";
+import { MessageValidator } from "../websocketMessageValidator";
+
+interface WebSocketCoreOptions<TState, TAction, T>
+  extends WebSocketHookOptions {
+  reducer: (state: TState, action: TAction) => TState;
+  initialState: TState;
+  validator: MessageValidator<T>;
+}
+
+export const useWebsocketCore = <TState, TAction, T>({
+  reducer,
+  initialState,
+  validator,
+  ...config
+}: WebSocketCoreOptions<TState, TAction, T>) => {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const connectionRef = useRef<WebsocketConnection | null>(null);
+
+  useEffect(() => {
+    if (!config.enabled) return;
+
+    if (!connectionRef.current) {
+      connectionRef.current = new WebsocketConnection(config);
+    }
+
+    const connection = connectionRef.current;
+
+    connection.on("message", (rawData: unknown) => {
+      try {
+        const validatedData = validator.validate(rawData);
+        clientLogger.debug("Received valid WebSocket message", {
+          validatedData,
+        });
+
+        // dispatch here
+        clientLogger.debug("Validated WebSocket message", {
+          validatedData,
+        });
+        dispatch({
+          type: "ADD_FRAME",
+          payload: validatedData,
+        } as TAction);
+      } catch (error) {
+        clientLogger.error("Failed to parse WebSocket message", {
+          error,
+        });
+      }
+    });
+
+    connection.on("open", (event) => {
+      clientLogger.debug("WebSocket connection opened", {
+        event,
+      });
+    });
+
+    connection.on("close", (event) => {
+      clientLogger.debug("WebSocket connection closed", {
+        event,
+      });
+    });
+
+    connection.on("error", (error) => {
+      clientLogger.error("WebSocket connection error", {
+        error,
+      });
+    });
+
+    connection.on("heartbeat", (event) => {
+      clientLogger.debug("Received heartbeat from server", {
+        event,
+      });
+    });
+
+    connection.connect();
+
+    return () => {
+      // clean up here
+      connection.disconnect();
+    };
+  }, [config.enabled, config.url]);
+
+  return {
+    state,
+    dispatch,
+    connection: connectionRef.current,
+    connectionStatus: connectionRef.current?.getConnectionStatus(),
+  };
+};

@@ -4,9 +4,6 @@ import TextareaResizable from "./TextAreaResizable";
 import InputContext from "@/context/InputContext";
 import { Button } from "@/components/ui/button";
 import AudioButton from "./inputButtons/AudioButton";
-import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
-import { v4 as uuidv4 } from "uuid";
-import { createTimestamp } from "@/app/lib/helperFunctions";
 import { useWebsocketContext } from "@/context/WebsocketContext";
 
 type InputAreaProps = {
