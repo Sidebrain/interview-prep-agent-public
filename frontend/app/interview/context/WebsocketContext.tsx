@@ -1,10 +1,11 @@
 "use client";
 import React, { createContext, useContext } from "react";
 import { WebSocketHookOptions } from "@/types/websocketTypes";
-import useWebSocket from "@/hooks/useWebsocketNew";
-import { WebsocketInterface } from "@/types/websocketInterface";
+import { useWebSocket } from "@/app/interview/hooks/useWebSocket";
 
-const WebsocketContext = createContext<WebsocketInterface | null>(null);
+const WebsocketContext = createContext<ReturnType<typeof useWebSocket> | null>(
+  null
+);
 
 export const WebsocketProvider: React.FC<{
   children: React.ReactNode;

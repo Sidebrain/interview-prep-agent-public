@@ -1,17 +1,9 @@
 "use client";
 import clientLogger from "@/app/lib/clientLogger";
 import WebsocketConnection from "@/infrastructure/WebsocketConnection";
-import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
-import { WebSocketHookOptions } from "@/types/websocketTypes";
 import { useEffect, useReducer, useRef } from "react";
-import { MessageValidator } from "../websocketMessageValidator";
+import { WebSocketCoreOptions } from "../types/websocketConnectionTypes";
 
-interface WebSocketCoreOptions<TState, TAction, T>
-  extends WebSocketHookOptions {
-  reducer: (state: TState, action: TAction) => TState;
-  initialState: TState;
-  validator: MessageValidator<T>;
-}
 
 export const useWebsocketCore = <TState, TAction, T>({
   reducer,
