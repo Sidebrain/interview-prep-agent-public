@@ -1,6 +1,8 @@
 import clientLogger from "@/app/lib/clientLogger";
-import { WebsocketMessageSender } from "@/handlers/websocketMessageSender";
-import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
+import {
+  createWebsocketMessageSender,
+  WebsocketMessageSender,
+} from "@/app/interview/handlers/websocketMessageSender/sender";
 import { WebSocketHookOptions } from "@/types/websocketTypes";
 import EventEmitter from "events";
 
@@ -71,7 +73,7 @@ class WebSocketConnection {
 
       this.reconnectCount = 0;
       this.startHeartbeat();
-      this.messageSender = new WebsocketMessageSender(this.websocket!);
+      this.messageSender = createWebsocketMessageSender(this.websocket!);
       this.eventEmitter.emit("open", event);
     };
 
@@ -107,10 +109,8 @@ class WebSocketConnection {
       this.eventEmitter.emit("heartbeat");
       return;
     }
-
     try {
-      //! TODO: you dont need to parse the data here
-      const parsedData = JSON.parse(event.data);
+      const parsedData = JSON.parse(event.data); // this is needed, ensures that the data is an object
       this.eventEmitter.emit("message", parsedData);
     } catch (error) {
       this.eventEmitter.emit(
@@ -121,8 +121,6 @@ class WebSocketConnection {
   }
 
   private handleReconnect(): void {
-    // clean up before reconnecting
-    // this.cleanupAllListeners();
     this.cleanupEventListeners();
     this.stopHeartbeat();
 
@@ -251,10 +249,6 @@ class WebSocketConnection {
 
   getReadyState(): number {
     return this.websocket?.readyState ?? WebSocket.CLOSED;
-  }
-
-  createHumanInputFrame(content: string): WebsocketFrame {
-    return this.messageSender?.createHumanInputFrame(content) ?? {};
   }
 }
 
