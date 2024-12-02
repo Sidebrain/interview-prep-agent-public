@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AudioService } from "../infrastructure/audio/AudioService";
 
 type UseVoiceProps = {
-  onTranscription: ({ transcription }: { transcription: string }) => void;
+  onTranscription: (transcription: string) => void;
 };
 
 const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {

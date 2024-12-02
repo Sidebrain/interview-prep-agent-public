@@ -47,10 +47,7 @@ export class AudioTranscriber {
         );
       }
 
-      const transcription = (await response.json()) as {
-        transcription: string;
-      };
-
+      const transcription = (await response.json()) as string | null;
       return transcription;
     } catch (error) {
       clientLogger.error("Failed to make transcription request", {

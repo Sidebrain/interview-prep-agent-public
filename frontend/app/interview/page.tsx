@@ -6,16 +6,18 @@ import UserArea from "./components/UserArea";
 
 const InterviewPage = () => {
   return (
-    // <WebsocketProvider
-    //   options={{
-    //     url: process.env.NEXT_PUBLIC_WS_URL_V3 || "",
-    //     enabled: true,
-    //   }}
-    // >
-    <InputProvider>
-      <UserArea />
-    </InputProvider>
-    // </WebsocketProvider>
+    <WebsocketProvider
+      options={{
+        url: process.env.NEXT_PUBLIC_WS_URL_V3 || "",
+        enabled: true,
+      }}
+    >
+      <InputProvider>
+        <div className="flex justify-center">
+          <UserArea />
+        </div>
+      </InputProvider>
+    </WebsocketProvider>
   );
 };
 

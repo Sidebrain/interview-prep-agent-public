@@ -7,9 +7,7 @@ export interface AudioServiceInterface {
   initializeAudioStream: () => Promise<void>;
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<Blob | null>;
-  transcribeAudio: (
-    audioBlob: Blob
-  ) => Promise<{ transcription: string } | null>;
+  transcribeAudio: (audioBlob: Blob) => Promise<string | null>;
   cleanup: () => Promise<void>;
 }
 

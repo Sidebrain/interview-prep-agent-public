@@ -37,6 +37,12 @@ export class AudioRecorder {
   public initialize = (stream: MediaStream) => {
     this.mediaRecorder = new MediaRecorder(stream, { mimeType: this.mimeType });
     this.addEventListeners();
+    clientLogger.debug("AudioRecorder initialized", {
+      mediaRecorder: this.mediaRecorder,
+      mimeType: this.mimeType,
+      timeslice: this.timeslice,
+
+    });
   };
 
   public startRecording = () => {

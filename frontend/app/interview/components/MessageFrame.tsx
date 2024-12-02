@@ -44,7 +44,7 @@ import Markdown from "react-markdown";
 
 const MessageFrame = ({ frame }: { frame: WebsocketFrame }) => {
   return (
-    <div className="flex flex-col border border-gray-300 rounded-md p-2 w-1/3 whitespace-pre-wrap ">
+    <div className="flex flex-col border border-gray-300 rounded-md p-2 whitespace-pre-wrap ">
       <Markdown>{frame.frame.content}</Markdown>
     </div>
   );
