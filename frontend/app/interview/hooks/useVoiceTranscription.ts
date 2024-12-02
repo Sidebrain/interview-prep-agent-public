@@ -1,6 +1,6 @@
 import clientLogger from "@/app/lib/clientLogger";
-import { AudioService } from "@/infrastructure/AudioService";
 import { useEffect, useRef, useState } from "react";
+import { AudioService } from "../infrastructure/audio/AudioService";
 
 type UseVoiceProps = {
   onTranscription: ({ transcription }: { transcription: string }) => void;
@@ -11,6 +11,7 @@ const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {
   const [error, setError] = useState<string | null>(null);
   const audioServiceRef = useRef<AudioService | null>(null);
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   useEffect(() => {
     audioServiceRef.current = new AudioService("audio/webm");
@@ -41,7 +42,8 @@ const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {
     }
     try {
       setIsRecording(false);
-      await audioService.stopRecording();
+      const audioBlob = await audioService.stopRecording();
+      setAudioBlob(audioBlob);
       setPlaybackUrl(audioService.createPlaybackUrl());
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unknown error");
@@ -56,7 +58,11 @@ const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {
       throw new Error("Audio service not initialized");
     }
     try {
-      const transcription = await audioService.transcribeAudio();
+      const transcription = await audioService.transcribeAudio(audioBlob);
+      if (!transcription) {
+        clientLogger.warn("No transcription to return");
+        return;
+      }
       clientLogger.debug("Transcription response: ", transcription);
       onTranscription(transcription);
     } catch (error) {
