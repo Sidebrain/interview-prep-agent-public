@@ -57,8 +57,16 @@ const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {
     if (!audioService) {
       throw new Error("Audio service not initialized");
     }
+    let blob = audioBlob;
+    if (isRecording) {
+      blob = await audioService.stopRecording();
+      setIsRecording(false);
+      setAudioBlob(blob);
+      setPlaybackUrl(audioService.createPlaybackUrl());
+    }
+
     try {
-      const transcription = await audioService.transcribeAudio(audioBlob);
+      const transcription = await audioService.transcribeAudio(blob);
       if (!transcription) {
         clientLogger.warn("No transcription to return");
         return;
