@@ -1,4 +1,5 @@
 import clientLogger from "@/app/lib/clientLogger";
+import { WebsocketMessageSender } from "@/handlers/websocketMessageSender";
 import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
 import { WebSocketHookOptions } from "@/types/websocketTypes";
 import EventEmitter from "events";
@@ -13,11 +14,16 @@ class WebSocketConnection {
   private eventEmitter: EventEmitter;
   private reconnectCount: number = 0;
   private heartbeatTimer: NodeJS.Timeout | null = null;
+  private messageSender: WebsocketMessageSender | null = null;
 
   constructor(config: WebSocketHookOptions) {
     this.config = config;
     this.eventEmitter = new EventEmitter();
     this.cleanupAllListeners();
+  }
+
+  getWebsocket(): WebSocket | null {
+    return this.websocket;
   }
 
   connect(): void {
@@ -65,6 +71,7 @@ class WebSocketConnection {
 
       this.reconnectCount = 0;
       this.startHeartbeat();
+      this.messageSender = new WebsocketMessageSender(this.websocket!);
       this.eventEmitter.emit("open", event);
     };
 
@@ -159,23 +166,29 @@ class WebSocketConnection {
     }
 
     try {
-      const message = typeof data === "string" ? data : JSON.stringify(data);
+      if (this.messageSender) {
+        const success = this.messageSender.send(data);
+        if (!success) {
+          throw new Error("Failed to send message");
+        }
+        //     const message = typeof data === "string" ? data : JSON.stringify(data);
 
-      clientLogger.debug("Sending WebSocket message", {
-        messageType: typeof data,
-        message: JSON.stringify(data, null, 2),
-        readyState: this.websocket.readyState,
-        connectionStatus: this.getConnectionStatus(),
-      });
+        //   clientLogger.debug("Sending WebSocket message", {
+        //     messageType: typeof data,
+        //     message: JSON.stringify(data, null, 2),
+        //     readyState: this.websocket.readyState,
+        //     connectionStatus: this.getConnectionStatus(),
+        //   });
 
-      this.websocket.send(message);
+        //   this.websocket.send(message);
 
-      clientLogger.debug("Successfully sent WebSocket message", {
-        timestamp: new Date().toISOString(),
-      });
+        clientLogger.debug("Successfully sent WebSocket message", {
+          timestamp: new Date().toISOString(),
+        });
 
-      // Optional: emit sent event
-      this.eventEmitter.emit("messageSent", data);
+        // Optional: emit sent event
+        this.eventEmitter.emit("messageSent", data);
+      }
     } catch (error) {
       clientLogger.error("Failed to send WebSocket message", {
         error: error instanceof Error ? error.message : String(error),
@@ -184,6 +197,15 @@ class WebSocketConnection {
       });
       throw error;
     }
+  }
+
+  sendHumanInput(content: string): void {
+    if (!this.messageSender) {
+      throw new Error("Message sender not initialized");
+    }
+
+    const frame = this.messageSender.createHumanInputFrame(content);
+    this.sendMessage(frame);
   }
 
   getConnectionStatus(): string {
@@ -221,6 +243,7 @@ class WebSocketConnection {
     if (this.websocket) {
       this.websocket.close();
       this.websocket = null;
+      this.messageSender = null;
       this.cleanupAllListeners();
     }
     this.stopHeartbeat();
@@ -228,6 +251,10 @@ class WebSocketConnection {
 
   getReadyState(): number {
     return this.websocket?.readyState ?? WebSocket.CLOSED;
+  }
+
+  createHumanInputFrame(content: string): WebsocketFrame {
+    return this.messageSender?.createHumanInputFrame(content) ?? {};
   }
 }
 

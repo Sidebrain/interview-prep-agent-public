@@ -1,9 +1,8 @@
 "use client";
 import clientLogger from "@/app/lib/clientLogger";
 import WebsocketConnection from "@/infrastructure/WebsocketConnection";
-import { useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { WebSocketCoreOptions } from "../types/websocketConnectionTypes";
-
 
 export const useWebsocketCore = <TState, TAction, T>({
   reducer,
@@ -77,10 +76,21 @@ export const useWebsocketCore = <TState, TAction, T>({
     };
   }, [config.enabled, config.url]);
 
+  const sendMessage = useCallback(
+    (data: any) => {
+      if (!connectionRef.current) {
+        throw new Error("Websocket connection not initialized");
+      }
+      return connectionRef.current.sendMessage(data);
+    },
+    [connectionRef.current]
+  );
+
   return {
     state,
     dispatch,
     connection: connectionRef.current,
     connectionStatus: connectionRef.current?.getConnectionStatus(),
+    sendMessage,
   };
 };

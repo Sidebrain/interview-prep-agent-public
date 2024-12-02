@@ -4,8 +4,9 @@ import {
 } from "@/types/ScalableWebsocketTypes";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
-import { createTimestamp } from "@/app/lib/helperFunctions";
+import { createHumanInputFrame, createTimestamp } from "@/app/lib/helperFunctions";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
+import clientLogger from "@/app/lib/clientLogger";
 
 // Base interface for all the message formatters
 interface MessageFormatter<T> {
@@ -24,10 +25,16 @@ type SendableMessage = z.infer<typeof WebsocketFrameSchema>;
 // Formatter for user input messages
 class UserInputMessageFormatter implements MessageFormatter<SendableMessage> {
   canFormat(data: unknown): data is SendableMessage {
+    // if (typeof data !== "object" || data === null) {
+    //   return false;
+    // }
     return WebsocketFrameSchema.safeParse(data).success;
   }
 
   format(data: SendableMessage): string {
+    clientLogger.debug("UserInputMessageFormatter format", {
+      data,
+    });
     try {
       return JSON.stringify(data);
     } catch (error) {
@@ -43,11 +50,15 @@ export class WebsocketMessageSender implements MessageSender {
 
   constructor(ws: WebSocket) {
     this.ws = ws;
-    this.formatters = [new UserInputMessageFormatter()];
+    this.formatters = [
+      new UserInputMessageFormatter(),
+    ];
   }
 
   send(data: unknown): boolean {
-    console.log("Sending data: ", data);
+    clientLogger.debug("WebsocketMessageSender send", {
+      data,
+    });
     for (const formatter of this.formatters) {
       if (formatter.canFormat(data)) {
         const message = formatter.format(data as any);
@@ -56,7 +67,9 @@ export class WebsocketMessageSender implements MessageSender {
       }
     }
 
-    console.error("No formatter found for data: ", data);
+    clientLogger.error("No formatter found for data: ", {
+      data,
+    });
     return false;
   }
 
@@ -71,26 +84,8 @@ export class WebsocketMessageSender implements MessageSender {
       frame: frameToRegenerate,
     };
   }
-
   createHumanInputFrame(content: string): WebsocketFrame {
-    return {
-      frameId: uuidv4(),
-      correlationId: uuidv4(),
-      type: "input",
-      address: "human",
-      frame: {
-        id: uuidv4(),
-        object: "human.completion",
-        model: "infinity",
-        role: "user",
-        content: content,
-        createdTs: createTimestamp(),
-        title: null,
-        delta: null,
-        index: 0,
-        finishReason: "stop",
-      },
-    };
+    return createHumanInputFrame(content);
   }
 }
 

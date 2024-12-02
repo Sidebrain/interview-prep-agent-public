@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import Markdown from "react-markdown";
 
@@ -44,7 +45,15 @@ import Markdown from "react-markdown";
 
 const MessageFrame = ({ frame }: { frame: WebsocketFrame }) => {
   return (
-    <div className="flex flex-col border border-gray-300 rounded-md p-2 whitespace-pre-wrap ">
+    <div
+      className={cn(
+        "flex flex-col border border-gray-300 rounded-md p-2 whitespace-pre-wrap",
+        {
+          "bg-black text-white": frame.frame.role === "user",
+          "bg-white": frame.frame.role === "assistant",
+        }
+      )}
+    >
       <Markdown>{frame.frame.content}</Markdown>
     </div>
   );

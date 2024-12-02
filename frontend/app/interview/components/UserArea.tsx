@@ -6,9 +6,12 @@ import { FrameState } from "../reducers/frameReducer";
 import { Mic, MicOff } from "lucide-react";
 import TextareaResizable from "./TextAreaResizable";
 import { useInput } from "../context/InputContext";
+import { useEffect, useRef, useState } from "react";
+import clientLogger from "@/app/lib/clientLogger";
+import { createHumanInputFrame } from "@/app/lib/helperFunctions";
 
 const AudioRecorder = () => {
-  const { state: inputValue, dispatch: dispatchInputValue } = useInput();
+  const { dispatch: dispatchInputValue } = useInput();
   const { isRecording, error, startRecording, stopRecording, transcribeAudio } =
     useVoiceTranscription({
       onTranscription: (transcription) => {
@@ -53,21 +56,77 @@ const AudioRecorder = () => {
   );
 };
 
-const UserInput = () => {
+type UserInputProps = {
+  maxTextareaHeight: number;
+};
+
+const UserInputArea = ({ maxTextareaHeight }: UserInputProps) => {
+  const { dispatch: dispatchFrame, sendMessage } = useWebsocketContext();
+  const { state: inputValue, dispatch: dispatchInputValue } = useInput();
+
   return (
-    <TextareaResizable
-      maxTextareaHeight={400}
-      handleSubmit={(e) => {
-        e.preventDefault();
-        console.log("submitted");
-      }}
-    />
+    <div className="flex">
+      <TextareaResizable
+        maxTextareaHeight={maxTextareaHeight}
+        handleSubmit={(e) => {
+          e.preventDefault();
+          const frame = createHumanInputFrame(inputValue);
+          sendMessage(frame);
+          dispatchFrame({ type: "ADD_FRAME", payload: frame });
+          dispatchInputValue({ type: "SET_INPUT", payload: "" });
+        }}
+      />
+      <AudioRecorder />
+    </div>
   );
 };
 
-const MessageContainer = ({ frames }: FrameState) => {
+type MessageContainerProps = FrameState & {
+  setMaxTextareaHeight: (height: number) => void;
+};
+const MessageContainer = ({
+  frames,
+  setMaxTextareaHeight,
+}: MessageContainerProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // identify the max textarea height
+  useEffect(() => {
+    const computeMaxHeight = () => {
+      if (containerRef.current) {
+        const containerHeight = containerRef.current.clientHeight;
+        const newMaxHeight = Math.max(50, Math.max(150, containerHeight * 0.7));
+        setMaxTextareaHeight(newMaxHeight);
+
+        clientLogger.debug({
+          containerHeight,
+          newMaxHeight,
+        });
+      }
+    };
+    computeMaxHeight();
+
+    window.addEventListener("resize", computeMaxHeight);
+    return () => window.removeEventListener("resize", computeMaxHeight);
+  }, []);
+
+  // scroll to bottom when new frames are added
+  useEffect(() => {
+    // add a small delay to ensure the DOM has updated
+    const scrollTimeout = setTimeout(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      }
+    }, 50);
+
+    return () => clearTimeout(scrollTimeout);
+  }, [frames]);
+
   return (
-    <div className="flex flex-col grow gap-2 max-h-screen overflow-scroll text-sm no-scrollbar md:w-2/3 w-full items-start p-4 md:p-0">
+    <div
+      ref={containerRef}
+      className="flex flex-col grow gap-2 max-h-screen overflow-scroll text-sm no-scrollbar md:w-2/3 w-full items-start p-4 md:p-0"
+    >
       {frames.map((frame, index) => (
         <MessageFrame key={index} frame={frame} />
       ))}
@@ -77,12 +136,15 @@ const MessageContainer = ({ frames }: FrameState) => {
 
 const UserArea = () => {
   const { state: frameList } = useWebsocketContext();
+  const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
 
   return (
     <div className="flex flex-col gap-2 items-center md:w-2/3 ">
-      <MessageContainer frames={frameList.frames} />
-      <UserInput />
-      <AudioRecorder />
+      <MessageContainer
+        frames={frameList.frames}
+        setMaxTextareaHeight={setMaxTextareaHeight}
+      />
+      <UserInputArea maxTextareaHeight={maxTextareaHeight} />
     </div>
   );
 };
