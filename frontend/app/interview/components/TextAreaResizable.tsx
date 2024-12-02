@@ -48,6 +48,7 @@ const TextareaResizable = forwardRef<HTMLTextAreaElement, TextAreaProps>(
         onChange={handleInputChange}
         onKeyDown={onKeyDown}
         className="resize-none w-full p-2 focus-visible:ring-transparent"
+        placeholder="Type your message here..."
       />
     );
   }
