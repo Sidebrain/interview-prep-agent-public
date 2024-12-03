@@ -57,8 +57,14 @@ class WebSocketConnection {
     this.cleanupEventListeners();
 
     // remove all listeners from the event emitter
+    // this.eventEmitter.removeAllListeners("heartbeat");
+    // this.eventEmitter.removeAllListeners("message");  // remove all listeners from the event emitter
     this.eventEmitter.removeAllListeners("heartbeat");
-    // this.eventEmitter.removeAllListeners("message");
+    this.eventEmitter.removeAllListeners("message");
+    this.eventEmitter.removeAllListeners("open");
+    this.eventEmitter.removeAllListeners("close");
+    this.eventEmitter.removeAllListeners("error");
+    this.eventEmitter.removeAllListeners("messageSent");
   }
 
   private setupEventListeners(): void {
@@ -238,13 +244,14 @@ class WebSocketConnection {
   }
 
   disconnect(): void {
+    this.stopHeartbeat();
+    this.cleanupAllListeners();
+
     if (this.websocket) {
       this.websocket.close();
       this.websocket = null;
       this.messageSender = null;
-      this.cleanupAllListeners();
     }
-    this.stopHeartbeat();
   }
 
   getReadyState(): number {
