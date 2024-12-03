@@ -13,7 +13,7 @@ const InterviewPage = () => {
       }}
     >
       <InputProvider>
-        <div className="flex justify-center">
+        <div className="flex justify-center md:min-w-1/3 w-full m-2">
           <UserArea />
         </div>
       </InputProvider>

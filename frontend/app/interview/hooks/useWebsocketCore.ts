@@ -1,8 +1,8 @@
 "use client";
 import clientLogger from "@/app/lib/clientLogger";
-import WebsocketConnection from "@/infrastructure/WebsocketConnection";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { WebSocketCoreOptions } from "../types/websocketConnectionTypes";
+import WebsocketConnection from "../infrastructure/websocket/WebsocketConnection";
 
 export const useWebsocketCore = <TState, TAction, T>({
   reducer,
