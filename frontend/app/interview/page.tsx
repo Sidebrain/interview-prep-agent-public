@@ -3,6 +3,7 @@ import React from "react";
 import { WebsocketProvider } from "./context/WebsocketContext";
 import { InputProvider } from "./context/InputContext";
 import UserArea from "./components/UserArea";
+import EvaluationArea from "./components/EvaluationArea";
 
 const InterviewPage = () => {
   return (
@@ -15,6 +16,7 @@ const InterviewPage = () => {
       <InputProvider>
         <div className="flex justify-center md:min-w-1/3 w-full m-2">
           <UserArea />
+          <EvaluationArea />
         </div>
       </InputProvider>
     </WebsocketProvider>

@@ -11,7 +11,7 @@ const UserArea = () => {
   return (
     <div className="flex flex-col gap-2 items-center md:w-2/3 ">
       <MessageContainer
-        frames={frameList.frames}
+        frames={frameList.websocketFrames}
         setMaxTextareaHeight={setMaxTextareaHeight}
       />
       <UserInputArea maxTextareaHeight={maxTextareaHeight} />

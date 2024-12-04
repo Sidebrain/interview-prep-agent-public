@@ -1,12 +1,12 @@
 import clientLogger from "@/app/lib/clientLogger";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 
-export interface FrameState {
-  frames: WebsocketFrame[];
+export interface FrameList {
+  websocketFrames: WebsocketFrame[];
 }
 
-export const initialFrameState: FrameState = {
-  frames: [],
+export const initialFrameList: FrameList = {
+  websocketFrames: [],
 };
 
 export type FrameAction =
@@ -14,14 +14,14 @@ export type FrameAction =
   | { type: "REMOVE_FRAME"; payload: string };
 
 export const frameReducer = (
-  state: FrameState,
+  state: FrameList,
   action: FrameAction
-): FrameState => {
+): FrameList => {
   switch (action.type) {
     case "ADD_FRAME":
       // temporary check to prevent duplicate frames
       if (
-        state.frames.find((frame) => frame.frameId === action.payload.frameId)
+        state.websocketFrames.find((frame) => frame.frameId === action.payload.frameId)
       ) {
         clientLogger.debug("Duplicate frame received", {
           frameId: action.payload.frameId,
@@ -30,12 +30,12 @@ export const frameReducer = (
       }
       return {
         ...state,
-        frames: [...state.frames, action.payload],
+        websocketFrames: [...state.websocketFrames, action.payload],
       };
     case "REMOVE_FRAME":
       return {
         ...state,
-        frames: state.frames.filter(
+        websocketFrames: state.websocketFrames.filter(
           (frame) => frame.frameId !== action.payload
         ),
       };

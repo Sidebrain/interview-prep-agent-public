@@ -1,6 +1,5 @@
 import { MessageFormatter, SendableMessage } from "./types";
 import clientLogger from "@/app/lib/clientLogger";
-import { createHumanInputFrame } from "@/app/lib/helperFunctions";
 import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
 
 // Formatter for user input messages
