@@ -4,10 +4,29 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 from typing import Literal
 
-AddressType = Literal[
-    "content", "artifact", "human", "thought"
+RoleType = Literal["assistant", "user"]
+FinishReasonType = Literal[
+    "stop",
+    "length",
+    "tool_calls",
+    "content_filter",
+    "function_call",
 ]
 
+AddressType = Literal["content", "artifact", "human", "thought"]
+FrameType = Literal[
+    "completion",
+    "streaming",
+    "heartbeat",
+    "error",
+    "input",
+    "signal.regenerate",
+]
+ObjectType = Literal[
+    "chat.completion",
+    "chat.completion.chunk",
+    "human.completion",
+]
 
 class CompletionFrameChunk(BaseModel):
     model_config = ConfigDict(
@@ -15,34 +34,24 @@ class CompletionFrameChunk(BaseModel):
         populate_by_name=True,
     )
     id: str
-    object: Literal[
-        "chat.completion",
-        "chat.completion.chunk",
-        "human.completion",
-    ]
+    object: ObjectType
     model: str
-    role: Literal["assistant", "user"]
+    role: RoleType
     content: str | None
     delta: str | None
     created_ts: int = Field(
-        default_factory=lambda: int(
-            datetime.now().timestamp()
-        )
+        default_factory=lambda: int(datetime.now().timestamp())
     )
     title: str | None = None
     index: int = 0
-    finish_reason: Literal[
-        "stop",
-        "length",
-        "tool_calls",
-        "content_filter",
-        "function_call",
-    ]
+    finish_reason: FinishReasonType
 
     def get_human_readable_created_ts(self) -> str:
-        return datetime.fromtimestamp(
-            self.created_ts
-        ).strftime("%Y-%m-%d %H:%M:%S")
+        return datetime.fromtimestamp(self.created_ts).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+
 
 
 class WebsocketFrame(BaseModel):
@@ -51,17 +60,8 @@ class WebsocketFrame(BaseModel):
         populate_by_name=True,
     )
     frame_id: str
-    correlation_id: str = Field(
-        default_factory=lambda: str(uuid4())
-    )
-    type: Literal[
-        "completion",
-        "streaming",
-        "heartbeat",
-        "error",
-        "input",
-        "signal.regenerate",
-    ]
+    correlation_id: str = Field(default_factory=lambda: str(uuid4()))
+    type: FrameType
     address: AddressType
     frame: CompletionFrameChunk
 
