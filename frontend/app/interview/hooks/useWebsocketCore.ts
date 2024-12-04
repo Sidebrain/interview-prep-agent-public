@@ -7,7 +7,7 @@ import WebsocketConnection from "../infrastructure/websocket/WebsocketConnection
 export const useWebsocketCore = <TState, TAction, T>({
   reducer,
   initialState,
-  validator,
+  validator: websocketMessageValidator,
   ...config
 }: WebSocketCoreOptions<TState, TAction, T>) => {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -24,7 +24,7 @@ export const useWebsocketCore = <TState, TAction, T>({
 
     connection.on("message", (rawData: unknown) => {
       try {
-        const validatedData = validator.validate(rawData);
+        const validatedData = websocketMessageValidator.validate(rawData);
         clientLogger.debug("Received valid WebSocket message", {
           validatedData,
         });
@@ -72,7 +72,7 @@ export const useWebsocketCore = <TState, TAction, T>({
 
     return () => {
       // clean up here
-      connection.disconnect();
+      connection.cleanup();
     };
   }, [config.enabled, config.url]);
 
@@ -81,6 +81,9 @@ export const useWebsocketCore = <TState, TAction, T>({
       if (!connectionRef.current) {
         throw new Error("Websocket connection not initialized");
       }
+      clientLogger.debug("Sending message to WebSocket", {
+        data,
+      });
       return connectionRef.current.sendMessage(data);
     },
     [connectionRef.current]

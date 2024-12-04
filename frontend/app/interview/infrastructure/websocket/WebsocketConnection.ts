@@ -5,23 +5,34 @@ import {
 } from "@/app/interview/handlers/websocketMessageSender/sender";
 import { WebSocketHookOptions } from "@/types/websocketTypes";
 import EventEmitter from "events";
-
-export type CustomWebSocketEventMap = WebSocketEventMap & {
-  heartbeat: void;
-};
+import { HeartbeatHandler } from "./handlers/HeartbeatHandler";
+import { ReconnectHandler } from "./handlers/ReconnectionHandler";
+import { WebsocketEventHandler } from "./handlers/EventHandler";
+import { CustomWebSocketEventMap } from "./types";
 
 class WebSocketConnection {
   private websocket: WebSocket | null = null;
-  private config: WebSocketHookOptions;
   private eventEmitter: EventEmitter;
-  private reconnectCount: number = 0;
-  private heartbeatTimer: NodeJS.Timeout | null = null;
+  private heartbeatHandler: HeartbeatHandler | null = null;
   private messageSender: WebsocketMessageSender | null = null;
+  private reconnectHandler: ReconnectHandler | null = null;
+  private eventHandler: WebsocketEventHandler | null = null;
 
-  constructor(config: WebSocketHookOptions) {
-    this.config = config;
+  constructor(private readonly config: WebSocketHookOptions) {
     this.eventEmitter = new EventEmitter();
-    this.cleanupAllListeners();
+    this.initializeHandlers();
+  }
+
+  private initializeHandlers(): void {
+    this.reconnectHandler = new ReconnectHandler(
+      this.config.reconnectAttempts ?? 5,
+      this.config.reconnectInterval ?? 3000,
+      this.connect.bind(this)
+    );
+    this.heartbeatHandler = new HeartbeatHandler(
+      this.config.heartbeatInterval ?? 30000,
+      this.sendRawMessage.bind(this)
+    );
   }
 
   getWebsocket(): WebSocket | null {
@@ -36,125 +47,39 @@ class WebSocketConnection {
     });
 
     if (this.websocket) {
-      this.cleanupAllListeners();
-      this.disconnect();
+      this.cleanup();
     }
 
     this.websocket = new WebSocket(this.config.url, this.config.protocols);
-    this.setupEventListeners();
+    this.eventHandler = new WebsocketEventHandler(
+      this.eventEmitter,
+      this.websocket
+    );
+    this.eventHandler.setupEventListeners({
+      onOpen: () => {
+        this.reconnectHandler?.reset();
+        this.heartbeatHandler?.start();
+        this.messageSender = createWebsocketMessageSender(this.websocket!);
+      },
+      onClose: () => {
+        this.heartbeatHandler?.stop();
+        this.reconnectHandler?.handleReconnect();
+      },
+      onError: (error) => {
+        this.eventEmitter.emit("error", error);
+      },
+    });
   }
 
-  private cleanupEventListeners(): void {
+  cleanup(): void {
+    this.heartbeatHandler?.stop();
+    this.eventHandler?.cleanup();
+    this.eventEmitter.removeAllListeners();
+
     if (this.websocket) {
-      this.websocket.onopen = null;
-      this.websocket.onclose = null;
-      this.websocket.onerror = null;
-      this.websocket.onmessage = null;
-    }
-  }
-
-  private cleanupAllListeners(): void {
-    this.cleanupEventListeners();
-
-    // remove all listeners from the event emitter
-    // this.eventEmitter.removeAllListeners("heartbeat");
-    // this.eventEmitter.removeAllListeners("message");  // remove all listeners from the event emitter
-    this.eventEmitter.removeAllListeners("heartbeat");
-    this.eventEmitter.removeAllListeners("message");
-    this.eventEmitter.removeAllListeners("open");
-    this.eventEmitter.removeAllListeners("close");
-    this.eventEmitter.removeAllListeners("error");
-    this.eventEmitter.removeAllListeners("messageSent");
-  }
-
-  private setupEventListeners(): void {
-    if (!this.websocket) return;
-
-    this.websocket.onopen = (event: CustomWebSocketEventMap["open"]) => {
-      clientLogger.debug("WebSocket opened", {
-        url: this.config.url,
-        protocols: this.config.protocols,
-        readyState: this.websocket?.readyState,
-      });
-
-      this.reconnectCount = 0;
-      this.startHeartbeat();
-      this.messageSender = createWebsocketMessageSender(this.websocket!);
-      this.eventEmitter.emit("open", event);
-    };
-
-    this.websocket.onclose = (event: CustomWebSocketEventMap["close"]) => {
-      clientLogger.debug("WebSocket closed", {
-        code: event.code,
-        reason: event.reason,
-        wasClean: event.wasClean,
-        readyState: this.websocket?.readyState,
-      });
-
-      this.stopHeartbeat();
-      this.eventEmitter.emit("close", event);
-      this.handleReconnect();
-    };
-
-    this.websocket.onerror = (event: CustomWebSocketEventMap["error"]) => {
-      clientLogger.error("WebSocket error", {
-        error: event,
-        readyState: this.websocket?.readyState,
-      });
-
-      this.eventEmitter.emit("error", event);
-    };
-
-    this.websocket.onmessage = (event: CustomWebSocketEventMap["message"]) => {
-      this.handleMessage(event);
-    };
-  }
-
-  private handleMessage(event: MessageEvent<string>): void {
-    if (event.data === "pong") {
-      this.eventEmitter.emit("heartbeat");
-      return;
-    }
-    try {
-      const parsedData = JSON.parse(event.data); // this is needed, ensures that the data is an object
-      this.eventEmitter.emit("message", parsedData);
-    } catch (error) {
-      this.eventEmitter.emit(
-        "error",
-        new Error(`Failed to parse message ${error}`)
-      );
-    }
-  }
-
-  private handleReconnect(): void {
-    this.cleanupEventListeners();
-    this.stopHeartbeat();
-
-    if (this.reconnectCount < (this.config.reconnectAttempts ?? 5)) {
-      setTimeout(() => {
-        this.reconnectCount++;
-
-        clientLogger.debug("Reconnecting to WebSocket", {
-          reconnectCount: this.reconnectCount,
-        });
-
-        this.connect();
-      }, this.config.reconnectInterval ?? 3000);
-    }
-  }
-
-  // also clean this up
-  private startHeartbeat(): void {
-    this.stopHeartbeat();
-    this.heartbeatTimer = setInterval(() => {
-      this.sendMessage("ping");
-    }, this.config.heartbeatInterval ?? 30000);
-  }
-
-  private stopHeartbeat(): void {
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = null;
+      this.websocket.close(1000, "Closing connection via cleanup");
+      this.websocket = null;
+      this.messageSender = null;
     }
   }
 
@@ -165,34 +90,24 @@ class WebSocketConnection {
         data: JSON.stringify(data, null, 2),
         connectionStatus: this.getConnectionStatus(),
       });
-
       throw new Error("WebSocket is not connected");
     }
 
+    if (!this.messageSender) {
+      throw new Error("Message sender not initialized");
+    }
+
     try {
-      if (this.messageSender) {
-        const success = this.messageSender.send(data);
-        if (!success) {
-          throw new Error("Failed to send message");
-        }
-        //     const message = typeof data === "string" ? data : JSON.stringify(data);
-
-        //   clientLogger.debug("Sending WebSocket message", {
-        //     messageType: typeof data,
-        //     message: JSON.stringify(data, null, 2),
-        //     readyState: this.websocket.readyState,
-        //     connectionStatus: this.getConnectionStatus(),
-        //   });
-
-        //   this.websocket.send(message);
-
-        clientLogger.debug("Successfully sent WebSocket message", {
-          timestamp: new Date().toISOString(),
-        });
-
-        // Optional: emit sent event
-        this.eventEmitter.emit("messageSent", data);
+      const success = this.messageSender.send(data);
+      if (!success) {
+        throw new Error("Failed to send message");
       }
+      clientLogger.debug("Successfully sent WebSocket message", {
+        timestamp: new Date().toISOString(),
+      });
+
+      // Optional: emit sent event
+      this.eventEmitter.emit("messageSent", data);
     } catch (error) {
       clientLogger.error("Failed to send WebSocket message", {
         error: error instanceof Error ? error.message : String(error),
@@ -202,14 +117,12 @@ class WebSocketConnection {
       throw error;
     }
   }
-
-  sendHumanInput(content: string): void {
-    if (!this.messageSender) {
-      throw new Error("Message sender not initialized");
+  private sendRawMessage(data: string): void {
+    if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) {
+      clientLogger.debug("Cannot send heartbeat - connection not open");
+      return;
     }
-
-    const frame = this.messageSender.createHumanInputFrame(content);
-    this.sendMessage(frame);
+    this.websocket.send(data);
   }
 
   getConnectionStatus(): string {
@@ -241,17 +154,6 @@ class WebSocketConnection {
     listener: (event: CustomWebSocketEventMap[K]) => void
   ): void {
     this.eventEmitter.off(event, listener);
-  }
-
-  disconnect(): void {
-    this.stopHeartbeat();
-    this.cleanupAllListeners();
-
-    if (this.websocket) {
-      this.websocket.close();
-      this.websocket = null;
-      this.messageSender = null;
-    }
   }
 
   getReadyState(): number {

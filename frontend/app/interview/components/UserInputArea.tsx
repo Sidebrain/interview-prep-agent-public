@@ -6,6 +6,7 @@ import TextareaResizable from "./TextAreaResizable";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { FormEvent, useRef } from "react";
+import clientLogger from "@/app/lib/clientLogger";
 
 type UserInputProps = {
   maxTextareaHeight: number;
@@ -19,6 +20,10 @@ const UserInputArea = ({ maxTextareaHeight }: UserInputProps) => {
   const handleSubmit = (e: FormEvent<Element>) => {
     e.preventDefault();
     const frame = createHumanInputFrame(inputValue);
+    clientLogger.debug("Sending human input frame with content", {
+      content: inputValue,
+      frame,
+    });
     sendMessage(frame);
     dispatchFrame({ type: "ADD_FRAME", payload: frame });
     dispatchInputValue({ type: "SET_INPUT", payload: "" });

@@ -1,14 +1,13 @@
-import {
-  CompletionFrameChunk,
-} from "@/types/ScalableWebsocketTypes";
+import { CompletionFrameChunk } from "@/types/ScalableWebsocketTypes";
 import { v4 as uuidv4 } from "uuid";
 import { createHumanInputFrame } from "@/app/lib/helperFunctions";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import clientLogger from "@/app/lib/clientLogger";
-import { MessageFormatter, MessageSender } from "@/app/interview/handlers/websocketMessageSender/types";
+import {
+  MessageFormatter,
+  MessageSender,
+} from "@/app/interview/handlers/websocketMessageSender/types";
 import { PingMessageFormatter, UserInputMessageFormatter } from "./formatters";
-
-
 
 export class WebsocketMessageSender implements MessageSender {
   private ws: WebSocket;
@@ -28,7 +27,7 @@ export class WebsocketMessageSender implements MessageSender {
     });
     for (const formatter of this.formatters) {
       if (formatter.canFormat(data)) {
-        const message = formatter.format(data as any);
+        const message = formatter.format(data as unknown);
         this.ws.send(message);
         return true;
       }

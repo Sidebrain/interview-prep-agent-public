@@ -1,11 +1,17 @@
 import { MessageFormatter, SendableMessage } from "./types";
 import clientLogger from "@/app/lib/clientLogger";
+import { createHumanInputFrame } from "@/app/lib/helperFunctions";
 import { WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
 
 // Formatter for user input messages
 class UserInputMessageFormatter implements MessageFormatter<SendableMessage> {
   canFormat(data: unknown): data is SendableMessage {
-    return WebsocketFrameSchema.safeParse(data).success;
+    const canFormat = WebsocketFrameSchema.safeParse(data).success;
+    clientLogger.debug("UserInputMessageFormatter format check", {
+      data,
+      canFormat,
+    });
+    return canFormat;
   }
 
   format(data: SendableMessage): string {
@@ -24,7 +30,12 @@ class UserInputMessageFormatter implements MessageFormatter<SendableMessage> {
 // Formatter for ping messages
 class PingMessageFormatter implements MessageFormatter<string> {
   canFormat(data: unknown): data is string {
-    return typeof data === "string" && data === "ping";
+    const canFormat = typeof data === "string" && data === "ping";
+    clientLogger.debug("PingMessageFormatter format check", {
+      data,
+      canFormat,
+    });
+    return canFormat;
   }
 
   format(data: string): string {
