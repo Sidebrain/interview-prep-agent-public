@@ -39,11 +39,7 @@ class EvaluationLogContext:
     frame_id: Optional[str] = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            k: v
-            for k, v in self.__dict__.items()
-            if v is not None
-        }
+        return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
 class EvaluatorBase(ABC):
@@ -60,9 +56,7 @@ class EvaluatorBase(ABC):
                 "type": self.__class__.__name__,
                 "evaluation_schema": (
                     self.evaluation_schema.__class__.__name__
-                    if not isinstance(
-                        self.evaluation_schema, str
-                    )
+                    if not isinstance(self.evaluation_schema, str)
                     else "string schema"
                 ),
             },
@@ -81,17 +75,13 @@ class EvaluatorBase(ABC):
         """
         # Get the correlation id from the last message in the memory store
         # this is the user input
-        correlation_id = memory_store.memory[
-            -1
-        ].correlation_id
+        correlation_id = memory_store.memory[-1].correlation_id
         # Create input log context
         input_context = EvaluationLogContext(
             correlation_id=correlation_id,
             questions_count=len(questions),
             question_samples=(
-                [q.model_dump() for q in questions[:2]]
-                if questions
-                else None
+                [q.model_dump() for q in questions[:2]] if questions else None
             ),
             memory_store_size=(
                 len(memory_store.memory)
@@ -100,9 +90,7 @@ class EvaluatorBase(ABC):
             ),
             evaluation_schema_type=(
                 self.evaluation_schema.__class__.__name__
-                if not isinstance(
-                    self.evaluation_schema, str
-                )
+                if not isinstance(self.evaluation_schema, str)
                 else "string schema"
             ),
         )
@@ -113,19 +101,15 @@ class EvaluatorBase(ABC):
                 extra={"context": input_context.to_dict()},
             )
 
-        context_messages = (
-            await self.retreive_and_build_context_messages(
-                questions=questions,
-                memory_store=memory_store,
-                address_filter=["human"],
-                custom_user_instruction=(
-                    self.evaluation_schema
-                    if isinstance(
-                        self.evaluation_schema, str
-                    )
-                    else None
-                ),
-            )
+        context_messages = await self.retreive_and_build_context_messages(
+            questions=questions,
+            memory_store=memory_store,
+            address_filter=["human"],
+            custom_user_instruction=(
+                self.evaluation_schema
+                if isinstance(self.evaluation_schema, str)
+                else None
+            ),
         )
 
         evaluation = await self.ask_thinker_for_evaluation(
@@ -133,13 +117,11 @@ class EvaluatorBase(ABC):
             thinker=thinker,
         )
 
-        evaluation_frame = (
-            Dispatcher.package_and_transform_to_webframe(
-                evaluation,
-                address="content",
-                frame_id=str(uuid4()),
-                correlation_id=correlation_id,
-            )
+        evaluation_frame = Dispatcher.package_and_transform_to_webframe(
+            evaluation,
+            address="evaluation",
+            frame_id=str(uuid4()),
+            correlation_id=correlation_id,
         )
 
         if debug:
@@ -152,9 +134,7 @@ class EvaluatorBase(ABC):
                 frame_id=evaluation_frame.frame_id,
                 evaluation_schema_type=(
                     self.evaluation_schema.__class__.__name__
-                    if not isinstance(
-                        self.evaluation_schema, str
-                    )
+                    if not isinstance(self.evaluation_schema, str)
                     else "string schema"
                 ),
             )
@@ -187,11 +167,7 @@ class EvaluatorBase(ABC):
                 extra={
                     "context": {
                         "message_count": len(messages),
-                        "first_message": (
-                            messages[0]
-                            if messages
-                            else None
-                        ),
+                        "first_message": (messages[0] if messages else None),
                         "address_filter": address_filter,
                         "has_custom_instruction": custom_user_instruction
                         is not None,
@@ -212,9 +188,7 @@ class EvaluatorBase(ABC):
     @abstractmethod
     async def ask_thinker_for_evaluation(
         self,
-        messages: List[
-            dict[str, str]
-        ],  # the context to send LLM
+        messages: List[dict[str, str]],  # the context to send LLM
         thinker: "Thinker",
     ) -> ChatCompletion:
         """
@@ -232,9 +206,7 @@ class EvaluatorSimple(EvaluatorBase):
         messages: List[dict[str, str]],
         thinker: "Thinker",
     ) -> ChatCompletion:
-        return await super().ask_thinker_for_evaluation(
-            messages, thinker
-        )
+        return await super().ask_thinker_for_evaluation(messages, thinker)
 
 
 class EvaluatorStructured(EvaluatorBase):
@@ -247,8 +219,10 @@ class EvaluatorStructured(EvaluatorBase):
         messages: List[dict[str, str]],
         thinker: "Thinker",
     ) -> ChatCompletion:
-        structured_evaluation_response = await thinker.extract_structured_response(
-            messages=messages,
-            pydantic_structure_to_extract=self.evaluation_schema,
+        structured_evaluation_response = (
+            await thinker.extract_structured_response(
+                messages=messages,
+                pydantic_structure_to_extract=self.evaluation_schema,
+            )
         )
         return structured_evaluation_response

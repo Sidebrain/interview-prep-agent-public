@@ -14,7 +14,7 @@ const InterviewPage = () => {
       }}
     >
       <InputProvider>
-        <div className="flex justify-center md:min-w-1/3 w-full m-2">
+        <div className="flex justify-center md:min-w-1/3 w-full m-2 gap-2">
           <UserArea />
           <EvaluationArea />
         </div>

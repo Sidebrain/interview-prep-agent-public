@@ -1,4 +1,4 @@
-import { FrameType } from "@/types/reducerTypes";
+import type { FrameType } from "@/types/reducerTypes";
 import { FrameRenderHandler } from "@/handlers/frameRenderHandler";
 import { useArtifact } from "@/context/ArtifactContext";
 import { Button } from "@/components/ui/button";

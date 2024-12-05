@@ -13,7 +13,7 @@ FinishReasonType = Literal[
     "function_call",
 ]
 
-AddressType = Literal["content", "artifact", "human", "thought"]
+AddressType = Literal["content", "artifact", "human", "thought", "evaluation"]
 FrameType = Literal[
     "completion",
     "streaming",
@@ -27,6 +27,7 @@ ObjectType = Literal[
     "chat.completion.chunk",
     "human.completion",
 ]
+
 
 class CompletionFrameChunk(BaseModel):
     model_config = ConfigDict(
@@ -50,8 +51,6 @@ class CompletionFrameChunk(BaseModel):
         return datetime.fromtimestamp(self.created_ts).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-
-
 
 
 class WebsocketFrame(BaseModel):

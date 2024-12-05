@@ -1,13 +1,16 @@
 import { useEffect, useRef } from "react";
-import MessageFrame from "./MessageFrame";
+import ConversationFrame from "./frames/ConversationFrame";
 import clientLogger from "@/app/lib/clientLogger";
-import { FrameState } from "../reducers/frameReducer";
+import { FrameList } from "../reducers/frameReducer";
+import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
+import { frameRenderers } from "../services/frameRenderers";
 
-type MessageContainerProps = FrameState & {
+type MessageContainerProps = FrameList & {
   setMaxTextareaHeight: (height: number) => void;
 };
+
 const MessageContainer = ({
-  frames,
+  websocketFrames,
   setMaxTextareaHeight,
 }: MessageContainerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -17,7 +20,10 @@ const MessageContainer = ({
     const computeMaxHeight = () => {
       if (containerRef.current) {
         const containerHeight = containerRef.current.clientHeight;
-        const newMaxHeight = Math.max(50, Math.max(150, containerHeight * 0.7));
+        const newMaxHeight = Math.max(
+          50,
+          Math.max(150, containerHeight * 0.7)
+        );
         setMaxTextareaHeight(newMaxHeight);
 
         clientLogger.debug({
@@ -37,21 +43,20 @@ const MessageContainer = ({
     // add a small delay to ensure the DOM has updated
     const scrollTimeout = setTimeout(() => {
       if (containerRef.current) {
-        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        containerRef.current.scrollTop =
+          containerRef.current.scrollHeight;
       }
     }, 50);
 
     return () => clearTimeout(scrollTimeout);
-  }, [frames]);
+  }, [websocketFrames]);
 
   return (
     <div
       ref={containerRef}
       className="flex flex-col grow gap-2 max-h-screen overflow-scroll text-sm no-scrollbar md:w-2/3 w-full items-start p-4 md:p-0"
     >
-      {frames.map((frame, index) => (
-        <MessageFrame key={index} frame={frame} />
-      ))}
+      {frameRenderers.conversation(websocketFrames)}
     </div>
   );
 };

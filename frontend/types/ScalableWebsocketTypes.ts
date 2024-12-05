@@ -1,29 +1,49 @@
 import { z } from "zod";
 import { createTimestamp } from "@/app/lib/helperFunctions";
 
+// Centralized enums
+const ObjectType = [
+  "chat.completion",
+  "chat.completion.chunk",
+  "human.completion",
+] as const;
+const RoleType = ["assistant", "user"] as const;
+const FinishReasonType = [
+  "stop",
+  "length",
+  "tool_calls",
+  "content_filter",
+  "function_call",
+] as const;
+const FrameType = [
+  "completion",
+  "streaming",
+  "heartbeat",
+  "error",
+  "input",
+  "signal.regenerate",
+] as const;
+const AddressType = [
+  "content",
+  "artifact",
+  "human",
+  "thought",
+  "evaluation",
+] as const;
+
 // zod types for type validation
 
 const CompletionFrameChunkSchema = z.object({
   id: z.string(),
-  object: z.enum([
-    "chat.completion",
-    "chat.completion.chunk",
-    "human.completion",
-  ]),
+  object: z.enum(ObjectType),
   model: z.string(),
-  role: z.enum(["assistant", "user"]),
+  role: z.enum(RoleType),
   content: z.string().nullable(),
   delta: z.string().nullable(),
   createdTs: z.number().int().default(createTimestamp()), // unix timestamp
   title: z.string().nullable(),
   index: z.number(),
-  finishReason: z.enum([
-    "stop",
-    "length",
-    "tool_calls",
-    "content_filter",
-    "function_call",
-  ]),
+  finishReason: z.enum(FinishReasonType),
 });
 
 const ThoughtSchema = z.object({
@@ -40,15 +60,8 @@ const WebsocketFrameSchema = z.object({
   // track changes: added "input" to type, added "human" to address
   frameId: z.string(),
   correlationId: z.string(),
-  type: z.enum([
-    "completion",
-    "streaming",
-    "heartbeat",
-    "error",
-    "input",
-    "signal.regenerate",
-  ]),
-  address: z.enum(["content", "artifact", "human", "thought"]).nullable(),
+  type: z.enum(FrameType),
+  address: z.enum(AddressType).nullable(),
   frame: CompletionFrameChunkSchema,
 });
 
@@ -61,4 +74,16 @@ export type {
 };
 
 // zod types for type validation on the websocket
-export { CompletionFrameChunkSchema, WebsocketFrameSchema, ThoughtSchema };
+export {
+  CompletionFrameChunkSchema,
+  WebsocketFrameSchema,
+  ThoughtSchema,
+};
+
+export type {
+  AddressType,
+  FrameType,
+  ObjectType,
+  RoleType,
+  FinishReasonType,
+};

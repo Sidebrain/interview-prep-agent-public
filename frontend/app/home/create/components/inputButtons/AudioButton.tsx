@@ -1,7 +1,8 @@
 import { Icons } from "@/components/icons";
 import InputContext from "@/context/InputContext";
 import useVoice from "@/hooks/useVoice";
-import React, { useContext } from "react";
+import type React from "react";
+import { useContext } from "react";
 
 const AudioButton = () => {
   const { dispatch: dispatchInputValue } = useContext(InputContext);
