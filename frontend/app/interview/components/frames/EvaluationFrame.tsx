@@ -1,14 +1,7 @@
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import React from "react";
 import RecursiveEvaluationFrame from "./RecursiveEvaluationFrame";
-
-const tryParseJSON = (content: string) => {
-  try {
-    return JSON.parse(content);
-  } catch (e) {
-    return null;
-  }
-};
+import { tryParseJSON } from "@/app/lib/helperFunctions";
 
 const EvaluationFrame = ({
   websocketFrame,

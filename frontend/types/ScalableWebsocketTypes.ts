@@ -2,20 +2,23 @@ import { z } from "zod";
 import { createTimestamp } from "@/app/lib/helperFunctions";
 
 // Centralized enums
-const ObjectType = [
+export const ObjectType = [
   "chat.completion",
   "chat.completion.chunk",
   "human.completion",
 ] as const;
-const RoleType = ["assistant", "user"] as const;
-const FinishReasonType = [
+
+export const RoleType = ["assistant", "user"] as const;
+
+export const FinishReasonType = [
   "stop",
   "length",
   "tool_calls",
   "content_filter",
   "function_call",
 ] as const;
-const FrameType = [
+
+export const FrameType = [
   "completion",
   "streaming",
   "heartbeat",
@@ -23,7 +26,8 @@ const FrameType = [
   "input",
   "signal.regenerate",
 ] as const;
-const AddressType = [
+
+export const AddressType = [
   "content",
   "artifact",
   "human",
@@ -32,8 +36,7 @@ const AddressType = [
 ] as const;
 
 // zod types for type validation
-
-const CompletionFrameChunkSchema = z.object({
+export const CompletionFrameChunkSchema = z.object({
   id: z.string(),
   object: z.enum(ObjectType),
   model: z.string(),
@@ -46,17 +49,16 @@ const CompletionFrameChunkSchema = z.object({
   finishReason: z.enum(FinishReasonType),
 });
 
-const ThoughtSchema = z.object({
+export const ThoughtSchema = z.object({
   question: z.string(),
   sampleAnswer: z.string(),
   options: z.string(),
 });
 
 export type Thought = z.infer<typeof ThoughtSchema>;
+export type CompletionFrameChunk = z.infer<typeof CompletionFrameChunkSchema>;
 
-type CompletionFrameChunk = z.infer<typeof CompletionFrameChunkSchema>;
-
-const WebsocketFrameSchema = z.object({
+export const WebsocketFrameSchema = z.object({
   // track changes: added "input" to type, added "human" to address
   frameId: z.string(),
   correlationId: z.string(),
@@ -65,25 +67,4 @@ const WebsocketFrameSchema = z.object({
   frame: CompletionFrameChunkSchema,
 });
 
-type WebsocketFrame = z.infer<typeof WebsocketFrameSchema>;
-
-export type {
-  // types received from websocket
-  CompletionFrameChunk,
-  WebsocketFrame,
-};
-
-// zod types for type validation on the websocket
-export {
-  CompletionFrameChunkSchema,
-  WebsocketFrameSchema,
-  ThoughtSchema,
-};
-
-export type {
-  AddressType,
-  FrameType,
-  ObjectType,
-  RoleType,
-  FinishReasonType,
-};
+export type WebsocketFrame = z.infer<typeof WebsocketFrameSchema>;

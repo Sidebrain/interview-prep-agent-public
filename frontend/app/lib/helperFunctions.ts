@@ -5,9 +5,7 @@ const createTimestamp = () => {
   return Math.floor(Date.now() / 1000);
 };
 
-export { createTimestamp };
-
-export const createHumanInputFrame = (content: string): WebsocketFrame => {
+const createHumanInputFrame = (content: string): WebsocketFrame => {
   return {
     frameId: uuidv4(),
     correlationId: uuidv4(),
@@ -27,3 +25,16 @@ export const createHumanInputFrame = (content: string): WebsocketFrame => {
     },
   };
 };
+
+const tryParseJSON = (content: string | null) => {
+  if (content === null) {
+    return null;
+  }
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    return null;
+  }
+};
+
+export { tryParseJSON, createTimestamp, createHumanInputFrame };

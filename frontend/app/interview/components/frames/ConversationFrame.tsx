@@ -1,5 +1,6 @@
+import { tryParseJSON } from "@/app/lib/helperFunctions";
 import { cn } from "@/lib/utils";
-import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
+import { ThoughtSchema, WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import Markdown from "react-markdown";
 
 const ConversationFrame = ({
@@ -7,6 +8,17 @@ const ConversationFrame = ({
 }: {
   websocketFrame: WebsocketFrame;
 }) => {
+  let content = websocketFrame.frame.content;
+  const structuredContent = tryParseJSON(content);
+
+  if (structuredContent !== null) {
+    // try parsing for a thought
+    const { success, data } = ThoughtSchema.safeParse(structuredContent);
+    if (success) {
+      content = data.question;
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -17,7 +29,7 @@ const ConversationFrame = ({
         }
       )}
     >
-      <Markdown>{websocketFrame.frame.content}</Markdown>
+      <Markdown>{content}</Markdown>
     </div>
   );
 };

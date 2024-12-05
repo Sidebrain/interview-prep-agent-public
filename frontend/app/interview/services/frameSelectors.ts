@@ -40,4 +40,15 @@ export const frameSelectors = {
       )
     );
   },
+
+  lastThought: (websocketFrames: WebsocketFrame[]) => {
+    if (!websocketFrames || websocketFrames.length === 0) {
+      return [];
+    }
+    const thoughtFrames = frameSelectors.thought(websocketFrames);
+    if (thoughtFrames.length === 0) {
+      return [];
+    }
+    return [thoughtFrames[thoughtFrames.length - 1]];
+  },
 };
