@@ -10,6 +10,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        keyframes: {
+          "fade-out": {
+            "0%": { opacity: "1" },
+            "75%": { opacity: "1" },
+            "100%": { opacity: "0" },
+          },
+        },
+        animation: {
+          "fade-out": "fade-out 2s ease-out",
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -58,6 +68,9 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography"),
+  ],
 };
 export default config;

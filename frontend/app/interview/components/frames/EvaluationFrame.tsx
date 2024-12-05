@@ -1,7 +1,7 @@
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import React from "react";
-import RecursiveEvaluationFrame from "./RecursiveEvaluationFrame";
 import { tryParseJSON } from "@/app/lib/helperFunctions";
+import { RecursiveEvaluationFrame } from "./RecursiveEvaluationFrame";
 
 const EvaluationFrame = ({
   websocketFrame,
@@ -16,7 +16,7 @@ const EvaluationFrame = ({
   const structuredContent = tryParseJSON(content);
   if (structuredContent === null) {
     return (
-      <div className="border border-gray-300 rounded-md p-2 m-1 whitespace-pre-wrap">
+      <div className="border w-full border-gray-300 rounded-md p-2 m-1 whitespace-pre-wrap">
         {content}
       </div>
     );
@@ -25,7 +25,7 @@ const EvaluationFrame = ({
   return (
     <div>
       <div
-        className="border border-gray-300 rounded-md p-2 whitespace-pre-wrap m-1"
+        className="border border-gray-300 rounded-md p-2 whitespace-pre-wrap m-1 "
         key={websocketFrame.frameId}
       >
         <RecursiveEvaluationFrame data={structuredContent} />
