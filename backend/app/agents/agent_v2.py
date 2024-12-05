@@ -20,7 +20,11 @@ from app.types.interview_concept_types import (
     QuestionAndAnswer,
     hiring_requirements,
 )
-from app.types.websocket_types import CompletionFrameChunk, WebsocketFrame, AddressType
+from app.types.websocket_types import (
+    CompletionFrameChunk,
+    WebsocketFrame,
+    AddressType,
+)
 from app.websocket_handler import Channel
 
 import logging
@@ -34,6 +38,7 @@ logger = logging.getLogger(__name__)
 model = "gpt-4o-mini-2024-07-18"
 
 # After the imports, before the logger setup
+
 
 class Thinker:
     debug = DEBUG_CONFIG["thinker"]
@@ -74,7 +79,10 @@ class Thinker:
         return extracted_structure
 
     async def think_with_tool(
-        self, messages: list[dict[str, str]], tool: dict[str, str], debug: bool = False
+        self,
+        messages: list[dict[str, str]],
+        tool: dict[str, str],
+        debug: bool = False,
     ) -> ChatCompletion:
         response = await self.client.chat.completions.create(
             messages=messages,
@@ -126,7 +134,9 @@ class ListeningAgent:
 
         if debug:
             logger.debug(f"\n{'^'*30}\n")
-            logger.debug(f"Listening agent {self.agent_id} new message received:")
+            logger.debug(
+                f"Listening agent {self.agent_id} new message received:"
+            )
             logger.debug(frame.frame.content)
             logger.debug(f"\n{'*'*30}\n")
             logger.debug(f"Listening agent {self.agent_id} response:")
@@ -151,12 +161,14 @@ class Agent:
         self.thinker = Thinker()
         # define topic for the agent's memory
         self.memory_topic = f"agent.{self.agent_id}.memory"
-        self.memory = create_memory_store(self.memory_topic)
+        self.memory = create_memory_store()
         self.channel = channel
         self.interview = Interview(self.thinker, self.memory, self.channel)
         self.setup()
 
-    def setup_listening_agents(self, debug: bool = True) -> list[ListeningAgent]:
+    def setup_listening_agents(
+        self, debug: bool = True
+    ) -> list[ListeningAgent]:
         return [
             ListeningAgent(
                 purpose="To collect the information about the emotional qualities we are looking for in the hire",
@@ -201,9 +213,11 @@ class Agent:
         frame_to_send = Dispatcher.package_and_transform_to_webframe(
             response, "content", frame_id
         )
-        self.memory.add(frame_to_send)  # Add the frame to memory
+        await self.memory.add(frame_to_send)  # Add the frame to memory
 
-        await self.channel.send_message(frame_to_send.model_dump_json(by_alias=True))
+        await self.channel.send_message(
+            frame_to_send.model_dump_json(by_alias=True)
+        )
 
     async def internal_thought_projection(self):
         """Use this to generate helper text"""
@@ -277,7 +291,9 @@ class Agent:
             return
         frame_id = str(uuid4())
         try:
-            parsed_message = WebsocketFrame.model_validate_json(msg, strict=False)
+            parsed_message = WebsocketFrame.model_validate_json(
+                msg, strict=False
+            )
 
             if self.debug and debug:
                 logger.debug(
@@ -304,7 +320,9 @@ class Agent:
 
             await asyncio.gather(
                 *[
-                    self.channel.send_message(frame.model_dump_json(by_alias=True))
+                    self.channel.send_message(
+                        frame.model_dump_json(by_alias=True)
+                    )
                     for frame in frames
                 ]
             )
@@ -318,7 +336,9 @@ class MockInterview:
 
     async def __call__(self, frame_id: str):
         # extract questions from the interview questions document and rubric params that it is associated with
-        mock_interview_questions = await self.extract_questions_and_rubric_params()
+        mock_interview_questions = (
+            await self.extract_questions_and_rubric_params()
+        )
         # generate a sample answer for each question - {sample_answer, sample_answer_framework, sample_answer_concepts}
         # package it in a websocket frame and send it to the user as a thought
         # wait for the user to answer
@@ -357,7 +377,9 @@ class Interview:
         self, concept: BaseModel, frame_id: str, debug: bool = True
     ) -> Tuple[WebsocketFrame, QuestionAndAnswer]:
         if self.debug and debug:
-            logger.debug(f"printing the concept that is being interviewed: {concept}")
+            logger.debug(
+                f"printing the concept that is being interviewed: {concept}"
+            )
 
         info_to_extract_from_user = [
             field_details.description
@@ -376,13 +398,17 @@ class Interview:
             custom_user_instruction={
                 "role": "user",
                 "content": """Ask a question to get the following information:\n{info_to_extract_from_user} """.format(
-                    info_to_extract_from_user=" ".join(info_to_extract_from_user)
+                    info_to_extract_from_user=" ".join(
+                        info_to_extract_from_user
+                    )
                 ),
             },
         )
 
         if self.debug and debug:
-            logger.debug(f"messages that form context for question generation: ")
+            logger.debug(
+                f"messages that form context for question generation: "
+            )
             for m in messages:
                 logger.debug(f"{m.items()}")
                 logger.debug(f"\n{'-'*30}\n")
@@ -423,6 +449,8 @@ class Interview:
                 self.channel.send_message(
                     frame_to_send_to_user.model_dump_json(by_alias=True)
                 ),
-                self.channel.send_message(q_and_a_frame.model_dump_json(by_alias=True)),
+                self.channel.send_message(
+                    q_and_a_frame.model_dump_json(by_alias=True)
+                ),
             ]
         )
