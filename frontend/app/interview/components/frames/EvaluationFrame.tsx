@@ -1,17 +1,41 @@
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
+import React from "react";
+import RecursiveEvaluationFrame from "./RecursiveEvaluationFrame";
+
+const tryParseJSON = (content: string) => {
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    return null;
+  }
+};
 
 const EvaluationFrame = ({
   websocketFrame,
 }: {
   websocketFrame: WebsocketFrame;
 }) => {
+  const content = websocketFrame.frame.content;
+  if (content === null) {
+    return null;
+  }
+
+  const structuredContent = tryParseJSON(content);
+  if (structuredContent === null) {
+    return (
+      <div className="border border-gray-300 rounded-md p-2 m-1 whitespace-pre-wrap">
+        {content}
+      </div>
+    );
+  }
+
   return (
     <div>
       <div
         className="border border-gray-300 rounded-md p-2 whitespace-pre-wrap m-1"
         key={websocketFrame.frameId}
       >
-        {websocketFrame.frame.content}
+        <RecursiveEvaluationFrame data={structuredContent} />
       </div>
     </div>
   );
