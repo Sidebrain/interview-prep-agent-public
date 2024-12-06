@@ -223,6 +223,10 @@ class Agent:
         """Use this to generate helper text"""
         raise NotImplementedError
 
+    async def save_artifacts_to_yaml(self, artifacts: list[BaseModel]):
+        with open("logs/artifacts.yaml", "w") as file:
+            yaml.dump(artifacts, file)
+
     async def generate_all_artifacts(
         self, frame_id: str
     ) -> Tuple[list[WebsocketFrame], list[ChatCompletion]]:
@@ -246,10 +250,7 @@ class Agent:
         self, artifact: str, frame_id: str, debug: bool = True
     ) -> Tuple[WebsocketFrame, ChatCompletion]:
         messages = self.memory.extract_memory_for_generation(
-            custom_user_instruction={
-                "role": "user",
-                "content": f"Using the previous information provided by the user, generate a high quality and detailed: {artifact}",
-            }
+            custom_user_instruction=f"Using the previous information provided by the user, generate a high quality and detailed: {artifact}"
         )
         response = await self.thinker.generate(messages=messages)
         websocket_frame = Dispatcher.package_and_transform_to_webframe(
@@ -305,7 +306,7 @@ class Agent:
                 await self.regenerate_artefact(parsed_message, debug)
                 return
 
-            self.memory.add(parsed_message)
+            await self.memory.add(parsed_message)
             await self.interview(frame_id=frame_id)
         except json.JSONDecodeError:
             logger.error("Failed to decode the message")
@@ -395,20 +396,16 @@ class Interview:
                 "content",
                 "human",
             ],  # so that the context does not include the in between thought frames
-            custom_user_instruction={
-                "role": "user",
-                "content": """Ask a question to get the following information:\n{info_to_extract_from_user} """.format(
-                    info_to_extract_from_user=" ".join(
-                        info_to_extract_from_user
-                    )
-                ),
-            },
+            custom_user_instruction=f"""Ask a question to get the following information:\n{info_to_extract_from_user} """.format(
+                info_to_extract_from_user=" ".join(info_to_extract_from_user)
+            ),
         )
 
         if self.debug and debug:
             logger.debug(
                 f"messages that form context for question generation: "
             )
+            logger.debug(f"messages: {messages}")
             for m in messages:
                 logger.debug(f"{m.items()}")
                 logger.debug(f"\n{'-'*30}\n")

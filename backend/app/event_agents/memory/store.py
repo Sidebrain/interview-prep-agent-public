@@ -99,9 +99,7 @@ class InMemoryStore:
                 logger.debug(
                     f"No parent frame found for completion frame: {completion_frame.id}"
                 )
-                logger.debug(
-                    "Available websocket frame, completion chunk ids"
-                )
+                logger.debug("Available websocket frame, completion chunk ids")
                 logger.debug(
                     [
                         (
@@ -115,9 +113,7 @@ class InMemoryStore:
 
     def extract_memory_for_generation(
         self,
-        custom_user_instruction: Optional[
-            Dict[str, str]
-        ] = None,
+        custom_user_instruction: Optional[Dict[str, str]] = None,
         address_filter: List[AddressType] = [],
     ) -> List[Dict[str, str]]:
         """Extract memory in format needed for generation."""
@@ -129,9 +125,9 @@ class InMemoryStore:
                 "content": message.frame.content,
             }
             for message in self.memory
-            if not address_filter
-            or message.address in address_filter
+            if not address_filter or message.address in address_filter
         ]
+        print(f"\033[33mmemory_content: {memory_content}\033[0m")
 
         if custom_user_instruction:
             memory_content.append(
@@ -140,5 +136,6 @@ class InMemoryStore:
                     "content": custom_user_instruction,
                 }
             )
+            print(f"\033[33msystem + memory_content: { memory_content}\033[0m")
 
         return system + memory_content
