@@ -10,12 +10,11 @@ from app.event_agents.evaluations.evaluators import (
     relevance_evaluator,
     exaggeration_evaluator,
     structured_thinking_evaluator,
-    communication_evaluator,
+    # communication_evaluator,
+    # candidate_evaluation_evaluator,
 )
-from app.event_agents.orchestrator.interview_manager import (
-    EvaluationManager,
-    InterviewManager,
-)
+from app.event_agents.evaluations.manager import EvaluationManager
+from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.orchestrator.thinker import Thinker
 from app.event_agents.memory.factory import (
     create_memory_store,
@@ -41,9 +40,7 @@ class Broker:
         self._event_queue: asyncio.Queue = asyncio.Queue()
         self._is_running: bool = False
 
-    async def subscribe(
-        self, event_type: BaseModel, handler: Callable
-    ):
+    async def subscribe(self, event_type: BaseModel, handler: Callable):
         """
         Subscribe to an event type with a handler function.
 
@@ -53,13 +50,9 @@ class Broker:
 
         The handler will be invoked whenever an event of the specified type is published.
         """
-        self._subscribers[event_type.__name__].append(
-            handler
-        )
+        self._subscribers[event_type.__name__].append(handler)
 
-    async def unsubscribe(
-        self, event_type: BaseModel, handler: Callable
-    ):
+    async def unsubscribe(self, event_type: BaseModel, handler: Callable):
         """
         Unsubscribe from an event type with a handler function.
 
@@ -69,9 +62,7 @@ class Broker:
 
         Removes the specified handler from the list of subscribers for the given event type.
         """
-        self._subscribers[event_type.__name__].remove(
-            handler
-        )
+        self._subscribers[event_type.__name__].remove(handler)
 
     async def publish(self, event: dict):
         """
@@ -151,7 +142,8 @@ class Agent:
                 relevance_evaluator,
                 exaggeration_evaluator,
                 structured_thinking_evaluator,
-                communication_evaluator,
+                # communication_evaluator,
+                # candidate_evaluation_evaluator,
             ],
         )
         self.interview_manager = InterviewManager(
@@ -185,9 +177,7 @@ class Agent:
         - WebsocketFrame: Handled by handle_websocket_frame
         Also sets up interview manager subscriptions.
         """
-        await self.broker.subscribe(
-            StartEvent, self.handle_start_event
-        )
+        await self.broker.subscribe(StartEvent, self.handle_start_event)
         await self.broker.subscribe(
             MessageReceivedEvent,
             self.handle_message_received_event,
@@ -200,9 +190,7 @@ class Agent:
         #     AddToMemoryEvent,
         #     self.interview_manager.handle_add_to_memory_event,
         # )
-        await self.broker.subscribe(
-            WebsocketFrame, self.handle_websocket_frame
-        )
+        await self.broker.subscribe(WebsocketFrame, self.handle_websocket_frame)
         await self.interview_manager.subscribe()
 
     async def handle_start_event(self, event: StartEvent):
@@ -221,18 +209,12 @@ class Agent:
             )
             # doing this because otherwise the event loop is blocked
             # the status updates in the QuestionsGatheringEvent were not being published
-            asyncio.create_task(
-                self.interview_manager.initialize()
-            )
+            asyncio.create_task(self.interview_manager.initialize())
         except Exception as e:
-            logger.error(
-                f"Error in handle_start_event: {str(e)}"
-            )
+            logger.error(f"Error in handle_start_event: {str(e)}")
             raise
 
-    async def handle_message_received_event(
-        self, event: MessageReceivedEvent
-    ):
+    async def handle_message_received_event(self, event: MessageReceivedEvent):
         """
         Process incoming messages from the websocket.
 
@@ -249,10 +231,8 @@ class Agent:
             message = event.message
             if message == None:
                 return
-            parsed_message = (
-                WebsocketFrame.model_validate_json(
-                    message, strict=False
-                )
+            parsed_message = WebsocketFrame.model_validate_json(
+                message, strict=False
             )
             logger.info(
                 f"Received message, parsed into websocket frame: {parsed_message}"
@@ -269,14 +249,10 @@ class Agent:
             logger.error("Failed to decode the message")
             return
         except Exception as e:
-            logger.error(
-                f"Error in handle_message_received_event: {str(e)}"
-            )
+            logger.error(f"Error in handle_message_received_event: {str(e)}")
             raise
 
-    async def handle_websocket_frame(
-        self, event: WebsocketFrame
-    ):
+    async def handle_websocket_frame(self, event: WebsocketFrame):
         """
         Send a websocket frame to the client.
 
@@ -291,7 +267,5 @@ class Agent:
                 event.model_dump_json(by_alias=True)
             )
         except Exception as e:
-            logger.error(
-                f"Error in handle_websocket_frame: {str(e)}"
-            )
+            logger.error(f"Error in handle_websocket_frame: {str(e)}")
             raise
