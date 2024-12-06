@@ -1,1 +1,12 @@
-commit_details.txt
+# misc
+.DS_Store
+*.pem
+
+# User files
+.env*
+secret
+.commit_description*
+documentation/*
+
+# VSCode
+**/.VSCode*

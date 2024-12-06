@@ -1,7 +1,11 @@
+import asyncio
 from pydantic import BaseModel, Field
 from app.event_agents.evaluations.evaluator_base import (
     EvaluatorSimple,
     EvaluatorStructured,
+)
+from app.event_agents.evaluations.rating_rubric_evaluator import (
+    RatingRubricEvaluationBuilder,
 )
 
 
@@ -31,24 +35,24 @@ structured_thinking_evaluator = EvaluatorStructured(
 )
 
 
-class CommunicationSchema(BaseModel):
-    dance: list[str] = Field(
-        description="Evaluation of the dance of the user's answer. The dance is the way the user establishes the interplay between conflict and resolution through content"
-    )
-    rhythm: list[str] = Field(
-        description="Evaluation of the rhythm of the user's answer. The rhythm is the way the user's answer flows from one point to another"
-    )
-    tone: list[str] = Field(
-        description="Evaluation of the tone of the user's answer. The tone is the way the user's answer is delivered. The more conversational the better"
-    )
-    direction: list[str] = Field(
-        description="Evaluation of how well the end of the answer is connected to the beginning, via the middle"
-    )
-    storylenses: list[str] = Field(
-        description="Evaluation of the storylenses of the user's answer. The storylenses is your unique viewpoint, your story, your lens vs regurgitation from memory"
-    )
+# class CommunicationSchema(BaseModel):
+#     dance: list[str] = Field(
+#         description="Evaluation of the dance of the user's answer. The dance is the way the user establishes the interplay between conflict and resolution through content"
+#     )
+#     rhythm: list[str] = Field(
+#         description="Evaluation of the rhythm of the user's answer. The rhythm is the way the user's answer flows from one point to another"
+#     )
+#     tone: list[str] = Field(
+#         description="Evaluation of the tone of the user's answer. The tone is the way the user's answer is delivered. The more conversational the better"
+#     )
+#     direction: list[str] = Field(
+#         description="Evaluation of how well the end of the answer is connected to the beginning, via the middle"
+#     )
+#     storylenses: list[str] = Field(
+#         description="Evaluation of the storylenses of the user's answer. The storylenses is your unique viewpoint, your story, your lens vs regurgitation from memory"
+#     )
 
 
-communication_evaluator = EvaluatorStructured(
-    evaluation_schema=CommunicationSchema
-)
+# communication_evaluator = EvaluatorStructured(
+#     evaluation_schema=CommunicationSchema
+# )

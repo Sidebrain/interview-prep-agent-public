@@ -103,8 +103,8 @@ hiring_requirements = [
     Requirement,
     # Budget,
     # # Expected,
-    Backup,
-    CultureFit,
+    # Backup,
+    # CultureFit,
     # InternalRequirements,
 ]
 

@@ -11,6 +11,7 @@ from app.event_agents.evaluations.evaluators import (
     # candidate_evaluation_evaluator,
 )
 from app.event_agents.evaluations.manager import EvaluationManager
+from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.orchestrator.broker import Broker
 from app.event_agents.orchestrator.thinker import Thinker
@@ -43,13 +44,14 @@ class Agent:
             session_id=self.session_id,
             thinker=self.thinker,
             memory_store=self.memory_store,
-            evaluators=[
-                relevance_evaluator,
-                exaggeration_evaluator,
-                structured_thinking_evaluator,
-                # communication_evaluator,
-                # candidate_evaluation_evaluator,
-            ],
+            evaluator_registry=EvaluatorRegistry(),
+            # evaluators=[
+            #     relevance_evaluator,
+            #     exaggeration_evaluator,
+            #     structured_thinking_evaluator,
+            #     # communication_evaluator,
+            #     # candidate_evaluation_evaluator,
+            # ],
         )
         self.interview_manager = InterviewManager(
             session_id=self.session_id,

@@ -226,6 +226,11 @@ class InterviewManager:
         )
         await self.broker.publish(let_user_know_timer_started_event)
 
+        # Initialize evaluator registry
+        logger.info("Initializing evaluator registry")
+        await self.eval_manager.evaluator_registry.initialize()
+        logger.info("Initialized evaluator registry")
+
         # Start asking questions
         try:
             await self.ask_next_question()
