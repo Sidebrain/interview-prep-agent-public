@@ -4,10 +4,8 @@ from uuid import UUID
 
 from fastapi import WebSocket
 
-from app.event_agents.orchestrator.broker import (
-    Agent,
-    StartEvent,
-)
+from app.event_agents.agent import Agent
+from app.event_agents.orchestrator.events import StartEvent
 from app.event_agents.websocket_handler import Channel
 
 logger = logging.getLogger(__name__)
