@@ -54,20 +54,33 @@ class EvaluationManager:
         """
         Handle evaluations concurrently and yield results as they complete.
         """
-        evaluation_frames = []
+        evaluation_tasks = []
 
-        # recieve once all the evaluations are done
+        # Create tasks for all evaluations
         for evaluator in self.evaluator_registry.get_evaluators():
-            try:
-                evaluation_frame = await evaluator.evaluate(
-                    questions,
-                    self.memory_store,
-                    self.thinker,
-                )
-                evaluation_frames.append(evaluation_frame)
-            except Exception as e:
+            task = self.run_evaluation(evaluator, questions)
+            evaluation_tasks.append(task)
+
+        # Run all evaluations concurrently
+        evaluation_frames = await asyncio.gather(*evaluation_tasks, return_exceptions=True)
+        
+        # Filter out any exceptions and log them
+        filtered_frames = []
+        for result in evaluation_frames:
+            if isinstance(result, Exception):
                 logger.error(
-                    f"Evaluation failed: {str(e)}",
+                    f"Evaluation failed: {str(result)}",
                     exc_info=True,
                 )
-        return evaluation_frames
+            else:
+                filtered_frames.append(result)
+
+        return filtered_frames
+
+    async def run_evaluation(self, evaluator, questions):
+        """Helper method to run individual evaluations"""
+        return await evaluator.evaluate(
+            questions,
+            self.memory_store,
+            self.thinker,
+        )
