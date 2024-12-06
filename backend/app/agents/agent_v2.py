@@ -164,6 +164,7 @@ class Agent:
         self.memory = create_memory_store()
         self.channel = channel
         self.interview = Interview(self.thinker, self.memory, self.channel)
+        self.artifact_dict = {}
         self.setup()
 
     def setup_listening_agents(
@@ -223,14 +224,31 @@ class Agent:
         """Use this to generate helper text"""
         raise NotImplementedError
 
-    async def save_artifacts_to_yaml(self, artifacts: list[BaseModel]):
-        with open("logs/artifacts.yaml", "w") as file:
-            yaml.dump(artifacts, file)
+    def save_artifacts_to_yaml(self):
+        with open("config/artifacts_v2.yaml", "w") as file:
+            yaml.dump(self.artifact_dict, file)
+
+    def add_artifact_to_dict(self, artifact: str, content: str):
+        self.artifact_dict[artifact] = content
+        logger.info(f"\033[33mArtifact added to dictionary: {artifact}\033[0m")
+        logger.info(
+            f"\033[33mLength of artifact dict: {len(self.artifact_dict.keys())}\033[0m"
+        )
+        # check if all three artifacts are present
+        # if they are then save to the yaml file
+        if len(self.artifact_dict.keys()) == 3:
+            logger.info("Saving artifacts to yaml file")
+            self.save_artifacts_to_yaml()
+
+    def clean_previous_artifacts(self):
+        self.artifact_dict = {}
+        self.save_artifacts_to_yaml()
 
     async def generate_all_artifacts(
         self, frame_id: str
     ) -> Tuple[list[WebsocketFrame], list[ChatCompletion]]:
         """Use this to generate artifacts"""
+        self.clean_previous_artifacts()
         artifacts_to_generate = [
             # "Short description of the job",
             "job description",
@@ -243,6 +261,7 @@ class Agent:
                 for artifact in artifacts_to_generate
             ]
         )
+        self.save_artifacts_to_yaml()
         frames, responses = zip(*generated_items)
         return frames, responses
 
@@ -253,10 +272,13 @@ class Agent:
             custom_user_instruction=f"Using the previous information provided by the user, generate a high quality and detailed: {artifact}"
         )
         response = await self.thinker.generate(messages=messages)
+        # save the artifact to the artifact dictionary
+        # primary reason is to save to the yaml file
+        self.add_artifact_to_dict(artifact, response.choices[0].message.content)
         websocket_frame = Dispatcher.package_and_transform_to_webframe(
             response, "artifact", frame_id, title=artifact.title()
         )
-        self.memory.add(websocket_frame)
+        await self.memory.add(websocket_frame)
         if self.debug and debug:
             # logger.debug(f"Artifact generated: {artifact}")
             # logger.debug(websocket_frame.model_dump_json(indent=4))
@@ -270,12 +292,12 @@ class Agent:
     ):
 
         try:
-            parent_frame = self.memory.parent_frame_for_completion_chunk(
+            parent_frame = self.memory.find_parent_frame(
                 incoming_parsed_frame.frame
             )
             # generate a new artifact frame with the same id as the parent frame
             new_artifact_frame, _ = await self.generate_single_artifact(
-                parent_frame.frame.title, parent_frame.frame_id
+                parent_frame.frame.title.lower(), parent_frame.frame_id
             )
             self.memory.add(new_artifact_frame)
             await self.channel.send_message(
@@ -439,7 +461,7 @@ class Interview:
                 object="chat.completion",
             ),
         )
-        self.memory.add(frame_to_send_to_user)
+        await self.memory.add(frame_to_send_to_user)
 
         await asyncio.gather(
             *[

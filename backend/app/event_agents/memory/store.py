@@ -127,7 +127,6 @@ class InMemoryStore:
             for message in self.memory
             if not address_filter or message.address in address_filter
         ]
-        print(f"\033[33mmemory_content: {memory_content}\033[0m")
 
         if custom_user_instruction:
             memory_content.append(
@@ -136,6 +135,5 @@ class InMemoryStore:
                     "content": custom_user_instruction,
                 }
             )
-            print(f"\033[33msystem + memory_content: { memory_content}\033[0m")
 
         return system + memory_content
