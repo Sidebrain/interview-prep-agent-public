@@ -150,44 +150,30 @@ class InterviewManager:
             raise
 
     async def initialize(self) -> list[QuestionAndAnswer]:
-        """
-        Initialize the interview session and start the question gathering process.
-
-        This method:
-        1. Publishes initial questions gathering event
-        2. Gathers questions using the question manager
-        3. Publishes completion event
-        4. Starts the interview timer
-        5. Initiates the first question
-
-        Returns:
-            list[QuestionAndAnswer]: List of gathered questions for the interview
-        """
+        """Initialize the interview session and start the question gathering process."""
         logger.info("Starting new interview session: %s", self)
+        
+        await self.begin_question_gathering()
+        questions = await self.collect_and_store_questions()
+        await self.complete_question_gathering()
+        
+        await self.start_interview_timer()
+        await self.initialize_evaluation_systems()
+        await self.begin_questioning()
+        
+        return questions
 
-        # # Gather questions
-        # questions = (
-        #     await self.question_manager.gather_questions()
-        # )
-        # logger.info(
-        #     "Questions gathered: %s",
-        #     {
-        #         "session": self.session_id.hex[:8],
-        #         "question_count": len(questions),
-        #     },
-        # )
-
-        # First event
+    async def begin_question_gathering(self) -> None:
+        """Signal the start of question gathering phase."""
         in_progress_event = QuestionsGatheringEvent(
             status=Status.in_progress,
             session_id=self.session_id,
         )
-
         await self.broker.publish(in_progress_event)
 
-        # gather questions and store them in the instance variable
+    async def collect_and_store_questions(self) -> list[QuestionAndAnswer]:
+        """Gather and store interview questions."""
         questions = await self.question_manager.gather_questions()
-
         logger.info(
             "Questions gathered",
             extra={
@@ -195,43 +181,51 @@ class InterviewManager:
                 "question_count": len(questions),
             },
         )
+        return questions
 
-        # Second event
-        completed_question_gathering_event = QuestionsGatheringEvent(
+    async def complete_question_gathering(self) -> None:
+        """Signal completion of question gathering phase."""
+        completed_event = QuestionsGatheringEvent(
             status=Status.completed,
             session_id=self.session_id,
         )
-
-        await self.broker.publish(completed_question_gathering_event)
+        await self.broker.publish(completed_event)
         logger.debug(
             "\033[33m\nCompleted gathering %d questions. Published event.\n\033[0m",
             len(self.question_manager.questions),
         )
 
-        # Start time tracking in the background# Start timer
+    async def start_interview_timer(self) -> None:
+        """Start the interview timer and notify the user."""
         asyncio.create_task(self.time_manager.start_timer())
         logger.info("Timer started: %s", self.time_manager)
-
+        
         time_unit = "seconds" if self.max_time_allowed < 60 else "minutes"
         time_to_answer = (
             self.max_time_allowed
             if self.max_time_allowed < 60
             else math.ceil(self.max_time_allowed / 60)
         )
-
-        let_user_know_timer_started_event = Dispatcher.package_and_transform_to_webframe(
+        
+        timer_notification = Dispatcher.package_and_transform_to_webframe(
             f"Timer started. You have {time_to_answer} {time_unit} to answer the questions.",
             "content",
             frame_id=str(uuid4()),
         )
-        await self.broker.publish(let_user_know_timer_started_event)
+        await self.broker.publish(timer_notification)
 
-        # Initialize evaluator registry
+    async def initialize_evaluation_systems(self) -> None:
+        """Initialize evaluation and perspective systems."""
         logger.info("Initializing evaluator registry")
         await self.eval_manager.evaluator_registry.initialize()
         logger.info("Initialized evaluator registry")
 
-        # Start asking questions
+        # logger.info("Initializing perspective registry")
+        # await self.perspective_manager.perspective_registry.initialize()
+        # logger.info("Initialized perspective registry")
+
+    async def begin_questioning(self) -> None:
+        """Start the question-asking process."""
         try:
             await self.ask_next_question()
         except Exception as e:
@@ -244,8 +238,6 @@ class InterviewManager:
                 },
                 exc_info=True,
             )
-
-        return questions
 
     async def ask_next_question(self) -> None:
         """Request and publish next question."""
