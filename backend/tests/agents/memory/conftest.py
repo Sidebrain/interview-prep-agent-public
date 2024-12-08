@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 import pytest
 
-from app.agents.memory.protocols import ConfigProvider, MessagePublisher
+from app.event_agents.memory.protocols import ConfigProvider, MessagePublisher
 from app.types.websocket_types import WebsocketFrame
 
 

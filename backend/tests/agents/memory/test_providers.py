@@ -1,5 +1,5 @@
 import pytest
-from app.agents.memory.providers import YAMLConfigProvider, PubSubMessagePublisher
+from app.event_agents.memory.providers import YAMLConfigProvider, PubSubMessagePublisher
 from app.types.websocket_types import CompletionFrameChunk, WebsocketFrame
 from .conftest import MockConfigProvider, MockMessagePublisher
 
