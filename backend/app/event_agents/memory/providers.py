@@ -10,10 +10,12 @@ from pubsub import pub
 class YAMLConfigProvider:
     """Concrete implementation of ConfigProvider using YAML files."""
 
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: str | None = None):
         self.config_path = config_path
 
     def get_system_prompt(self) -> List[Dict[str, str]]:
+        if self.config_path is None:
+            return []
         with open(self.config_path, "r") as file:
             config = yaml.safe_load(file)
             return [

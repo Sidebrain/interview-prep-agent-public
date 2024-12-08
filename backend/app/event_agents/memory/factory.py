@@ -3,8 +3,9 @@ from .providers import YAMLConfigProvider, PubSubMessagePublisher
 
 
 def create_memory_store(
-    # memory_topic: str, 
-    config_path: str = "config/agent_v2.yaml", debug: bool = False
+    # memory_topic: str,
+    config_path: str | None = None,
+    debug: bool = False,
 ) -> InMemoryStore:
     """Create a new memory store instance with all required dependencies."""
     return InMemoryStore(

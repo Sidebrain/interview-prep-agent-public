@@ -33,15 +33,11 @@ logger = logging.getLogger(__name__)
 class EvaluationManager:
     def __init__(
         self,
-        broker: "Broker",
-        session_id: UUID,
         thinker: "Thinker",
         # evaluators: List["EvaluatorBase"],
         evaluator_registry: "EvaluatorRegistry",
         memory_store: "MemoryStore",
     ):
-        self.session_id = session_id
-        self.broker = broker
         self.thinker = thinker
         # self.evaluators = evaluators
         self.memory_store = memory_store
@@ -62,8 +58,10 @@ class EvaluationManager:
             evaluation_tasks.append(task)
 
         # Run all evaluations concurrently
-        evaluation_frames = await asyncio.gather(*evaluation_tasks, return_exceptions=True)
-        
+        evaluation_frames = await asyncio.gather(
+            *evaluation_tasks, return_exceptions=True
+        )
+
         # Filter out any exceptions and log them
         filtered_frames = []
         for result in evaluation_frames:
@@ -77,7 +75,9 @@ class EvaluationManager:
 
         return filtered_frames
 
-    async def run_evaluation(self, evaluator, questions):
+    async def run_evaluation(
+        self, evaluator: "EvaluatorBase", questions: List[QuestionAndAnswer]
+    ) -> "WebsocketFrame":
         """Helper method to run individual evaluations"""
         return await evaluator.evaluate(
             questions,

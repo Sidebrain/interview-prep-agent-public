@@ -23,6 +23,8 @@ from app.event_agents.orchestrator.events import (
     MessageReceivedEvent,
     StartEvent,
 )
+from app.event_agents.perspectives.manager import PerspectiveManager
+from app.event_agents.perspectives.registry import PerspectiveRegistry
 from app.event_agents.websocket_handler import Channel
 
 import logging
@@ -30,6 +32,7 @@ import logging
 from app.types.websocket_types import WebsocketFrame
 
 logger = logging.getLogger(__name__)
+
 
 class Agent:
     def __init__(self, channel: Channel):
@@ -40,18 +43,13 @@ class Agent:
         self.thinker = Thinker()
         self.memory_store = create_memory_store()
         self.evaluator = EvaluationManager(
-            broker=self.broker,
-            session_id=self.session_id,
             thinker=self.thinker,
             memory_store=self.memory_store,
             evaluator_registry=EvaluatorRegistry(),
-            # evaluators=[
-            #     relevance_evaluator,
-            #     exaggeration_evaluator,
-            #     structured_thinking_evaluator,
-            #     # communication_evaluator,
-            #     # candidate_evaluation_evaluator,
-            # ],
+        )
+        self.perspective_manager = PerspectiveManager(
+            perspective_registry=PerspectiveRegistry(),
+            memory_store=self.memory_store,
         )
         self.interview_manager = InterviewManager(
             session_id=self.session_id,
@@ -59,6 +57,7 @@ class Agent:
             thinker=self.thinker,
             memory_store=self.memory_store,
             eval_manager=self.evaluator,
+            perspective_manager=self.perspective_manager,
             max_time_allowed=10 * 60,  # 10 minutes
         )
 

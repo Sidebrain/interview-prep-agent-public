@@ -11,12 +11,16 @@ class JsonFormatter(logging.Formatter):
             "level": record.levelname,
             "file": record.filename,
             "line": record.lineno,
-            "message": record.msg
+            "message": record.msg,
         }
 
         # Add extra context if available
         if hasattr(record, "context"):
             log_data["context"] = record.context
+
+        # Add extra
+        if hasattr(record, "extra"):
+            log_data["extra"] = record.extra
 
         # Handle exceptions
         if record.exc_info:

@@ -21,6 +21,7 @@ from app.event_agents.orchestrator.events import (
     Status,
 )
 
+from app.event_agents.perspectives.manager import PerspectiveManager
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
@@ -44,6 +45,7 @@ class InterviewManager:
         thinker: "Thinker",
         memory_store: "MemoryStore",
         eval_manager: EvaluationManager,
+        perspective_manager: PerspectiveManager,
         max_time_allowed: int | None = None,
     ):
         self.broker = broker
@@ -58,6 +60,7 @@ class InterviewManager:
         self.interview_event_handler = InterviewEventHandler(broker, session_id)
         self.question_manager = QuestionManager(thinker)
         self.eval_manager = eval_manager
+        self.perspective_manager = perspective_manager
         self.memory_store = memory_store
 
     def __repr__(self) -> str:
@@ -128,16 +131,25 @@ class InterviewManager:
             evaluations = await self.eval_manager.handle_evaluation(
                 questions=[self.question_manager.current_question]
             )
+            print("\033[91mgenerating perspectives\033[0m")
+            perspectives = await self.perspective_manager.handle_perspective(
+                questions=[self.question_manager.current_question]
+            )
+            print("\033[91mperspectives generated\033[0m")
             logger.info(
                 "Answer processed",
                 extra={
                     "manager": self,
                     "evaluation_count": len(evaluations),
+                    "perspective_count": len(perspectives),
                 },
             )
 
             for evaluation in evaluations:
                 await self.broker.publish(evaluation)
+
+            for perspective in perspectives:
+                await self.broker.publish(perspective)
             await self.ask_next_question()
         except Exception as e:
             logger.error(
@@ -152,15 +164,15 @@ class InterviewManager:
     async def initialize(self) -> list[QuestionAndAnswer]:
         """Initialize the interview session and start the question gathering process."""
         logger.info("Starting new interview session: %s", self)
-        
+
         await self.begin_question_gathering()
         questions = await self.collect_and_store_questions()
         await self.complete_question_gathering()
-        
+
         await self.start_interview_timer()
         await self.initialize_evaluation_systems()
         await self.begin_questioning()
-        
+
         return questions
 
     async def begin_question_gathering(self) -> None:
@@ -199,14 +211,14 @@ class InterviewManager:
         """Start the interview timer and notify the user."""
         asyncio.create_task(self.time_manager.start_timer())
         logger.info("Timer started: %s", self.time_manager)
-        
+
         time_unit = "seconds" if self.max_time_allowed < 60 else "minutes"
         time_to_answer = (
             self.max_time_allowed
             if self.max_time_allowed < 60
             else math.ceil(self.max_time_allowed / 60)
         )
-        
+
         timer_notification = Dispatcher.package_and_transform_to_webframe(
             f"Timer started. You have {time_to_answer} {time_unit} to answer the questions.",
             "content",
@@ -220,9 +232,9 @@ class InterviewManager:
         await self.eval_manager.evaluator_registry.initialize()
         logger.info("Initialized evaluator registry")
 
-        # logger.info("Initializing perspective registry")
-        # await self.perspective_manager.perspective_registry.initialize()
-        # logger.info("Initialized perspective registry")
+        logger.info("Initializing perspective registry")
+        await self.perspective_manager.perspective_registry.initialize()
+        logger.info("Initialized perspective registry")
 
     async def begin_questioning(self) -> None:
         """Start the question-asking process."""
@@ -252,9 +264,25 @@ class InterviewManager:
             await self.broker.publish(interview_end_event)
         else:
             logger.info("Asking question: %s", self.question_manager)
+
+            # add the question to memory
+            #! this needs a CQRS
+            await self.add_questions_to_memory(next_question)
+
             await self.broker.publish(
                 AskQuestionEvent(
                     question=next_question,
                     session_id=self.session_id,
                 )
             )
+
+    async def add_questions_to_memory(
+        self, question: QuestionAndAnswer
+    ) -> None:
+        """Add questions to memory."""
+        question_frame = Dispatcher.package_and_transform_to_webframe(
+            question.question,
+            "content",
+            frame_id=str(uuid4()),
+        )
+        await self.memory_store.add(question_frame)

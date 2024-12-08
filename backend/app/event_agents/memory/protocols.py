@@ -21,21 +21,17 @@ class MemoryStore(Protocol):
     def extract_memory_for_generation(
         self,
         address_filter: List[AddressType] = [],
-        custom_user_instruction: Optional[
-            Dict[str, str]
-        ] = None,
+        custom_user_instruction: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, str]]: ...
 
 
 class ConfigProvider(Protocol):
     """Protocol for configuration management."""
 
-    def get_system_prompt(self) -> List[Dict[str, str]]: ...
+    def get_system_prompt(self) -> List[Dict[str, str]] | None: ...
 
 
 class MessagePublisher(Protocol):
     """Protocol for publishing messages."""
 
-    def publish(
-        self, topic: str, frame: WebsocketFrame
-    ) -> None: ...
+    def publish(self, topic: str, frame: WebsocketFrame) -> None: ...

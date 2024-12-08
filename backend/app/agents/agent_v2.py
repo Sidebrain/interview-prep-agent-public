@@ -161,7 +161,9 @@ class Agent:
         self.thinker = Thinker()
         # define topic for the agent's memory
         self.memory_topic = f"agent.{self.agent_id}.memory"
-        self.memory = create_memory_store()
+        self.memory = create_memory_store(
+            config_path="config/agent_v2.yaml"
+        )
         self.channel = channel
         self.interview = Interview(self.thinker, self.memory, self.channel)
         self.artifact_dict = {}

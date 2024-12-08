@@ -13,7 +13,7 @@ FinishReasonType = Literal[
     "function_call",
 ]
 
-AddressType = Literal["content", "artifact", "human", "thought", "evaluation"]
+AddressType = Literal["content", "artifact", "human", "thought", "evaluation", "perspective"]
 FrameType = Literal[
     "completion",
     "streaming",

@@ -117,6 +117,16 @@ class InMemoryStore:
         address_filter: List[AddressType] = [],
     ) -> List[Dict[str, str]]:
         """Extract memory in format needed for generation."""
+        logger.debug(
+            "Extracting memory for generation",
+            extra={
+                "context": {
+                    "address_filter": address_filter,
+                    "current_memory_length": len(self.memory),
+                    "custom_user_instruction": custom_user_instruction,
+                }
+            },
+        )
         system = self.config_provider.get_system_prompt()
 
         memory_content = [
