@@ -33,6 +33,7 @@ export const AddressType = [
   "human",
   "thought",
   "evaluation",
+  "perspective",
 ] as const;
 
 // zod types for type validation
@@ -56,7 +57,9 @@ export const ThoughtSchema = z.object({
 });
 
 export type Thought = z.infer<typeof ThoughtSchema>;
-export type CompletionFrameChunk = z.infer<typeof CompletionFrameChunkSchema>;
+export type CompletionFrameChunk = z.infer<
+  typeof CompletionFrameChunkSchema
+>;
 
 export const WebsocketFrameSchema = z.object({
   // track changes: added "input" to type, added "human" to address

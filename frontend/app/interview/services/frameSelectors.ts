@@ -23,6 +23,15 @@ export const frameSelectors = {
     );
   },
 
+  perspective: (websocketFrames: WebsocketFrame[]) => {
+    const selectTypes: ConversationAddressTypes = ["perspective"];
+    return websocketFrames.filter((websocketFrame) =>
+      selectTypes.includes(
+        websocketFrame.address as (typeof AddressType)[number]
+      )
+    );
+  },
+
   evaluation: (websocketFrames: WebsocketFrame[]) => {
     const selectTypes: ConversationAddressTypes = ["evaluation"];
     return websocketFrames.filter((websocketFrame) =>

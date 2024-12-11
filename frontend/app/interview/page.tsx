@@ -5,6 +5,7 @@ import { InputProvider } from "./context/InputContext";
 import UserArea from "./components/UserArea";
 import EvaluationArea from "./components/EvaluationArea";
 import SuggestionArea from "./components/SuggestionArea";
+import PerspectiveArea from "./components/PerspectiveArea";
 
 const InterviewPage = () => {
   return (
@@ -18,7 +19,8 @@ const InterviewPage = () => {
         <div className="flex justify-center md:min-w-1/3 w-full m-2 gap-2">
           <EvaluationArea />
           <UserArea />
-          <SuggestionArea />
+          <PerspectiveArea />
+          {/* <SuggestionArea /> */}
         </div>
       </InputProvider>
     </WebsocketProvider>

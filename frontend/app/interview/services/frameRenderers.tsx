@@ -3,6 +3,7 @@ import { frameSelectors } from "./frameSelectors";
 import ConversationFrame from "../components/frames/ConversationFrame";
 import EvaluationFrame from "../components/frames/EvaluationFrame";
 import SuggestionFrame from "../components/frames/SuggestionFrame";
+import PerspectiveFrame from "../components/frames/PerspectiveFrame";
 
 type FrameRenderer<T> = {
   select: (frames: WebsocketFrame[]) => WebsocketFrame[];
@@ -22,6 +23,14 @@ export const frameRenderers = {
     render: (frames) =>
       frames.map((frame) => (
         <ConversationFrame key={frame.frameId} websocketFrame={frame} />
+      )),
+  }),
+
+  perspective: createRenderer<React.ReactNode>({
+    select: frameSelectors.perspective,
+    render: (frames) =>
+      frames.map((frame) => (
+        <PerspectiveFrame key={frame.frameId} websocketFrame={frame} />
       )),
   }),
 

@@ -49,7 +49,7 @@ class PerspectiveBase:
         )
 
         correlation_id = self._get_correlation_id(memory_store)
-        self._ensure_description_exists()
+        # self._ensure_description_exists()
 
         instruction = self._create_evaluation_instruction()
         context = await self._build_evaluation_context(
@@ -96,10 +96,10 @@ class PerspectiveBase:
         return (
             f"You are a {self.perspective}. "
             f"Here is the description of the things that this perspective would care about: "
-            f"{self.description}. "
+            # f"{self.description}. "
             f"Your task is to evaluate the candidate from the candidate's responses "
             f"to the questions. "
-            f"You are to evaluate the candidate from the perspective of {self.perspective}."
+            f"You are to evaluate the candidate from the perspective of a {self.perspective}."
         )
 
     async def _build_evaluation_context(
@@ -133,7 +133,7 @@ class PerspectiveBase:
         """Package the analysis into a WebsocketFrame"""
         return Dispatcher.package_and_transform_to_webframe(
             analysis,
-            address="evaluation",
+            address="perspective",
             frame_id=str(uuid4()),
             correlation_id=correlation_id,
         )
@@ -191,8 +191,8 @@ class PerspectiveBase:
         )
 
         messages = self._create_initialization_messages()
-        description = await self._generate_description(messages)
-        self._save_description(description)
+        # description = await self._generate_description(messages)
+        # self._save_description(description)
 
         return self.description
 
