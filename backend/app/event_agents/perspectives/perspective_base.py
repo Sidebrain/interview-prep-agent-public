@@ -91,16 +91,27 @@ class PerspectiveBase:
                 f"Description not initialized for {self.perspective} perspective"
             )
 
-    def _create_evaluation_instruction(self) -> str:
+    def _create_evaluation_instruction(
+        self, simple_description: bool = True
+    ) -> str:
         """Create the custom instruction for this perspective"""
-        return (
-            f"You are a {self.perspective}. "
-            f"Here is the description of the things that this perspective would care about: "
-            # f"{self.description}. "
-            f"Your task is to evaluate the candidate from the candidate's responses "
-            f"to the questions. "
-            f"You are to evaluate the candidate from the perspective of a {self.perspective}."
-        )
+        if simple_description:
+            return (
+                f"You are a {self.perspective}. "
+                f"You thrive working in teams, coming up with creative solutions collaboratively, and are a great communicator. "
+                f"You are provided the transcript of the interview until various points in time. "
+                f"Your task is to briefly evaluate the candidate's fit into the team and the company."
+                f"Specifically, you are to evaluate the candidate on how well they would work with you and the team."
+            )
+        else:
+            return (
+                f"You are a {self.perspective}. "
+                f"Here is the description of the things that this perspective would care about: "
+                f"{self.description}. "
+                f"Your task is to evaluate the candidate from the candidate's responses "
+                f"to the questions. "
+                f"You are to evaluate the candidate from the perspective of a {self.perspective}."
+            )
 
     async def _build_evaluation_context(
         self,

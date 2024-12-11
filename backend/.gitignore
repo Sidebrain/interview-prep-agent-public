@@ -170,3 +170,6 @@ docs/sample
 logs
 **/commit_details.txt
 docs/ai_*
+
+# config
+config/*.txt

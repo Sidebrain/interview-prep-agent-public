@@ -113,53 +113,77 @@ class InterviewManager:
     async def handle_add_to_memory_event(
         self, new_memory_event: AddToMemoryEvent
     ) -> None:
-        """Handle new memory event and trigger next question."""
+        """
+        Process a new answer, evaluate it, generate perspectives, and advance to next question.
+        """
         logger.info(
             "Processing answer",
             extra={
                 "manager": self,
-                "answer_length": (
-                    len(new_memory_event.frame.frame.content)
-                    if new_memory_event.frame.frame.content
-                    else 0
-                ),
+                "answer_length": self._get_answer_length(new_memory_event),
             },
         )
 
         try:
-            await self.memory_store.add(new_memory_event.frame)
-            evaluations = await self.eval_manager.handle_evaluation(
-                questions=[self.question_manager.current_question]
-            )
-            print("\033[91mgenerating perspectives\033[0m")
-            perspectives = await self.perspective_manager.handle_perspective(
-                questions=[self.question_manager.current_question]
-            )
-            print("\033[91mperspectives generated\033[0m")
-            logger.info(
-                "Answer processed",
-                extra={
-                    "manager": self,
-                    "evaluation_count": len(evaluations),
-                    "perspective_count": len(perspectives),
-                },
-            )
-
-            for evaluation in evaluations:
-                await self.broker.publish(evaluation)
-
-            for perspective in perspectives:
-                await self.broker.publish(perspective)
+            await self._process_answer(new_memory_event)
+            await self._generate_evaluations_and_perspectives()
             await self.ask_next_question()
         except Exception as e:
             logger.error(
                 "Answer processing failed",
-                extra={
-                    "manager": self,
-                    "error": str(e),
-                },
+                extra={"manager": self, "error": str(e)},
             )
             raise
+
+    async def _process_answer(self, new_memory_event: AddToMemoryEvent) -> None:
+        """Store the answer in memory."""
+        await self.memory_store.add(new_memory_event.frame)
+
+    async def _generate_evaluations_and_perspectives(self) -> None:
+        """Generate and publish evaluations and perspectives for the current question."""
+        evaluations = await self._generate_evaluations()
+        perspectives = await self._generate_perspectives()
+
+        logger.info(
+            "Answer processed",
+            extra={
+                "manager": self,
+                "evaluation_count": len(evaluations),
+                "perspective_count": len(perspectives),
+            },
+        )
+
+        await self._publish_results(evaluations, perspectives)
+
+    async def _generate_evaluations(self) -> list:
+        """Generate evaluations for the current question."""
+        return await self.eval_manager.handle_evaluation(
+            questions=[self.question_manager.current_question]
+        )
+
+    async def _generate_perspectives(self) -> list:
+        """Generate perspectives for the current question."""
+        perspectives = await self.perspective_manager.handle_perspective(
+            questions=[self.question_manager.current_question]
+        )
+        return perspectives
+
+    async def _publish_results(
+        self, evaluations: list, perspectives: list
+    ) -> None:
+        """Publish evaluations and perspectives to the broker."""
+        for evaluation in evaluations:
+            await self.broker.publish(evaluation)
+        for perspective in perspectives:
+            await self.broker.publish(perspective)
+
+    def _get_answer_length(self, new_memory_event: AddToMemoryEvent) -> int:
+        """Calculate the length of the answer content."""
+        return (
+            len(new_memory_event.frame.frame.content)
+            if new_memory_event.frame.frame.content
+            else 0
+        )
 
     async def initialize(self) -> list[QuestionAndAnswer]:
         """Initialize the interview session and start the question gathering process."""

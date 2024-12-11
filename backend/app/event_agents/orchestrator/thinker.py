@@ -53,7 +53,10 @@ class Thinker:
         return extracted_structure
 
     async def think_with_tool(
-        self, messages: list[dict[str, str]], tool: dict[str, str], debug: bool = False
+        self,
+        messages: list[dict[str, str]],
+        tool: dict[str, str],
+        debug: bool = False,
     ) -> ChatCompletion:
         response = await self.client.chat.completions.create(
             messages=messages,
