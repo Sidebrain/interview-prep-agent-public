@@ -141,8 +141,10 @@ class InterviewManager:
 
     async def _generate_evaluations_and_perspectives(self) -> None:
         """Generate and publish evaluations and perspectives for the current question."""
-        evaluations = await self._generate_evaluations()
-        perspectives = await self._generate_perspectives()
+        evaluations, perspectives = await asyncio.gather(
+            self._generate_evaluations(),
+            self._generate_perspectives()
+        )
 
         logger.info(
             "Answer processed",
