@@ -135,6 +135,7 @@ class PerspectiveBase:
         """Generate the perspective's analysis"""
         return await self.thinker.generate(
             messages=context,
+            max_tokens=200,
             debug=True,
         )
 

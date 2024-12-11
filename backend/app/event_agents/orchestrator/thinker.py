@@ -23,11 +23,22 @@ class Thinker:
         self.client = client
 
     async def generate(
-        self, messages: list[dict[str, str]], debug: bool = False
+        self,
+        messages: list[dict[str, str]],
+        debug: bool = False,
+        max_tokens: int | None = None,
     ) -> ChatCompletion:
-        response = await self.client.chat.completions.create(
-            messages=messages,
-            model=model,
+        # kwargs with None values are not passed to the client
+        kwargs = {
+            "messages": messages,
+            "model": model,
+        }
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+
+        # having to manually specify type, because kwargs unpacking breaks the type inference
+        response: ChatCompletion = await self.client.chat.completions.create(
+            **kwargs
         )
 
         if self.debug and debug:
