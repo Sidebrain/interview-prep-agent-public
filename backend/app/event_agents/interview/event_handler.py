@@ -8,6 +8,7 @@ from app.event_agents.orchestrator.events import (
     AskQuestionEvent,
     InterviewEndEvent,
     InterviewEndReason,
+    InterviewSummaryRaiseEvent,
     QuestionsGatheringEvent,
 )
 
@@ -64,6 +65,9 @@ class InterviewEventHandler:
                     )
                 )
                 await self.broker.publish(end_interview_message)
+                await self.broker.publish(
+                    InterviewSummaryRaiseEvent(session_id=self.session_id)
+                )
             case InterviewEndReason.timeout:
                 end_interview_message = (
                     Dispatcher.package_and_transform_to_webframe(
@@ -73,6 +77,9 @@ class InterviewEventHandler:
                     )
                 )
                 await self.broker.publish(end_interview_message)
+                await self.broker.publish(
+                    InterviewSummaryRaiseEvent(session_id=self.session_id)
+                )
             case _:
                 logger.info(
                     "Interview ended with unknown reason: %s",

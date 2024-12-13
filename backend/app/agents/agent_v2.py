@@ -1,5 +1,4 @@
 import asyncio
-from functools import singledispatch
 import json
 from typing import Tuple
 from uuid import uuid4
@@ -23,7 +22,6 @@ from app.types.interview_concept_types import (
 from app.types.websocket_types import (
     CompletionFrameChunk,
     WebsocketFrame,
-    AddressType,
 )
 from app.websocket_handler import Channel
 
@@ -427,7 +425,7 @@ class Interview:
 
         if self.debug and debug:
             logger.debug(
-                f"messages that form context for question generation: "
+                "messages that form context for question generation: "
             )
             logger.debug(f"messages: {messages}")
             for m in messages:

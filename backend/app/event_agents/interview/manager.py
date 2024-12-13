@@ -17,6 +17,7 @@ from app.event_agents.orchestrator.events import (
     AskQuestionEvent,
     InterviewEndEvent,
     InterviewEndReason,
+    InterviewSummaryRaiseEvent,
     QuestionsGatheringEvent,
     Status,
 )
@@ -106,9 +107,59 @@ class InterviewManager:
             self.interview_event_handler.handle_interview_end,
         )
         await self.broker.subscribe(
+            InterviewSummaryRaiseEvent,
+            self._generate_summary,
+        )
+        await self.broker.subscribe(
             AddToMemoryEvent,
             self.handle_add_to_memory_event,
         )
+
+    ######## Interview End Summary #########
+
+    async def _generate_summary(self) -> None:
+        """
+        Generate a summary of the interview.
+        """
+        interview = self.memory_store.extract_memory_for_generation(
+            address_filter=["content", "thought"],
+        )
+        perspectives = self.memory_store.extract_memory_for_generation(
+            address_filter=["perspective"],
+        )
+        evaluations = self.memory_store.extract_memory_for_generation(
+            address_filter=["evaluation"],
+        )
+        context = interview + perspectives + evaluations
+
+        context = context + [
+            {
+                "role": "user",
+                "content": self.summary_instruction(),
+            }
+        ]
+        logger.info(
+            "Generating summary of interview",
+            extra={
+                "context_length": len(context),
+                "session_id": self.session_id,
+                "context": [c["content"][:30] + "..." for c in context],
+            },
+        )
+
+        summary = await self.thinker.generate(context)
+        frame = Dispatcher.package_and_transform_to_webframe(
+            summary,
+            "content",
+            frame_id=str(uuid4()),
+        )
+
+        await self.broker.publish(frame)
+
+    def summary_instruction(self) -> str:
+        return "using the interview transcript, evaluations, and perspectives, generate an analysis of the interview."
+
+    ######### ######## ######## ######## ######## ######## #######
 
     async def handle_add_to_memory_event(
         self, new_memory_event: AddToMemoryEvent
@@ -142,8 +193,7 @@ class InterviewManager:
     async def _generate_evaluations_and_perspectives(self) -> None:
         """Generate and publish evaluations and perspectives for the current question."""
         evaluations, perspectives = await asyncio.gather(
-            self._generate_evaluations(),
-            self._generate_perspectives()
+            self._generate_evaluations(), self._generate_perspectives()
         )
 
         logger.info(

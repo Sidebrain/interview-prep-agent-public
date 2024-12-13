@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from app.event_agents.orchestrator.thinker import (
         Thinker,
     )
-    from app.event_agents.orchestrator.broker import Broker
 
 logger = logging.getLogger(__name__)
 

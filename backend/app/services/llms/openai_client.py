@@ -1,5 +1,4 @@
 import openai
-import os
 
 from app.services.env_keys import OPENAI_API_KEY
 

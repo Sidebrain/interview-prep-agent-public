@@ -1,11 +1,7 @@
-import asyncio
 from pydantic import BaseModel, Field
 from app.event_agents.evaluations.evaluator_base import (
     EvaluatorSimple,
     EvaluatorStructured,
-)
-from app.event_agents.evaluations.rating_rubric_evaluator import (
-    RatingRubricEvaluationBuilder,
 )
 
 

@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
-from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.perspectives.perspective_base import PerspectiveBase
 from app.event_agents.memory.store import InMemoryStore
 from app.types.interview_concept_types import QuestionAndAnswer

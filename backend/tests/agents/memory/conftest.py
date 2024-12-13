@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List
 import pytest
 
 from app.event_agents.memory.protocols import ConfigProvider, MessagePublisher

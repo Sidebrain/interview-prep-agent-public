@@ -3,13 +3,6 @@ import json
 from uuid import UUID, uuid4
 
 
-from app.event_agents.evaluations.evaluators import (
-    relevance_evaluator,
-    exaggeration_evaluator,
-    structured_thinking_evaluator,
-    # communication_evaluator,
-    # candidate_evaluation_evaluator,
-)
 from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.interview.manager import InterviewManager

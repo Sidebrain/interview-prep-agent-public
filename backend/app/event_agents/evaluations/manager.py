@@ -1,20 +1,13 @@
-from abc import ABC, abstractmethod
 import logging
-from typing import List, Protocol, AsyncIterator
+from typing import List
 from typing import TYPE_CHECKING
-from uuid import UUID
 import asyncio
 
-from app.event_agents.orchestrator.events import (
-    AddToMemoryEvent,
-)
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
-from openai.types.chat import ChatCompletion
 
 if TYPE_CHECKING:
-    from app.event_agents.orchestrator.broker import Broker
     from app.event_agents.orchestrator.thinker import (
         Thinker,
     )

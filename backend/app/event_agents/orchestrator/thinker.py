@@ -11,7 +11,6 @@ import logging
 # Create a logger instance
 logger = logging.getLogger(__name__)
 
-from openai import AsyncClient
 
 
 class Thinker:

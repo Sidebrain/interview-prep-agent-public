@@ -1,5 +1,4 @@
 from typing import Protocol, Optional, List, Dict
-from app.event_agents.orchestrator.events import BaseEvent
 from app.types.websocket_types import (
     WebsocketFrame,
     CompletionFrameChunk,

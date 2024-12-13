@@ -1,4 +1,3 @@
-from abc import ABC
 import asyncio
 from functools import singledispatchmethod
 from typing import Literal, Tuple

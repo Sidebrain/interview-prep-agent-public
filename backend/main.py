@@ -2,7 +2,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 import logging
-import os, sys
+import os
+import sys
 
 from app.api.v1.router import router as api_v1_router
 from app.api.v2.router import router as api_v2_router

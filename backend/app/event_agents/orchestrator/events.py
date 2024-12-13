@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -63,6 +63,11 @@ class InterviewEndEvent(BaseEvent):
     reason: InterviewEndReason
     session_id: UUID
     timestamp: int = Field(default_factory=lambda: int(datetime.now().timestamp()))
+
+
+class InterviewSummaryRaiseEvent(BaseEvent):
+    session_id: UUID
+
 
 class AnswerReceivedEvent(MessageReceivedEvent):
     question: QuestionAndAnswer

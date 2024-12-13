@@ -11,13 +11,7 @@ from app.event_agents.orchestrator.events import (
 
 
 if TYPE_CHECKING:
-    from app.event_agents.orchestrator.thinker import (
-        Thinker,
-    )
     from app.event_agents.orchestrator.broker import Broker
-    from app.event_agents.memory.protocols import (
-        MemoryStore,
-    )
 logger = logging.getLogger(__name__)
 
 class TimeManager:

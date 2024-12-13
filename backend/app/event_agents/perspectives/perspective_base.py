@@ -1,10 +1,8 @@
 import logging
-from typing import List, TypeVar
+from typing import List
 from uuid import uuid4
-from pydantic import BaseModel
 
 from app.agents.dispatcher import Dispatcher
-from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.memory.store import InMemoryStore
 from app.event_agents.orchestrator.thinker import Thinker
 
