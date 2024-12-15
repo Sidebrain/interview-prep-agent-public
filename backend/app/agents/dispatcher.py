@@ -25,9 +25,10 @@ class Dispatcher:
         address: AddressType,
         frame_id: str,
         correlation_id: str | None = None,
-        title: str = None,
+        title: str | None = None,
         debug: bool = False,
-    ) -> WebsocketFrame: ...
+    ) -> WebsocketFrame:
+        raise NotImplementedError(f"No implementation for type {type(response)}")
 
     @package_and_transform_to_webframe.register(str)
     def _(
@@ -35,7 +36,7 @@ class Dispatcher:
         address: AddressType,
         frame_id: str,
         correlation_id: str | None = None,
-        title: str = None,
+        title: str | None = None,
         debug: bool = False,
     ) -> WebsocketFrame:
         """

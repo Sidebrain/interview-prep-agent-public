@@ -2,26 +2,20 @@ import asyncio
 import logging
 import json
 
-from typing import TYPE_CHECKING
 from uuid import UUID
-from app.event_agents.orchestrator.events import (
-    InterviewEndEvent,
-    InterviewEndReason,
-)
 
+from app.event_agents.interview.notifications import NotificationManager
 
-if TYPE_CHECKING:
-    from app.event_agents.orchestrator.broker import Broker
 logger = logging.getLogger(__name__)
 
 class TimeManager:
     def __init__(
         self,
-        broker: "Broker",
+        notification_manager: "NotificationManager",
         session_id: UUID,
         max_time_allowed: int,
     ):
-        self.broker = broker
+        self.notification_manager = notification_manager
         self.session_id = session_id
         self.max_time_allowed = max_time_allowed
         self.time_elapsed = 0
@@ -50,10 +44,7 @@ class TimeManager:
             self.time_elapsed += 5
 
             if self.time_elapsed >= self.max_time_allowed:
-                logger.info("Interview timeout reached")
-                timeout_event = InterviewEndEvent(
-                    reason=InterviewEndReason.timeout,
-                    session_id=self.session_id,
+                await self.notification_manager.send_notification(
+                    "Interview timeout reached. Ending interview..."
                 )
-                await self.broker.publish(timeout_event)
                 break

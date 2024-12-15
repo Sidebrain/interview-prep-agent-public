@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.interview.manager import InterviewManager
+from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.orchestrator.broker import Broker
 from app.event_agents.orchestrator.thinker import Thinker
 from app.event_agents.memory.factory import (
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class Agent:
-    def __init__(self, channel: Channel):
+    def __init__(self, channel: Channel) -> None:
         self.agent_id: UUID = uuid4()
         self.session_id: UUID = uuid4()
         self.broker: Broker = Broker()
@@ -51,10 +52,11 @@ class Agent:
             memory_store=self.memory_store,
             eval_manager=self.evaluator,
             perspective_manager=self.perspective_manager,
+            notification_manager=NotificationManager(self.broker),
             max_time_allowed=10 * 60,  # 10 minutes
         )
 
-    async def start(self):
+    async def start(self) -> None:
         """
         Start the agent and initialize all components.
 

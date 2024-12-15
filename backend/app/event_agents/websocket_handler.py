@@ -7,7 +7,7 @@ from app.event_agents.orchestrator.events import MessageReceivedEvent
 
 
 if TYPE_CHECKING:
-    from app.event_agents.orchestrator.broker import Agent
+    from app.event_agents.agent import Agent
 
 
 logger = logging.getLogger(__name__)

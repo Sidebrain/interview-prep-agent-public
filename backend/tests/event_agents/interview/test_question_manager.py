@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, mock_open, patch
+from unittest.mock import AsyncMock
 import pytest
 
 from app.event_agents.interview.question_manager import QuestionManager, Questions

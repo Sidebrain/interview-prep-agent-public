@@ -1,25 +1,29 @@
 import asyncio
 from collections import defaultdict
-from typing import Callable
+from typing import Callable, TypeVar, Type
 from uuid import uuid4
 
-from pydantic import BaseModel
 
 
 import logging
 
+from app.event_agents.orchestrator.events import BaseEvent
+from app.types.websocket_types import WebsocketFrame
+
 
 logger = logging.getLogger(__name__)
 
+Event = TypeVar("Event", bound= BaseEvent | WebsocketFrame)
+
 
 class Broker:
-    def __init__(self):
+    def __init__(self) -> None:
         self.session_id: str = str(uuid4())
-        self._subscribers: dict = defaultdict(list)
+        self._subscribers: dict[str, list[Callable]] = defaultdict(list)
         self._event_queue: asyncio.Queue = asyncio.Queue()
         self._is_running: bool = False
 
-    async def subscribe(self, event_type: BaseModel, handler: Callable):
+    async def subscribe(self, event_type: Type[Event], handler: Callable) -> None:
         """
         Subscribe to an event type with a handler function.
 
@@ -31,7 +35,7 @@ class Broker:
         """
         self._subscribers[event_type.__name__].append(handler)
 
-    async def unsubscribe(self, event_type: BaseModel, handler: Callable):
+    async def unsubscribe(self, event_type: Type[Event], handler: Callable) -> None:
         """
         Unsubscribe from an event type with a handler function.
 
@@ -43,7 +47,7 @@ class Broker:
         """
         self._subscribers[event_type.__name__].remove(handler)
 
-    async def publish(self, event: dict):
+    async def publish(self, event: BaseEvent | WebsocketFrame) -> None:
         """
         Publish an event to the message queue.
 
@@ -54,7 +58,7 @@ class Broker:
         """
         await self._event_queue.put(event)
 
-    async def _process_events(self):
+    async def _process_events(self) -> None:
         """
         Process events from the message queue.
 
@@ -76,7 +80,7 @@ class Broker:
             for handler in handlers:
                 await handler(event)
 
-    async def stop(self):
+    async def stop(self) -> None:
         """
         Stop the event processing loop.
 
@@ -88,7 +92,7 @@ class Broker:
         if self._process_events_task:
             self._process_events_task.cancel()
 
-    async def start(self):
+    async def start(self) -> None:
         """
         Start the event processing loop.
 

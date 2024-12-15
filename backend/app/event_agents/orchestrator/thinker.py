@@ -1,3 +1,4 @@
+from typing import Type, TypeVar
 import instructor
 from openai import AsyncClient
 from openai.types.chat import ChatCompletion
@@ -10,6 +11,8 @@ import logging
 
 # Create a logger instance
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=BaseModel)
 
 
 
@@ -47,10 +50,10 @@ class Thinker:
 
     async def extract_structured_response(
         self,
-        pydantic_structure_to_extract: BaseModel,
+        pydantic_structure_to_extract: Type[T],
         messages: list[dict[str, str]],
         debug: bool = False,
-    ) -> BaseModel:
+    ) -> T:
         instructor_client = instructor.from_openai(self.client)
         extracted_structure = await instructor_client.chat.completions.create(
             model=model,

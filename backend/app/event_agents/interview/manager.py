@@ -5,27 +5,19 @@ import math
 
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
-from app.agents.dispatcher import Dispatcher
-from app.event_agents.evaluations.manager import (
+
+from app.event_agents.interview import (
+    Dispatcher,
     EvaluationManager,
-)
-from app.event_agents.interview.event_handler import InterviewEventHandler
-from app.event_agents.interview.question_manager import QuestionManager
-from app.event_agents.interview.time_manager import TimeManager
-from app.event_agents.orchestrator.events import (
+    NotificationManager,
+    QuestionManager,
+    TimeManager,
     AddToMemoryEvent,
     AskQuestionEvent,
-    InterviewEndEvent,
-    InterviewEndReason,
-    InterviewSummaryRaiseEvent,
-    QuestionsGatheringEvent,
-    Status,
+    PerspectiveManager,
+    QuestionAndAnswer
 )
-
-from app.event_agents.perspectives.manager import PerspectiveManager
-from app.types.interview_concept_types import (
-    QuestionAndAnswer,
-)
+from app.types.websocket_types import WebsocketFrame
 
 if TYPE_CHECKING:
     from app.event_agents.orchestrator.thinker import (
@@ -47,8 +39,9 @@ class InterviewManager:
         memory_store: "MemoryStore",
         eval_manager: EvaluationManager,
         perspective_manager: PerspectiveManager,
+        notification_manager: NotificationManager,
         max_time_allowed: int | None = None,
-    ):
+    ) -> None:
         self.broker = broker
         self.thinker = thinker
         self.session_id = session_id
@@ -56,13 +49,13 @@ class InterviewManager:
             max_time_allowed if max_time_allowed else 2 * 60
         )  # 2 minutes default
         self.time_manager = TimeManager(
-            broker, session_id, self.max_time_allowed
+            notification_manager, session_id, self.max_time_allowed
         )
-        self.interview_event_handler = InterviewEventHandler(broker, session_id)
         self.question_manager = QuestionManager(thinker)
         self.eval_manager = eval_manager
         self.perspective_manager = perspective_manager
         self.memory_store = memory_store
+        self.notification_manager = notification_manager
 
     def __repr__(self) -> str:
         return json.dumps(
@@ -82,37 +75,13 @@ class InterviewManager:
         )
 
     async def subscribe(self) -> None:
-        """
-        Subscribe to interview-related events.
-
-        Subscribes to:
-        - QuestionsGatheringEvent
-        - AskQuestionEvent
-        - InterviewEndEvent
-        """
-        logger.debug(
-            "Subscribing to questions gathering event for session %s",
-            self.session_id,
-        )
-        await self.broker.subscribe(
-            QuestionsGatheringEvent,
-            self.interview_event_handler.handle_questions_gathering_event,
-        )
-        await self.broker.subscribe(
-            AskQuestionEvent,
-            self.interview_event_handler.handle_ask_question,
-        )
-        await self.broker.subscribe(
-            InterviewEndEvent,
-            self.interview_event_handler.handle_interview_end,
-        )
-        await self.broker.subscribe(
-            InterviewSummaryRaiseEvent,
-            self._generate_summary,
-        )
         await self.broker.subscribe(
             AddToMemoryEvent,
             self.handle_add_to_memory_event,
+        )
+        await self.broker.subscribe(
+            AskQuestionEvent,
+            self.handle_ask_question_event,
         )
 
     ######## Interview End Summary #########
@@ -207,13 +176,13 @@ class InterviewManager:
 
         await self._publish_results(evaluations, perspectives)
 
-    async def _generate_evaluations(self) -> list:
+    async def _generate_evaluations(self) -> list[WebsocketFrame]:
         """Generate evaluations for the current question."""
         return await self.eval_manager.handle_evaluation(
             questions=[self.question_manager.current_question]
         )
 
-    async def _generate_perspectives(self) -> list:
+    async def _generate_perspectives(self) -> list[WebsocketFrame]:
         """Generate perspectives for the current question."""
         perspectives = await self.perspective_manager.handle_perspective(
             questions=[self.question_manager.current_question]
@@ -221,7 +190,7 @@ class InterviewManager:
         return perspectives
 
     async def _publish_results(
-        self, evaluations: list, perspectives: list
+        self, evaluations: list[WebsocketFrame], perspectives: list[WebsocketFrame]
     ) -> None:
         """Publish evaluations and perspectives to the broker."""
         for evaluation in evaluations:
@@ -237,27 +206,29 @@ class InterviewManager:
             else 0
         )
 
+    ########## ########## ########## ########## ########## ########## ##########
+
     async def initialize(self) -> list[QuestionAndAnswer]:
         """Initialize the interview session and start the question gathering process."""
         logger.info("Starting new interview session: %s", self)
 
-        await self.begin_question_gathering()
+        await self.notification_manager.send_notification(
+            "Interview started. Gathering questions..."
+        )
         questions = await self.collect_and_store_questions()
-        await self.complete_question_gathering()
+        await self.notification_manager.send_notification(
+            "Questions gathered. Starting interview timer..."
+        )
 
-        await self.start_interview_timer()
+        timer_notification_string = await self.start_interview_timer()
+
+        await self.notification_manager.send_notification(timer_notification_string)    
+
         await self.initialize_evaluation_systems()
         await self.begin_questioning()
 
         return questions
 
-    async def begin_question_gathering(self) -> None:
-        """Signal the start of question gathering phase."""
-        in_progress_event = QuestionsGatheringEvent(
-            status=Status.in_progress,
-            session_id=self.session_id,
-        )
-        await self.broker.publish(in_progress_event)
 
     async def collect_and_store_questions(self) -> list[QuestionAndAnswer]:
         """Gather and store interview questions."""
@@ -271,19 +242,8 @@ class InterviewManager:
         )
         return questions
 
-    async def complete_question_gathering(self) -> None:
-        """Signal completion of question gathering phase."""
-        completed_event = QuestionsGatheringEvent(
-            status=Status.completed,
-            session_id=self.session_id,
-        )
-        await self.broker.publish(completed_event)
-        logger.debug(
-            "\033[33m\nCompleted gathering %d questions. Published event.\n\033[0m",
-            len(self.question_manager.questions),
-        )
 
-    async def start_interview_timer(self) -> None:
+    async def start_interview_timer(self) -> str:
         """Start the interview timer and notify the user."""
         asyncio.create_task(self.time_manager.start_timer())
         logger.info("Timer started: %s", self.time_manager)
@@ -295,22 +255,25 @@ class InterviewManager:
             else math.ceil(self.max_time_allowed / 60)
         )
 
-        timer_notification = Dispatcher.package_and_transform_to_webframe(
-            f"Timer started. You have {time_to_answer} {time_unit} to answer the questions.",
-            "content",
-            frame_id=str(uuid4()),
-        )
-        await self.broker.publish(timer_notification)
+        timer_notification_string = f"Timer started. You have {time_to_answer} {time_unit} to answer the questions."
+        return timer_notification_string
+
 
     async def initialize_evaluation_systems(self) -> None:
         """Initialize evaluation and perspective systems."""
         logger.info("Initializing evaluator registry")
         await self.eval_manager.evaluator_registry.initialize()
         logger.info("Initialized evaluator registry")
+        await self.notification_manager.send_notification(
+            "Evaluator registry initialized."
+        )
 
         logger.info("Initializing perspective registry")
         await self.perspective_manager.perspective_registry.initialize()
         logger.info("Initialized perspective registry")
+        await self.notification_manager.send_notification(
+            "Perspective registry initialized."
+        )
 
     async def begin_questioning(self) -> None:
         """Start the question-asking process."""
@@ -333,11 +296,9 @@ class InterviewManager:
 
         if next_question is None:
             logger.info("Interview complete: %s", self)
-            interview_end_event = InterviewEndEvent(
-                reason=InterviewEndReason.questions_exhausted,
-                session_id=self.session_id,
+            await self.notification_manager.send_notification(
+                "Questions exhausted. Interview ended."
             )
-            await self.broker.publish(interview_end_event)
         else:
             logger.info("Asking question: %s", self.question_manager)
 
@@ -351,6 +312,22 @@ class InterviewManager:
                     session_id=self.session_id,
                 )
             )
+    
+    async def handle_ask_question_event(self, event: AskQuestionEvent) -> None:
+        """Send the question to the user."""
+        frame_id = str(uuid4())
+        question_thought_frame = Dispatcher.package_and_transform_to_webframe(
+            event.question,
+            "thought",
+            frame_id=frame_id,
+        )
+        question_frame = Dispatcher.package_and_transform_to_webframe(
+            event.question.question,
+            "content",
+            frame_id=frame_id,
+        )
+        await self.broker.publish(question_thought_frame)
+        await self.broker.publish(question_frame)
 
     async def add_questions_to_memory(
         self, question: QuestionAndAnswer
