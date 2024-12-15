@@ -1,7 +1,9 @@
-from typing import Annotated
-from pydantic import BaseModel, Field, create_model
-import yaml
 import logging
+from typing import Annotated
+
+import yaml
+from pydantic import BaseModel, Field, create_model
+
 from app.event_agents.orchestrator.thinker import Thinker
 
 logger = logging.getLogger(__name__)
@@ -26,7 +28,7 @@ class CandidateEvaluationRubric(BaseModel):
 
 
 class RatingRubricEvaluationBuilder:
-    def __init__(self):
+    def __init__(self) -> None:
         self.thinker = Thinker()
         self.yaml_path = "config/artifacts_v2.yaml"
 
@@ -46,25 +48,25 @@ class RatingRubricEvaluationBuilder:
                 "Rating rubric not found",
                 extra={"context": {"yaml_path": self.yaml_path}},
             )
-            raise ValueError(f"Rating rubric not found in {self.yaml_path}")
+            raise ValueError(
+                f"Rating rubric not found in {self.yaml_path}"
+            )
 
     async def extract_structured_rating_rubric(
         self, rubric_string: str
     ) -> CandidateEvaluationRubric:
         logger.info("Extracting structured rating rubric")
         try:
-            structured_rubric: CandidateEvaluationRubric = (
-                await self.thinker.extract_structured_response(
-                    debug=True,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are an expert at extracting rating rubrics from job descriptions.",
-                        },
-                        {"role": "user", "content": rubric_string},
-                    ],
-                    pydantic_structure_to_extract=CandidateEvaluationRubric,
-                )
+            structured_rubric: CandidateEvaluationRubric = await self.thinker.extract_structured_response(
+                debug=True,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert at extracting rating rubrics from job descriptions.",
+                    },
+                    {"role": "user", "content": rubric_string},
+                ],
+                pydantic_structure_to_extract=CandidateEvaluationRubric,
             )
             logger.debug(
                 "Successfully extracted rubric",
@@ -91,12 +93,15 @@ class RatingRubricEvaluationBuilder:
         logger.info("Building evaluation Pydantic model")
         fields = {}
         for rating in rubric.ratings:
-            field_name = rating.criteria.strip().replace(" ", "_").lower()
+            field_name = (
+                rating.criteria.strip().replace(" ", "_").lower()
+            )
             fields[field_name] = Annotated[
                 str, Field(description=rating.description)
             ]
             logger.debug(
-                "Added field", extra={"context": {"criteria": rating.criteria}}
+                "Added field",
+                extra={"context": {"criteria": rating.criteria}},
             )
         logger.info(
             "Added all fields",
@@ -125,12 +130,16 @@ class RatingRubricEvaluationBuilder:
                 extra={"context": {"error": str(e)}},
                 exc_info=True,
             )
-            raise ValueError(f"Failed to create evaluation model: {str(e)}")
+            raise ValueError(
+                f"Failed to create evaluation model: {str(e)}"
+            )
 
     async def get_rating_evaluation_schema(self) -> BaseModel:
-        evaluation_pydantic_schema = await self.build_evaluation_pydantic_model(
-            await self.extract_structured_rating_rubric(
-                self.get_rating_rubric_string_from_yaml()
+        evaluation_pydantic_schema = (
+            await self.build_evaluation_pydantic_model(
+                await self.extract_structured_rating_rubric(
+                    self.get_rating_rubric_string_from_yaml()
+                )
             )
         )
 

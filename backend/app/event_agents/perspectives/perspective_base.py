@@ -2,11 +2,11 @@ import logging
 from typing import List
 from uuid import uuid4
 
+from openai.types.chat import ChatCompletion
+
 from app.agents.dispatcher import Dispatcher
-from app.event_agents.memory.store import InMemoryStore
+from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.orchestrator.thinker import Thinker
-
-
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
@@ -34,7 +34,7 @@ class PerspectiveBase:
     async def evaluate(
         self,
         questions: List[QuestionAndAnswer],
-        memory_store: "InMemoryStore",
+        memory_store: "MemoryStore",
     ) -> WebsocketFrame:
         """Main evaluation pipeline for a perspective's analysis"""
         logger.debug(
@@ -57,7 +57,7 @@ class PerspectiveBase:
         )
         logger.debug(
             "Built evaluation context",
-            extra={"context": {"context": context}},
+            extra={"context": {"context": len(context)}},
         )
         analysis = await self._generate_analysis(context)
 
@@ -65,20 +65,21 @@ class PerspectiveBase:
             "Generated analysis",
             extra={
                 "context": {
-                    "analysis": analysis,
+                    "analysis": "completed",
                     "perspective": self.perspective,
                     "action": "generate_analysis",
-                    "context": context,
                 }
             },
         )
 
         return self._package_response(analysis, correlation_id)
 
-    def _get_correlation_id(self, memory_store: "InMemoryStore") -> str:
+    def _get_correlation_id(self, memory_store: "MemoryStore") -> str:
         """Extract correlation ID as the most recent human websocket frame"""
         human_frames = [
-            frame for frame in memory_store.memory if frame.address == "human"
+            frame
+            for frame in memory_store.memory
+            if frame.address == "human"
         ]
         return human_frames[-1].correlation_id
 
@@ -115,21 +116,20 @@ class PerspectiveBase:
         self,
         questions: List[QuestionAndAnswer],
         custom_user_instruction: str,
-        memory_store: "InMemoryStore",
-    ) -> List[dict]:
+        memory_store: "MemoryStore",
+    ) -> List[dict[str, str]]:
         """Build the context messages for evaluation"""
         return await self.retrieve_and_build_context_messages(
             questions=questions,
             memory_store=memory_store,
             address_filter=["human", "content"],
             custom_user_instruction=custom_user_instruction,
-            debug=True,
         )
 
     async def _generate_analysis(
         self,
-        context: List[dict],
-    ) -> str:
+        context: List[dict[str, str]],
+    ) -> ChatCompletion:
         """Generate the perspective's analysis"""
         return await self.thinker.generate(
             messages=context,
@@ -138,7 +138,7 @@ class PerspectiveBase:
         )
 
     def _package_response(
-        self, analysis: str, correlation_id: str
+        self, analysis: ChatCompletion, correlation_id: str
     ) -> WebsocketFrame:
         """Package the analysis into a WebsocketFrame"""
         return Dispatcher.package_and_transform_to_webframe(
@@ -148,7 +148,9 @@ class PerspectiveBase:
             correlation_id=correlation_id,
         )
 
-    def write_perspective_description_to_txt(self, description: str) -> None:
+    def write_perspective_description_to_txt(
+        self, description: str
+    ) -> None:
         logger.debug(
             "Writing perspective description to file",
             extra={
@@ -284,10 +286,9 @@ class PerspectiveBase:
     async def retrieve_and_build_context_messages(
         self,
         questions: List[QuestionAndAnswer],
-        memory_store: "InMemoryStore",
+        memory_store: "MemoryStore",
         address_filter: List[AddressType],
         custom_user_instruction: str,
-        debug: bool = False,
     ) -> List[dict[str, str]]:
         logger.debug(
             "Building context messages",
@@ -323,7 +324,9 @@ class PerspectiveBase:
         return messages
 
     def _insert_questions_before_answer(
-        self, messages: List[dict], questions: List[QuestionAndAnswer]
+        self,
+        messages: List[dict[str, str]],
+        questions: List[QuestionAndAnswer],
     ) -> None:
         """Insert questions into messages list before the answer."""
         for question in questions:

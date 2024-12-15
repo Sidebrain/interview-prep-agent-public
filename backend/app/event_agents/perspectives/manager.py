@@ -1,7 +1,10 @@
 import asyncio
 import logging
+
 from app.event_agents.memory.protocols import MemoryStore
-from app.event_agents.perspectives.perspective_base import PerspectiveBase
+from app.event_agents.perspectives.perspective_base import (
+    PerspectiveBase,
+)
 from app.event_agents.perspectives.registry import PerspectiveRegistry
 from app.types.interview_concept_types import QuestionAndAnswer
 from app.types.websocket_types import WebsocketFrame

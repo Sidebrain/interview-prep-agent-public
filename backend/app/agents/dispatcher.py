@@ -1,16 +1,16 @@
+import logging
 from functools import singledispatch
-from app.types.websocket_types import (
-    AddressType,
-    WebsocketFrame,
-    CompletionFrameChunk,
-)
-from openai.types.chat import ChatCompletion
-from pydantic import BaseModel
 from uuid import uuid4
 
-from app.constants import DEBUG_CONFIG, model
+from openai.types.chat import ChatCompletion
+from pydantic import BaseModel
 
-import logging
+from app.constants import DEBUG_CONFIG, model
+from app.types.websocket_types import (
+    AddressType,
+    CompletionFrameChunk,
+    WebsocketFrame,
+)
 
 # Create a logger instance
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class Dispatcher:
     debug = DEBUG_CONFIG["dispatcher"]
 
-    @singledispatch
+    @singledispatch  # type: ignore
     def package_and_transform_to_webframe(
         response,
         address: AddressType,
@@ -28,9 +28,11 @@ class Dispatcher:
         title: str | None = None,
         debug: bool = False,
     ) -> WebsocketFrame:
-        raise NotImplementedError(f"No implementation for type {type(response)}")
+        raise NotImplementedError(
+            f"No implementation for type {type(response)}"
+        )
 
-    @package_and_transform_to_webframe.register(str)
+    @package_and_transform_to_webframe.register(str)  # type: ignore
     def _(
         response,
         address: AddressType,
@@ -80,15 +82,11 @@ class Dispatcher:
         )
 
         if Dispatcher.debug and debug:
-            logger.debug(
-                websocket_frame.model_dump_json(indent=4)
-            )
+            logger.debug(websocket_frame.model_dump_json(indent=4))
 
         return websocket_frame
 
-    @package_and_transform_to_webframe.register(
-        ChatCompletion
-    )
+    @package_and_transform_to_webframe.register(ChatCompletion)  # type: ignore
     def _(
         response,
         address: AddressType,
@@ -97,7 +95,6 @@ class Dispatcher:
         title: str = None,
         debug: bool = False,
     ) -> WebsocketFrame:
-
         completion_frame = CompletionFrameChunk(
             id=response.id,
             object=response.object,
@@ -122,13 +119,11 @@ class Dispatcher:
         )
 
         if Dispatcher.debug and debug:
-            logger.debug(
-                websocket_frame.model_dump_json(indent=4)
-            )
+            logger.debug(websocket_frame.model_dump_json(indent=4))
 
         return websocket_frame
 
-    @package_and_transform_to_webframe.register(BaseModel)
+    @package_and_transform_to_webframe.register(BaseModel)  # type: ignore
     def _(
         response,
         address: AddressType,
@@ -142,9 +137,7 @@ class Dispatcher:
             object="chat.completion",
             model=model,
             role="assistant",
-            content=response.model_dump_json(
-                indent=4, by_alias=True
-            ),
+            content=response.model_dump_json(indent=4, by_alias=True),
             delta=None,
             title=title,
             index=0,
@@ -163,8 +156,6 @@ class Dispatcher:
         )
 
         if Dispatcher.debug and debug:
-            logger.debug(
-                websocket_frame.model_dump_json(indent=4)
-            )
+            logger.debug(websocket_frame.model_dump_json(indent=4))
 
         return websocket_frame

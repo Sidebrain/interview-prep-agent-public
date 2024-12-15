@@ -1,12 +1,13 @@
-from typing import Optional, List, Dict
-from .protocols import ConfigProvider, MessagePublisher
+import logging
+from typing import Dict, List, Optional
+
 from app.types.websocket_types import (
-    WebsocketFrame,
-    CompletionFrameChunk,
     AddressType,
+    CompletionFrameChunk,
+    WebsocketFrame,
 )
 
-import logging
+from .protocols import ConfigProvider
 
 logger = logging.getLogger(__name__)
 
@@ -24,22 +25,17 @@ class InMemoryStore:
 
     def __init__(
         self,
-        # memory_topic: str,
         config_provider: ConfigProvider,
-        message_publisher: MessagePublisher,
         debug: bool = False,
     ):
         self.memory: List[WebsocketFrame] = []
-        # self.memory_topic = memory_topic
         self.config_provider = config_provider
-        self.message_publisher = message_publisher
         self.debug = debug
 
     def __repr__(self) -> str:
         return (
-            f"InMemoryStore(\n"
+            f"MemoryStore(\n"
             f"  config_provider={self.config_provider},\n"
-            f"  message_publisher={self.message_publisher},\n"
             f"  debug={self.debug},\n"
             f"  memory_frames={len(self.memory)},\n"
             f")"
@@ -65,7 +61,6 @@ class InMemoryStore:
             )
 
         self.memory.append(frame)
-        # self.message_publisher.publish(self.memory_topic, frame)
 
     def clear(self) -> None:
         """Clear all frames from memory."""
@@ -99,7 +94,9 @@ class InMemoryStore:
                 logger.debug(
                     f"No parent frame found for completion frame: {completion_frame.id}"
                 )
-                logger.debug("Available websocket frame, completion chunk ids")
+                logger.debug(
+                    "Available websocket frame, completion chunk ids"
+                )
                 logger.debug(
                     [
                         (
@@ -113,7 +110,7 @@ class InMemoryStore:
 
     def extract_memory_for_generation(
         self,
-        custom_user_instruction: Optional[Dict[str, str]] = None,
+        custom_user_instruction: Optional[str] = None,
         address_filter: List[AddressType] = [],
     ) -> List[Dict[str, str]]:
         """Extract memory in format needed for generation."""
@@ -132,7 +129,7 @@ class InMemoryStore:
         memory_content = [
             {
                 "role": message.frame.role,
-                "content": message.frame.content,
+                "content": message.frame.content or "",
             }
             for message in self.memory
             if not address_filter or message.address in address_filter

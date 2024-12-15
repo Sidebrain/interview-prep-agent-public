@@ -1,31 +1,31 @@
 import asyncio
-import logging
 import json
+import logging
 import math
-
+import traceback
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from app.event_agents.interview import (
+    AddToMemoryEvent,
+    AskQuestionEvent,
     Dispatcher,
     EvaluationManager,
     NotificationManager,
+    PerspectiveManager,
+    QuestionAndAnswer,
     QuestionManager,
     TimeManager,
-    AddToMemoryEvent,
-    AskQuestionEvent,
-    PerspectiveManager,
-    QuestionAndAnswer
 )
 from app.types.websocket_types import WebsocketFrame
 
 if TYPE_CHECKING:
-    from app.event_agents.orchestrator.thinker import (
-        Thinker,
-    )
-    from app.event_agents.orchestrator.broker import Broker
     from app.event_agents.memory.protocols import (
         MemoryStore,
+    )
+    from app.event_agents.orchestrator.broker import Broker
+    from app.event_agents.orchestrator.thinker import (
+        Thinker,
     )
 logger = logging.getLogger(__name__)
 
@@ -64,12 +64,15 @@ class InterviewManager:
                 "session": self.session_id.hex[:8],
                 "time_remaining": self.max_time_allowed
                 - self.time_manager.time_elapsed,
-                "questions_remaining": len(self.question_manager.questions),
-                "current_question": (
-                    self.question_manager.current_question.question[:30] + "..."
-                    if self.question_manager.current_question
-                    else None
+                "questions_remaining": len(
+                    self.question_manager.questions
                 ),
+                # "current_question": (
+                #     self.question_manager.current_question.question[:30]
+                #     + "..."
+                #     if self.question_manager.current_question
+                #     else None
+                # ),
             },
             indent=2,
         )
@@ -140,7 +143,9 @@ class InterviewManager:
             "Processing answer",
             extra={
                 "manager": self,
-                "answer_length": self._get_answer_length(new_memory_event),
+                "answer_length": self._get_answer_length(
+                    new_memory_event
+                ),
             },
         )
 
@@ -151,11 +156,19 @@ class InterviewManager:
         except Exception as e:
             logger.error(
                 "Answer processing failed",
-                extra={"manager": self, "error": str(e)},
+                extra={
+                    "context": {
+                        "manager": self,
+                        "error": str(e),
+                        "stacktrace": traceback.format_exc(),
+                    }
+                },
             )
             raise
 
-    async def _process_answer(self, new_memory_event: AddToMemoryEvent) -> None:
+    async def _process_answer(
+        self, new_memory_event: AddToMemoryEvent
+    ) -> None:
         """Store the answer in memory."""
         await self.memory_store.add(new_memory_event.frame)
 
@@ -178,19 +191,42 @@ class InterviewManager:
 
     async def _generate_evaluations(self) -> list[WebsocketFrame]:
         """Generate evaluations for the current question."""
-        return await self.eval_manager.handle_evaluation(
+        evaluations = await self.eval_manager.handle_evaluation(
             questions=[self.question_manager.current_question]
         )
+        logger.info(
+            "Evaluations generated",
+            extra={
+                "context": {
+                    # "manager": self,
+                    "evaluation_count": len(evaluations),
+                }
+            },
+        )
+        return evaluations
 
     async def _generate_perspectives(self) -> list[WebsocketFrame]:
         """Generate perspectives for the current question."""
-        perspectives = await self.perspective_manager.handle_perspective(
-            questions=[self.question_manager.current_question]
+        perspectives = (
+            await self.perspective_manager.handle_perspective(
+                questions=[self.question_manager.current_question]
+            )
+        )
+        logger.info(
+            "Perspectives generated",
+            extra={
+                "context": {
+                    "manager": self,
+                    "perspective_count": len(perspectives),
+                }
+            },
         )
         return perspectives
 
     async def _publish_results(
-        self, evaluations: list[WebsocketFrame], perspectives: list[WebsocketFrame]
+        self,
+        evaluations: list[WebsocketFrame],
+        perspectives: list[WebsocketFrame],
     ) -> None:
         """Publish evaluations and perspectives to the broker."""
         for evaluation in evaluations:
@@ -198,7 +234,9 @@ class InterviewManager:
         for perspective in perspectives:
             await self.broker.publish(perspective)
 
-    def _get_answer_length(self, new_memory_event: AddToMemoryEvent) -> int:
+    def _get_answer_length(
+        self, new_memory_event: AddToMemoryEvent
+    ) -> int:
         """Calculate the length of the answer content."""
         return (
             len(new_memory_event.frame.frame.content)
@@ -222,15 +260,18 @@ class InterviewManager:
 
         timer_notification_string = await self.start_interview_timer()
 
-        await self.notification_manager.send_notification(timer_notification_string)    
+        await self.notification_manager.send_notification(
+            timer_notification_string
+        )
 
         await self.initialize_evaluation_systems()
         await self.begin_questioning()
 
         return questions
 
-
-    async def collect_and_store_questions(self) -> list[QuestionAndAnswer]:
+    async def collect_and_store_questions(
+        self,
+    ) -> list[QuestionAndAnswer]:
         """Gather and store interview questions."""
         questions = await self.question_manager.gather_questions()
         logger.info(
@@ -242,13 +283,14 @@ class InterviewManager:
         )
         return questions
 
-
     async def start_interview_timer(self) -> str:
         """Start the interview timer and notify the user."""
         asyncio.create_task(self.time_manager.start_timer())
         logger.info("Timer started: %s", self.time_manager)
 
-        time_unit = "seconds" if self.max_time_allowed < 60 else "minutes"
+        time_unit = (
+            "seconds" if self.max_time_allowed < 60 else "minutes"
+        )
         time_to_answer = (
             self.max_time_allowed
             if self.max_time_allowed < 60
@@ -258,19 +300,14 @@ class InterviewManager:
         timer_notification_string = f"Timer started. You have {time_to_answer} {time_unit} to answer the questions."
         return timer_notification_string
 
-
     async def initialize_evaluation_systems(self) -> None:
         """Initialize evaluation and perspective systems."""
-        logger.info("Initializing evaluator registry")
         await self.eval_manager.evaluator_registry.initialize()
-        logger.info("Initialized evaluator registry")
         await self.notification_manager.send_notification(
             "Evaluator registry initialized."
         )
 
-        logger.info("Initializing perspective registry")
         await self.perspective_manager.perspective_registry.initialize()
-        logger.info("Initialized perspective registry")
         await self.notification_manager.send_notification(
             "Perspective registry initialized."
         )
@@ -312,14 +349,18 @@ class InterviewManager:
                     session_id=self.session_id,
                 )
             )
-    
-    async def handle_ask_question_event(self, event: AskQuestionEvent) -> None:
+
+    async def handle_ask_question_event(
+        self, event: AskQuestionEvent
+    ) -> None:
         """Send the question to the user."""
         frame_id = str(uuid4())
-        question_thought_frame = Dispatcher.package_and_transform_to_webframe(
-            event.question,
-            "thought",
-            frame_id=frame_id,
+        question_thought_frame = (
+            Dispatcher.package_and_transform_to_webframe(
+                event.question,
+                "thought",
+                frame_id=frame_id,
+            )
         )
         question_frame = Dispatcher.package_and_transform_to_webframe(
             event.question.question,

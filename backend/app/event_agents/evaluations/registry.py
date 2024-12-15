@@ -1,25 +1,26 @@
 import logging
+from typing import Type, Any
+
 from app.event_agents.evaluations.evaluator_base import (
     EvaluatorBase,
     EvaluatorStructured,
+)
+from app.event_agents.evaluations.evaluators import (
+    exaggeration_evaluator,
+    relevance_evaluator,
+    structured_thinking_evaluator,
 )
 from app.event_agents.evaluations.rating_rubric_evaluator import (
     RatingRubricEvaluationBuilder,
 )
 from app.event_agents.orchestrator.thinker import Thinker
 
-from app.event_agents.evaluations.evaluators import (
-    relevance_evaluator,
-    exaggeration_evaluator,
-    structured_thinking_evaluator,
-)
-
 logger = logging.getLogger(__name__)
 
 
 class EvaluatorRegistry:
-    def __init__(self):
-        self._evaluators: dict[str, EvaluatorBase] = {}
+    def __init__(self) -> None:
+        self._evaluators: dict[str, EvaluatorBase[Any]] = {}
         self._thinker: Thinker = Thinker()
 
     async def initialize(self) -> None:
@@ -56,5 +57,5 @@ class EvaluatorRegistry:
             extra={"context": {"evaluators": self._evaluators}},
         )
 
-    def get_evaluators(self) -> list[EvaluatorBase]:
-        return list(self._evaluators.values())
+    def get_evaluators(self) -> dict[str, EvaluatorBase[Any]]:
+        return self._evaluators

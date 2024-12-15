@@ -1,8 +1,6 @@
-from typing import List, Dict
-from app.types.websocket_types import WebsocketFrame
-import yaml
-from pubsub import pub
+from typing import Dict, List
 
+import yaml
 
 ## Concrete implementations of providers
 
@@ -21,13 +19,8 @@ class YAMLConfigProvider:
             return [
                 {
                     "role": "system",
-                    "content": config["interview_agent"]["system_prompt"],
+                    "content": config["interview_agent"][
+                        "system_prompt"
+                    ],
                 }
             ]
-
-
-class PubSubMessagePublisher:
-    """Concrete implementation of MessagePublisher using pub-sub."""
-
-    def publish(self, topic: str, frame: WebsocketFrame) -> None:
-        pub.sendMessage(topic, frame=frame)

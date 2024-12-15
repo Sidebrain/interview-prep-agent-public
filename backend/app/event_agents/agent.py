@@ -1,28 +1,25 @@
 import asyncio
 import json
+import logging
 from uuid import UUID, uuid4
-
 
 from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.interview.notifications import NotificationManager
-from app.event_agents.orchestrator.broker import Broker
-from app.event_agents.orchestrator.thinker import Thinker
 from app.event_agents.memory.factory import (
     create_memory_store,
 )
+from app.event_agents.orchestrator.broker import Broker
 from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
     MessageReceivedEvent,
     StartEvent,
 )
+from app.event_agents.orchestrator.thinker import Thinker
 from app.event_agents.perspectives.manager import PerspectiveManager
 from app.event_agents.perspectives.registry import PerspectiveRegistry
 from app.event_agents.websocket_handler import Channel
-
-import logging
-
 from app.types.websocket_types import WebsocketFrame
 
 logger = logging.getLogger(__name__)
@@ -67,7 +64,7 @@ class Agent:
         await self.setup_subscribers()
         await self.broker.start()
 
-    async def setup_subscribers(self):
+    async def setup_subscribers(self) -> None:
         """
         Initialize all event subscriptions for the agent.
 
@@ -91,10 +88,12 @@ class Agent:
         #     AddToMemoryEvent,
         #     self.interview_manager.handle_add_to_memory_event,
         # )
-        await self.broker.subscribe(WebsocketFrame, self.handle_websocket_frame)
+        await self.broker.subscribe(
+            WebsocketFrame, self.handle_websocket_frame
+        )
         await self.interview_manager.subscribe()
 
-    async def handle_start_event(self, event: StartEvent):
+    async def handle_start_event(self, event: StartEvent) -> None:
         """
         Handle the initialization of a new interview session.
 
@@ -115,7 +114,9 @@ class Agent:
             logger.error(f"Error in handle_start_event: {str(e)}")
             raise
 
-    async def handle_message_received_event(self, event: MessageReceivedEvent):
+    async def handle_message_received_event(
+        self, event: MessageReceivedEvent
+    ) -> None:
         """
         Process incoming messages from the websocket.
 
@@ -130,7 +131,7 @@ class Agent:
         """
         try:
             message = event.message
-            if message == None:
+            if message is None:
                 return
             parsed_message = WebsocketFrame.model_validate_json(
                 message, strict=False
@@ -150,10 +151,14 @@ class Agent:
             logger.error("Failed to decode the message")
             return
         except Exception as e:
-            logger.error(f"Error in handle_message_received_event: {str(e)}")
+            logger.error(
+                f"Error in handle_message_received_event: {str(e)}"
+            )
             raise
 
-    async def handle_websocket_frame(self, event: WebsocketFrame):
+    async def handle_websocket_frame(
+        self, event: WebsocketFrame
+    ) -> None:
         """
         Send a websocket frame to the client.
 

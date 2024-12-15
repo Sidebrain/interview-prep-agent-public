@@ -1,33 +1,39 @@
-from typing import Protocol, Optional, List, Dict
+from typing import Dict, List, Optional, Protocol, runtime_checkable
+
 from app.types.websocket_types import (
-    WebsocketFrame,
-    CompletionFrameChunk,
     AddressType,
+    CompletionFrameChunk,
+    WebsocketFrame,
 )
 
 # All memory related protocol definitions
 
 
+@runtime_checkable
 class MemoryStore(Protocol):
     """Base protocol for storing and retrieving WebsocketFrames."""
+
+    memory: List[WebsocketFrame]
 
     async def add(self, frame: WebsocketFrame) -> None: ...
     def clear(self) -> None: ...
     def get(self) -> List[WebsocketFrame]: ...
     def find_parent_frame(
-        self, completion_frame: CompletionFrameChunk
+        self,
+        completion_frame: CompletionFrameChunk,
+        debug: bool = False,
     ) -> Optional[WebsocketFrame]: ...
     def extract_memory_for_generation(
         self,
+        custom_user_instruction: Optional[str] = None,
         address_filter: List[AddressType] = [],
-        custom_user_instruction: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, str]]: ...
 
 
 class ConfigProvider(Protocol):
     """Protocol for configuration management."""
 
-    def get_system_prompt(self) -> List[Dict[str, str]] | None: ...
+    def get_system_prompt(self) -> List[Dict[str, str]]: ...
 
 
 class MessagePublisher(Protocol):

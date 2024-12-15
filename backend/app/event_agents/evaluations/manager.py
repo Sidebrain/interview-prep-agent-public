@@ -1,24 +1,24 @@
-import logging
-from typing import List
-from typing import TYPE_CHECKING
 import asyncio
+import logging
+from typing import TYPE_CHECKING, List
 
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
+from app.types.websocket_types import WebsocketFrame
 
 if TYPE_CHECKING:
-    from app.event_agents.orchestrator.thinker import (
-        Thinker,
-    )
     from app.event_agents.evaluations.evaluator_base import (
         EvaluatorBase,
     )
+    from app.event_agents.evaluations.registry import EvaluatorRegistry
     from app.event_agents.memory.protocols import (
         MemoryStore,
     )
+    from app.event_agents.orchestrator.thinker import (
+        Thinker,
+    )
     from app.types.websocket_types import WebsocketFrame
-    from app.event_agents.evaluations.registry import EvaluatorRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +27,10 @@ class EvaluationManager:
     def __init__(
         self,
         thinker: "Thinker",
-        # evaluators: List["EvaluatorBase"],
         evaluator_registry: "EvaluatorRegistry",
         memory_store: "MemoryStore",
-    ):
+    ) -> None:
         self.thinker = thinker
-        # self.evaluators = evaluators
         self.memory_store = memory_store
         self.evaluator_registry = evaluator_registry
 
@@ -45,35 +43,34 @@ class EvaluationManager:
         """
         evaluation_tasks = []
 
-        # Create tasks for all evaluations
-        for evaluator in self.evaluator_registry.get_evaluators():
+        # tasks to initialize each evaluator
+        evaluators = list(
+            self.evaluator_registry.get_evaluators().values()
+        )
+
+        # tasks to evaluate each evaluator
+        for evaluator in evaluators:
             task = self.run_evaluation(evaluator, questions)
             evaluation_tasks.append(task)
 
-        # Run all evaluations concurrently
-        evaluation_frames = await asyncio.gather(
-            *evaluation_tasks, return_exceptions=True
-        )
-
-        # Filter out any exceptions and log them
-        filtered_frames = []
-        for result in evaluation_frames:
-            if isinstance(result, Exception):
-                logger.error(
-                    f"Evaluation failed: {str(result)}",
-                    exc_info=True,
-                )
-            else:
-                filtered_frames.append(result)
-
+        # Run all evaluations concurrently and handle exceptions
+        results = await asyncio.gather(*evaluation_tasks)
+        filtered_frames = [
+            result
+            for result in results
+            if isinstance(result, WebsocketFrame)
+        ]
         return filtered_frames
 
     async def run_evaluation(
-        self, evaluator: "EvaluatorBase", questions: List[QuestionAndAnswer]
+        self,
+        evaluator: "EvaluatorBase",
+        questions: List[QuestionAndAnswer],
     ) -> "WebsocketFrame":
         """Helper method to run individual evaluations"""
         return await evaluator.evaluate(
             questions,
             self.memory_store,
             self.thinker,
+            debug=True,
         )

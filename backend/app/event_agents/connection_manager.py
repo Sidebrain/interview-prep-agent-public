@@ -12,15 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: Dict[str, Channel] = {}
 
     def __repr__(self) -> str:
         return f"ConnectionManager(active_connections={len(self.active_connections)})"
 
-    async def connect(
-        self, websocket: WebSocket, token: str
-    ) -> Agent:
+    async def connect(self, websocket: WebSocket, token: str) -> Agent:
         """Creates a channel, agent, and connects the channel to the agent.
 
         Args:
@@ -59,16 +57,14 @@ class ConnectionManager:
             )
         return agent
 
-    def disconnect(self, token: str):
+    def disconnect(self, token: str) -> None:
         if token in self.active_connections:
             logger.debug(
                 {
                     "event": "client_disconnected",
                     "token": token,
                     "session_id": str(
-                        self.active_connections[
-                            token
-                        ].agent.session_id
+                        self.active_connections[token].agent.session_id
                     ),
                 }
             )
