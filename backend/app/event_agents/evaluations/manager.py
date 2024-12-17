@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, List
 
+from app.event_agents.evaluations.evaluator_base import T
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
@@ -64,7 +65,7 @@ class EvaluationManager:
 
     async def run_evaluation(
         self,
-        evaluator: "EvaluatorBase",
+        evaluator: "EvaluatorBase[T]",
         questions: List[QuestionAndAnswer],
     ) -> "WebsocketFrame":
         """Helper method to run individual evaluations"""

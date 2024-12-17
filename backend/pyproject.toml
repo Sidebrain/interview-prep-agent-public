@@ -88,3 +88,46 @@ docstring-code-format = true
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[tool.mypy]
+# Ensure strict type checking
+strict = true
+
+# Disallow untyped definitions and calls
+disallow_untyped_defs = true
+disallow_untyped_calls = true
+
+# Disallow dynamic typing
+disallow_any_generics = true
+disallow_subclassing_any = true
+
+# Disallow untyped decorators
+disallow_untyped_decorators = true
+
+# Disallow implicit optional
+no_implicit_optional = true
+
+# Warn about unused ignores
+warn_unused_ignores = true
+
+# Warn about return statements with values in functions declared to return None
+warn_return_any = true
+
+# Show error codes in error messages
+show_error_codes = true
+
+# Ensure all execution paths are returning
+warn_no_return = true
+
+# Warn about redundant casts
+warn_redundant_casts = true
+
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "backend"
+
+exclude = [
+    "venv/",
+    "app/agents/",
+    "app/api/"
+]
