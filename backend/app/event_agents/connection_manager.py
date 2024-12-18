@@ -19,53 +19,47 @@ class ConnectionManager:
         return f"ConnectionManager(active_connections={len(self.active_connections)})"
 
     async def connect(self, websocket: WebSocket, token: str) -> Agent:
-        """Creates a channel, agent, and connects the channel to the agent.
+        logger.info(f"Connection attempt for token: {token}")
+        
+        # Clean up any existing connection first
+        if token in self.active_connections:
+            logger.warning("Cleaning up existing connection for token", 
+                         extra={"context": {"token": token}})
+            await self._cleanup_connection(token)
 
-        Args:
-            websocket (WebSocket): _description_
-            token (str): _description_
-
-        Returns:
-            Agent: _description_
-        """
         await websocket.accept()
-        if token not in self.active_connections:
-            # creating a channel with an agent
-            channel = Channel(websocket)
-            agent = Agent(channel=channel)
-            channel.agent = agent
-
-            # start the broker
-            await agent.start()
-
-            # create start event
-            start_event = StartEvent(
-                session_id=agent.session_id,
-                client_id=UUID(token),
-            )
-
-            # emit start event
-            await agent.broker.publish(start_event)
-
-            self.active_connections[token] = channel
-            logger.debug(
-                {
-                    "event": "client_connected",
-                    "token": token,
-                    "session_id": str(agent.session_id),
-                }
-            )
+        
+        # Create new connection
+        channel = Channel(websocket)
+        agent = Agent(channel=channel)
+        channel.agent = agent
+        
+        # Initialize agent
+        await agent.start()
+        
+        # Create and emit start event
+        start_event = StartEvent(
+            session_id=agent.session_id,
+            client_id=UUID(token),
+        )
+        await agent.broker.publish(start_event)
+        
+        self.active_connections[token] = channel
+        logger.info("New connection established", 
+                   extra={"context": {"token": token, 
+                                    "session_id": str(agent.session_id)}})
         return agent
 
-    def disconnect(self, token: str) -> None:
+    async def disconnect(self, token: str) -> None:
+        """Clean up connection and stop agent"""
+        await self._cleanup_connection(token)
+
+    async def _cleanup_connection(self, token: str) -> None:
+        """Helper method to cleanup connection and associated resources"""
         if token in self.active_connections:
-            logger.debug(
-                {
-                    "event": "client_disconnected",
-                    "token": token,
-                    "session_id": str(
-                        self.active_connections[token].agent.session_id
-                    ),
-                }
-            )
+            channel = self.active_connections[token]
+            if channel.agent:
+                await channel.agent.stop()
             del self.active_connections[token]
+            logger.info("Connection cleaned up", 
+                       extra={"context": {"token": token}})

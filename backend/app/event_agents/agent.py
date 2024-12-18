@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import traceback
 from uuid import UUID, uuid4
 
 from app.event_agents.evaluations.manager import EvaluationManager
@@ -24,6 +25,9 @@ from app.types.websocket_types import WebsocketFrame
 
 logger = logging.getLogger(__name__)
 
+#! locking this agent id to the config file
+# AGENT_ID = UUID("3fe4ab11-64a1-4666-bcc7-c0dd7e55cdad")
+
 
 class Agent:
     def __init__(self, channel: Channel) -> None:
@@ -31,18 +35,20 @@ class Agent:
         self.session_id: UUID = uuid4()
         self.broker: Broker = Broker()
         self.channel = channel
+        self.is_active: bool = True
         self.thinker = Thinker()
         self.memory_store = create_memory_store()
         self.evaluator = EvaluationManager(
             thinker=self.thinker,
             memory_store=self.memory_store,
-            evaluator_registry=EvaluatorRegistry(),
+            evaluator_registry=EvaluatorRegistry(self.agent_id),
         )
         self.perspective_manager = PerspectiveManager(
             perspective_registry=PerspectiveRegistry(),
             memory_store=self.memory_store,
         )
         self.interview_manager = InterviewManager(
+            agent_id=self.agent_id,
             session_id=self.session_id,
             broker=self.broker,
             thinker=self.thinker,
@@ -52,6 +58,12 @@ class Agent:
             notification_manager=NotificationManager(self.broker),
             max_time_allowed=10 * 60,  # 10 minutes
         )
+
+    async def stop(self) -> None:
+        """Stop the agent and clean up all resources."""
+        logger.info("Stopping agent %s", self.agent_id)
+        self.is_active = False
+        await self.broker.stop()
 
     async def start(self) -> None:
         """
@@ -173,5 +185,17 @@ class Agent:
                 event.model_dump_json(by_alias=True)
             )
         except Exception as e:
-            logger.error(f"Error in handle_websocket_frame: {str(e)}")
+            logger.error(
+                f"Error in handle_websocket_frame: {str(e)}",
+                extra={
+                    "context": {
+                        "event": event.model_dump(by_alias=True),
+                        "agent_id": str(self.agent_id),
+                        "session_id": str(self.session_id),
+                        "traceback": traceback.format_exc(),
+                    }
+                },
+            )
+            # mark as inactive on error
+            await self.stop()
             raise

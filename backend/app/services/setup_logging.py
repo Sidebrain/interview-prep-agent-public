@@ -1,10 +1,12 @@
+import json
 import logging
 import logging.config
-import json
+
+from pydantic import BaseModel
 
 
 class JsonFormatter(logging.Formatter):
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         log_data = {
             "timestamp": self.formatTime(record),
             "logger": record.name,
@@ -16,7 +18,25 @@ class JsonFormatter(logging.Formatter):
 
         # Add extra context if available
         if hasattr(record, "context"):
-            log_data["context"] = record.context
+            try:
+                if isinstance(record.context, dict):
+                    sanitized_context = {}
+                    for key, value in record.context.items():
+                        if isinstance(value, BaseModel):
+                            sanitized_context[key] = value.model_dump(
+                                by_alias=True
+                            )
+                        else:
+                            try:
+                                json.dumps(value)
+                                sanitized_context[key] = value
+                            except Exception:
+                                sanitized_context[key] = str(value)
+                    log_data["context"] = sanitized_context
+                else:
+                    log_data["context"] = str(record.context)
+            except Exception:
+                log_data["context"] = str(record.context)
 
         # Add extra
         if hasattr(record, "extra"):
@@ -24,12 +44,14 @@ class JsonFormatter(logging.Formatter):
 
         # Handle exceptions
         if record.exc_info:
-            log_data["exception"] = self.formatException(record.exc_info)
+            log_data["exception"] = self.formatException(
+                record.exc_info
+            )
 
         return json.dumps(log_data, indent=2, default=str)
 
 
-def setup_logging(debug: bool = False):
+def setup_logging(debug: bool = False) -> None:
     logging_config = {
         "version": 1,
         "disable_existing_loggers": False,

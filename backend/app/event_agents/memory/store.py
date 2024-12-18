@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, List, Optional
 
+from app.event_agents.memory.types import LongTermMemory
 from app.types.websocket_types import (
     AddressType,
     CompletionFrameChunk,
@@ -27,7 +28,7 @@ class InMemoryStore:
         self,
         config_provider: ConfigProvider,
         debug: bool = False,
-    ):
+    ) -> None:
         self.memory: List[WebsocketFrame] = []
         self.config_provider = config_provider
         self.debug = debug

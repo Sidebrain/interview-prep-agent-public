@@ -49,15 +49,22 @@ class EvaluatorBase(ABC, Generic[T]):
     def __repr__(self) -> str:
         return json.dumps(
             {
-                "type": self.__class__.__name__,
                 "evaluation_schema": (
-                    self.evaluation_schema.__class__.__name__
-                    if not isinstance(self.evaluation_schema, str)
-                    else "string schema"
+                    self.evaluation_schema.model_dump()
+                    if isinstance(self.evaluation_schema, BaseModel)
+                    else self.evaluation_schema
                 ),
             },
             indent=2,
         )
+
+    def save_object(self) -> str:
+        s = (
+            self.evaluation_schema
+            if isinstance(self.evaluation_schema, str)
+            else self.evaluation_schema.model_json_schema()
+        )
+        return s
 
     async def evaluate(
         self,

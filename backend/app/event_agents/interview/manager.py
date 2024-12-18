@@ -17,6 +17,7 @@ from app.event_agents.interview import (
     QuestionManager,
     TimeManager,
 )
+from app.event_agents.memory.config_builder import save_state
 from app.types.websocket_types import WebsocketFrame
 
 if TYPE_CHECKING:
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 class InterviewManager:
     def __init__(
         self,
+        agent_id: UUID,
         session_id: UUID,
         broker: "Broker",
         thinker: "Thinker",
@@ -42,6 +44,7 @@ class InterviewManager:
         notification_manager: NotificationManager,
         max_time_allowed: int | None = None,
     ) -> None:
+        self.agent_id = agent_id
         self.broker = broker
         self.thinker = thinker
         self.session_id = session_id
@@ -67,12 +70,12 @@ class InterviewManager:
                 "questions_remaining": len(
                     self.question_manager.questions
                 ),
-                # "current_question": (
-                #     self.question_manager.current_question.question[:30]
-                #     + "..."
-                #     if self.question_manager.current_question
-                #     else None
-                # ),
+                "current_question": (
+                    self.question_manager.current_question.question[:30]
+                    + "..."
+                    if self.question_manager.current_question
+                    else None
+                ),
             },
             indent=2,
         )
@@ -247,13 +250,15 @@ class InterviewManager:
     ########## ########## ########## ########## ########## ########## ##########
 
     async def initialize(self) -> list[QuestionAndAnswer]:
-        """Initialize the interview session and start the question gathering process."""
         logger.info("Starting new interview session: %s", self)
 
         await self.notification_manager.send_notification(
             "Interview started. Gathering questions..."
         )
         questions = await self.collect_and_store_questions()
+
+        await save_state(self.agent_id, "questions", questions)
+
         await self.notification_manager.send_notification(
             "Questions gathered. Starting interview timer..."
         )
