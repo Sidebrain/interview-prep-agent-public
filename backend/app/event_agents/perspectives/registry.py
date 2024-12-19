@@ -9,11 +9,13 @@ from app.event_agents.perspectives.perspectors import (
     product_manager_perspective,
     sales_manager_perspective,
 )
+from app.event_agents.types import AgentContext
 
 
 class PerspectiveRegistry:
-    def __init__(self) -> None:
+    def __init__(self, agent_context: "AgentContext") -> None:
         self._perspectives: dict[str, PerspectiveBase] = {}
+        self.agent_context = agent_context
 
     async def initialize(self) -> None:
         print("\033[91minitializing perspectives\033[0m")
@@ -42,7 +44,7 @@ class PerspectiveRegistry:
     async def register_perspective(
         self, perspective_agent: PerspectiveBase
     ) -> None:
-        await perspective_agent.initialize()
+        await perspective_agent.initialize(self.agent_context)
         self._perspectives.update(
             {perspective_agent.perspective: perspective_agent}
         )

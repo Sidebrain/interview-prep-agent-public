@@ -37,7 +37,7 @@ class PerspectiveManager:
         # tasks to evaluate each perspective
         print(f"\033[91mperspectives: {len(perspectives)}\033[0m")
         for perspective in perspectives:
-            task = perspective.evaluate(questions, self.memory_store)
+            task = perspective.evaluate(questions, self.agent_context)
             perspective_tasks.append(task)
 
         # run all perspective evaluations concurrently

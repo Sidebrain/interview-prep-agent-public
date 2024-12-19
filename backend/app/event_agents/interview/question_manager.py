@@ -25,7 +25,7 @@ class QuestionManager:
         self,
         agent_context: "AgentContext",
         question_file_path: str | None = None,
-    ):
+    ) -> None:
         self.agent_context = agent_context
         self.thinker = agent_context.thinker
         self.questions: list[QuestionAndAnswer] = []

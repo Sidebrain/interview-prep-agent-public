@@ -1,7 +1,6 @@
 import json
 import logging
 from typing import Any
-from uuid import UUID
 
 from app.event_agents.evaluations.evaluator_base import (
     EvaluatorBase,
@@ -16,15 +15,17 @@ from app.event_agents.evaluations.rating_rubric_evaluator import (
     RatingRubricEvaluationBuilder,
 )
 from app.event_agents.orchestrator.thinker import Thinker
+from app.event_agents.types import AgentContext
 
 logger = logging.getLogger(__name__)
 
 
 class EvaluatorRegistry:
-    def __init__(self, agent_id: UUID) -> None:
+    def __init__(self, agent_context: "AgentContext") -> None:
+        self.agent_context = agent_context
         self._evaluators: dict[str, EvaluatorBase[Any]] = {}
-        self._thinker: Thinker = Thinker()
-        self.agent_id = agent_id
+        self._thinker: Thinker = agent_context.thinker
+        self.agent_id = agent_context.agent_id
 
     async def initialize(self) -> None:
         logger.info("Initializing evaluator registry")

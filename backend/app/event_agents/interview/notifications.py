@@ -19,7 +19,7 @@ class NotificationManager:
     ) -> None:
         try:
             frame = Dispatcher.package_and_transform_to_webframe(
-                notification,
+                notification,  # type: ignore
                 "content",
                 frame_id=str(uuid4()),
             )

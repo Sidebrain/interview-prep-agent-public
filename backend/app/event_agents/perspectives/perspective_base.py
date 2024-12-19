@@ -6,7 +6,7 @@ from openai.types.chat import ChatCompletion
 
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.memory.protocols import MemoryStore
-from app.event_agents.orchestrator.thinker import Thinker
+from app.event_agents.types import AgentContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
@@ -28,13 +28,12 @@ class PerspectiveBase:
             },
         )
         self.perspective = perspective
-        self.thinker = Thinker()
         self.description = None
 
     async def evaluate(
         self,
         questions: List[QuestionAndAnswer],
-        memory_store: "MemoryStore",
+        agent_context: "AgentContext",
     ) -> WebsocketFrame:
         """Main evaluation pipeline for a perspective's analysis"""
         logger.debug(
@@ -45,6 +44,7 @@ class PerspectiveBase:
                 }
             },
         )
+        memory_store = agent_context.memory_store
 
         correlation_id = self._get_correlation_id(memory_store)
         # self._ensure_description_exists()
@@ -59,7 +59,7 @@ class PerspectiveBase:
             "Built evaluation context",
             extra={"context": {"context": len(context)}},
         )
-        analysis = await self._generate_analysis(context)
+        analysis = await self._generate_analysis(context, agent_context)
 
         logger.debug(
             "Generated analysis",
@@ -129,9 +129,11 @@ class PerspectiveBase:
     async def _generate_analysis(
         self,
         context: List[dict[str, str]],
+        agent_context: "AgentContext",
     ) -> ChatCompletion:
         """Generate the perspective's analysis"""
-        return await self.thinker.generate(
+        thinker = agent_context.thinker
+        return await thinker.generate(
             messages=context,
             max_tokens=200,
             debug=True,
@@ -190,7 +192,7 @@ class PerspectiveBase:
             )
             raise
 
-    async def initialize(self) -> str:
+    async def initialize(self, agent_context: "AgentContext") -> str:
         """Initialize the perspective by generating and saving its description"""
         logger.debug(
             "Initializing perspective description",
@@ -203,7 +205,9 @@ class PerspectiveBase:
         )
 
         messages = self._create_initialization_messages()
-        # description = await self._generate_description(messages)
+        # description = await self._generate_description(
+        #     messages, agent_context
+        # )
         # self._save_description(description)
 
         return self.description
@@ -222,9 +226,12 @@ class PerspectiveBase:
             }
         ]
 
-    async def _generate_description(self, messages: List[dict]) -> str:
+    async def _generate_description(
+        self, messages: List[dict], agent_context: "AgentContext"
+    ) -> str:
         """Generate the perspective description using the thinker"""
-        response = await self.thinker.generate(
+        thinker = agent_context.thinker
+        response = await thinker.generate(
             messages=messages,
             debug=True,
         )

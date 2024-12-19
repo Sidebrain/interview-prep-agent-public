@@ -26,8 +26,6 @@ class EvaluationManager:
         evaluator_registry: "EvaluatorRegistry",
     ) -> None:
         self.agent_context = agent_context
-        self.thinker = agent_context.thinker
-        self.memory_store = agent_context.memory_store
         self.evaluator_registry = evaluator_registry
 
     async def handle_evaluation(
@@ -66,7 +64,6 @@ class EvaluationManager:
         """Helper method to run individual evaluations"""
         return await evaluator.evaluate(
             questions,
-            self.memory_store,
-            self.thinker,
+            self.agent_context,
             debug=True,
         )

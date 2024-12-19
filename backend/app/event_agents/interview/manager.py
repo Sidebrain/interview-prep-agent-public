@@ -54,11 +54,15 @@ class InterviewManager:
         )
         self.eval_manager = EvaluationManager(
             agent_context=self.agent_context,
-            evaluator_registry=EvaluatorRegistry(self.agent_id),
+            evaluator_registry=EvaluatorRegistry(
+                agent_context=self.agent_context
+            ),
         )
         self.perspective_manager = PerspectiveManager(
             agent_context=self.agent_context,
-            perspective_registry=PerspectiveRegistry(),
+            perspective_registry=PerspectiveRegistry(
+                agent_context=self.agent_context
+            ),
         )
 
     def __repr__(self) -> str:
