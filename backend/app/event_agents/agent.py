@@ -27,6 +27,15 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class AgentContext:
+    agent_id: UUID
+    session_id: UUID
+    broker: Broker
+    thinker: Thinker
+    memory_store: MemoryStore
+
+
+@dataclass
 class Agent:
     agent_id: UUID
     session_id: UUID
@@ -38,11 +47,7 @@ class Agent:
 
     def __post_init__(self) -> None:
         self.interview_manager = InterviewManager(
-            agent_id=self.agent_id,
-            session_id=self.session_id,
-            broker=self.broker,
-            thinker=self.thinker,
-            memory_store=self.memory_store,
+            agent_context=self.context,
             max_time_allowed=10 * 60,  # 10 minutes
         )
 
@@ -56,6 +61,16 @@ class Agent:
             channel=channel,
             is_active=True,
             memory_store=create_memory_store(),
+        )
+
+    @property
+    def context(self) -> AgentContext:
+        return AgentContext(
+            agent_id=self.agent_id,
+            session_id=self.session_id,
+            broker=self.broker,
+            thinker=self.thinker,
+            memory_store=self.memory_store,
         )
 
     async def stop(self) -> None:

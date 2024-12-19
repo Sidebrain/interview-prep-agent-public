@@ -4,7 +4,7 @@ import logging
 import math
 import traceback
 from typing import TYPE_CHECKING
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.interview import (
@@ -23,50 +23,44 @@ from app.event_agents.perspectives.registry import PerspectiveRegistry
 from app.types.websocket_types import WebsocketFrame
 
 if TYPE_CHECKING:
-    from app.event_agents.memory.protocols import (
-        MemoryStore,
-    )
-    from app.event_agents.orchestrator.broker import Broker
-    from app.event_agents.orchestrator.thinker import (
-        Thinker,
-    )
+    from app.event_agents.agent import AgentContext
+
 logger = logging.getLogger(__name__)
 
 
 class InterviewManager:
     def __init__(
         self,
-        agent_id: UUID,
-        session_id: UUID,
-        broker: "Broker",
-        thinker: "Thinker",
-        memory_store: "MemoryStore",
+        agent_context: "AgentContext",
         max_time_allowed: int | None = None,
     ) -> None:
-        self.agent_id = agent_id
-        self.broker = broker
-        self.thinker = thinker
-        self.session_id = session_id
+        # from the parent agent
+        self.agent_context = agent_context
+        self.agent_id = agent_context.agent_id
+        self.broker = agent_context.broker
+        self.thinker = agent_context.thinker
+        self.session_id = agent_context.session_id
+        self.memory_store = agent_context.memory_store
+
         self.max_time_allowed = (
             max_time_allowed if max_time_allowed else 2 * 60
         )  # 2 minutes default
-        self.notification_manager = NotificationManager(broker)
+        self.notification_manager = NotificationManager(self.broker)
         self.time_manager = TimeManager(
             notification_manager=self.notification_manager,
             session_id=self.session_id,
             max_time_allowed=self.max_time_allowed,
         )
-        self.question_manager = QuestionManager(thinker)
+        self.question_manager = QuestionManager(thinker=self.thinker)
         self.eval_manager = EvaluationManager(
-            thinker=thinker,
-            memory_store=memory_store,
+            thinker=self.thinker,
+            memory_store=self.memory_store,
             evaluator_registry=EvaluatorRegistry(self.agent_id),
         )
         self.perspective_manager = PerspectiveManager(
             perspective_registry=PerspectiveRegistry(),
-            memory_store=memory_store,
+            memory_store=self.memory_store,
         )
-        self.memory_store = memory_store
 
     def __repr__(self) -> str:
         return json.dumps(

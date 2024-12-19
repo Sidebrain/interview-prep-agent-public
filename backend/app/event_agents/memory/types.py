@@ -9,7 +9,7 @@ from app.types.websocket_types import WebsocketFrame
 
 class EvaluationSchema(BaseModel):
     name: str
-    schema: type[BaseModel] | str  # type: ignore
+    schema_: type[BaseModel] | str
 
 
 class AgentConfig(BaseModel):
