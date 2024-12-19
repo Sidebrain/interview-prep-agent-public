@@ -17,6 +17,7 @@ from app.event_agents.orchestrator.events import (
     StartEvent,
 )
 from app.event_agents.orchestrator.thinker import Thinker
+from app.event_agents.types import AgentContext
 from app.event_agents.websocket_handler import Channel
 from app.types.websocket_types import WebsocketFrame
 
@@ -24,15 +25,6 @@ logger = logging.getLogger(__name__)
 
 #! locking this agent id to the config file
 # AGENT_ID = UUID("3fe4ab11-64a1-4666-bcc7-c0dd7e55cdad")
-
-
-@dataclass
-class AgentContext:
-    agent_id: UUID
-    session_id: UUID
-    broker: Broker
-    thinker: Thinker
-    memory_store: MemoryStore
 
 
 @dataclass
