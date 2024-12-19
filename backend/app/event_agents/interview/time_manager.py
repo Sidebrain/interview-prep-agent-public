@@ -1,22 +1,21 @@
 import asyncio
-import logging
 import json
-
-from uuid import UUID
+import logging
 
 from app.event_agents.interview.notifications import NotificationManager
+from app.event_agents.types import AgentContext
 
 logger = logging.getLogger(__name__)
+
 
 class TimeManager:
     def __init__(
         self,
-        notification_manager: "NotificationManager",
-        session_id: UUID,
+        agent_context: "AgentContext",
         max_time_allowed: int,
     ):
-        self.notification_manager = notification_manager
-        self.session_id = session_id
+        self.agent_context = agent_context
+        self.session_id = agent_context.session_id
         self.max_time_allowed = max_time_allowed
         self.time_elapsed = 0
 
@@ -44,7 +43,8 @@ class TimeManager:
             self.time_elapsed += 5
 
             if self.time_elapsed >= self.max_time_allowed:
-                await self.notification_manager.send_notification(
-                    "Interview timeout reached. Ending interview..."
+                await NotificationManager.send_notification(
+                    self.agent_context,
+                    "Interview timeout reached. Ending interview...",
                 )
                 break

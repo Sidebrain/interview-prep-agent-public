@@ -23,7 +23,7 @@ from app.event_agents.perspectives.registry import PerspectiveRegistry
 from app.types.websocket_types import WebsocketFrame
 
 if TYPE_CHECKING:
-    from app.event_agents.agent import AgentContext
+    from app.event_agents.types import AgentContext
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +45,8 @@ class InterviewManager:
         self.max_time_allowed = (
             max_time_allowed if max_time_allowed else 2 * 60
         )  # 2 minutes default
-        self.notification_manager = NotificationManager(self.broker)
         self.time_manager = TimeManager(
-            notification_manager=self.notification_manager,
-            session_id=self.session_id,
+            agent_context=self.agent_context,
             max_time_allowed=self.max_time_allowed,
         )
         self.question_manager = QuestionManager(
@@ -255,21 +253,24 @@ class InterviewManager:
     async def initialize(self) -> list[QuestionAndAnswer]:
         logger.info("Starting new interview session: %s", self)
 
-        await self.notification_manager.send_notification(
-            "Interview started. Gathering questions..."
+        await NotificationManager.send_notification(
+            self.agent_context,
+            "Interview started. Gathering questions...",
         )
         questions = await self.collect_and_store_questions()
 
         await save_state(self.agent_id, "questions", questions)
 
-        await self.notification_manager.send_notification(
-            "Questions gathered. Starting interview timer..."
+        await NotificationManager.send_notification(
+            self.agent_context,
+            "Questions gathered. Starting interview timer...",
         )
 
         timer_notification_string = await self.start_interview_timer()
 
-        await self.notification_manager.send_notification(
-            timer_notification_string
+        await NotificationManager.send_notification(
+            self.agent_context,
+            timer_notification_string,
         )
 
         await self.initialize_evaluation_systems()
@@ -311,13 +312,15 @@ class InterviewManager:
     async def initialize_evaluation_systems(self) -> None:
         """Initialize evaluation and perspective systems."""
         await self.eval_manager.evaluator_registry.initialize()
-        await self.notification_manager.send_notification(
-            "Evaluator registry initialized."
+        await NotificationManager.send_notification(
+            self.agent_context,
+            "Evaluator registry initialized.",
         )
 
         await self.perspective_manager.perspective_registry.initialize()
-        await self.notification_manager.send_notification(
-            "Perspective registry initialized."
+        await NotificationManager.send_notification(
+            self.agent_context,
+            "Perspective registry initialized.",
         )
 
     async def begin_questioning(self) -> None:
@@ -341,8 +344,9 @@ class InterviewManager:
 
         if next_question is None:
             logger.info("Interview complete: %s", self)
-            await self.notification_manager.send_notification(
-                "Questions exhausted. Interview ended."
+            await NotificationManager.send_notification(
+                self.agent_context,
+                "Questions exhausted. Interview ended.",
             )
         else:
             logger.info("Asking question: %s", self.question_manager)
