@@ -51,15 +51,16 @@ class InterviewManager:
             session_id=self.session_id,
             max_time_allowed=self.max_time_allowed,
         )
-        self.question_manager = QuestionManager(thinker=self.thinker)
+        self.question_manager = QuestionManager(
+            agent_context=self.agent_context,
+        )
         self.eval_manager = EvaluationManager(
-            thinker=self.thinker,
-            memory_store=self.memory_store,
+            agent_context=self.agent_context,
             evaluator_registry=EvaluatorRegistry(self.agent_id),
         )
         self.perspective_manager = PerspectiveManager(
+            agent_context=self.agent_context,
             perspective_registry=PerspectiveRegistry(),
-            memory_store=self.memory_store,
         )
 
     def __repr__(self) -> str:

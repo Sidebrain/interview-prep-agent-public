@@ -1,11 +1,11 @@
 import asyncio
 import logging
 
-from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.perspectives.perspective_base import (
     PerspectiveBase,
 )
 from app.event_agents.perspectives.registry import PerspectiveRegistry
+from app.event_agents.types import AgentContext
 from app.types.interview_concept_types import QuestionAndAnswer
 from app.types.websocket_types import WebsocketFrame
 
@@ -15,11 +15,12 @@ logger = logging.getLogger(__name__)
 class PerspectiveManager:
     def __init__(
         self,
+        agent_context: "AgentContext",
         perspective_registry: PerspectiveRegistry,
-        memory_store: "MemoryStore",
     ) -> None:
+        self.agent_context = agent_context
         self.perspective_registry = perspective_registry
-        self.memory_store = memory_store
+        self.memory_store = agent_context.memory_store
 
     def get_perspectives(self) -> dict[str, PerspectiveBase]:
         print("\033[91mgetting perspectives\033[0m")

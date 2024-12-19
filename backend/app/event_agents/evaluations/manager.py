@@ -3,6 +3,7 @@ import logging
 from typing import TYPE_CHECKING, List
 
 from app.event_agents.evaluations.evaluator_base import T
+from app.event_agents.types import AgentContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
@@ -13,12 +14,6 @@ if TYPE_CHECKING:
         EvaluatorBase,
     )
     from app.event_agents.evaluations.registry import EvaluatorRegistry
-    from app.event_agents.memory.protocols import (
-        MemoryStore,
-    )
-    from app.event_agents.orchestrator.thinker import (
-        Thinker,
-    )
     from app.types.websocket_types import WebsocketFrame
 
 logger = logging.getLogger(__name__)
@@ -27,12 +22,12 @@ logger = logging.getLogger(__name__)
 class EvaluationManager:
     def __init__(
         self,
-        thinker: "Thinker",
+        agent_context: "AgentContext",
         evaluator_registry: "EvaluatorRegistry",
-        memory_store: "MemoryStore",
     ) -> None:
-        self.thinker = thinker
-        self.memory_store = memory_store
+        self.agent_context = agent_context
+        self.thinker = agent_context.thinker
+        self.memory_store = agent_context.memory_store
         self.evaluator_registry = evaluator_registry
 
     async def handle_evaluation(

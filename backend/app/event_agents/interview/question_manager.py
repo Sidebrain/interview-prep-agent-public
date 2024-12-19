@@ -5,14 +5,13 @@ from typing import TYPE_CHECKING
 import yaml
 from pydantic import BaseModel
 
+from app.event_agents.types import AgentContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
 
 if TYPE_CHECKING:
-    from app.event_agents.orchestrator.thinker import (
-        Thinker,
-    )
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +23,11 @@ class Questions(BaseModel):
 class QuestionManager:
     def __init__(
         self,
-        thinker: "Thinker",
+        agent_context: "AgentContext",
         question_file_path: str | None = None,
     ):
-        self.thinker = thinker
+        self.agent_context = agent_context
+        self.thinker = agent_context.thinker
         self.questions: list[QuestionAndAnswer] = []
         self.current_question: QuestionAndAnswer | None = None
         self.question_file_path = (
