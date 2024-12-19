@@ -6,6 +6,7 @@ import traceback
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
+from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.interview import (
     AddToMemoryEvent,
     AskQuestionEvent,
@@ -18,6 +19,7 @@ from app.event_agents.interview import (
     TimeManager,
 )
 from app.event_agents.memory.config_builder import save_state
+from app.event_agents.perspectives.registry import PerspectiveRegistry
 from app.types.websocket_types import WebsocketFrame
 
 if TYPE_CHECKING:
@@ -39,9 +41,6 @@ class InterviewManager:
         broker: "Broker",
         thinker: "Thinker",
         memory_store: "MemoryStore",
-        eval_manager: EvaluationManager,
-        perspective_manager: PerspectiveManager,
-        notification_manager: NotificationManager,
         max_time_allowed: int | None = None,
     ) -> None:
         self.agent_id = agent_id
@@ -51,14 +50,23 @@ class InterviewManager:
         self.max_time_allowed = (
             max_time_allowed if max_time_allowed else 2 * 60
         )  # 2 minutes default
+        self.notification_manager = NotificationManager(broker)
         self.time_manager = TimeManager(
-            notification_manager, session_id, self.max_time_allowed
+            notification_manager=self.notification_manager,
+            session_id=self.session_id,
+            max_time_allowed=self.max_time_allowed,
         )
         self.question_manager = QuestionManager(thinker)
-        self.eval_manager = eval_manager
-        self.perspective_manager = perspective_manager
+        self.eval_manager = EvaluationManager(
+            thinker=thinker,
+            memory_store=memory_store,
+            evaluator_registry=EvaluatorRegistry(self.agent_id),
+        )
+        self.perspective_manager = PerspectiveManager(
+            perspective_registry=PerspectiveRegistry(),
+            memory_store=memory_store,
+        )
         self.memory_store = memory_store
-        self.notification_manager = notification_manager
 
     def __repr__(self) -> str:
         return json.dumps(

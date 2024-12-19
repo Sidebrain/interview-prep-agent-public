@@ -31,7 +31,7 @@ class ConnectionManager:
         
         # Create new connection
         channel = Channel(websocket)
-        agent = Agent(channel=channel)
+        agent = Agent.create(channel)
         channel.agent = agent
         
         # Initialize agent

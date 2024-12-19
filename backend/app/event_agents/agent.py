@@ -2,15 +2,14 @@ import asyncio
 import json
 import logging
 import traceback
+from dataclasses import dataclass
 from uuid import UUID, uuid4
 
-from app.event_agents.evaluations.manager import EvaluationManager
-from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.interview.manager import InterviewManager
-from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.memory.factory import (
     create_memory_store,
 )
+from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.orchestrator.broker import Broker
 from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
@@ -18,8 +17,6 @@ from app.event_agents.orchestrator.events import (
     StartEvent,
 )
 from app.event_agents.orchestrator.thinker import Thinker
-from app.event_agents.perspectives.manager import PerspectiveManager
-from app.event_agents.perspectives.registry import PerspectiveRegistry
 from app.event_agents.websocket_handler import Channel
 from app.types.websocket_types import WebsocketFrame
 
@@ -29,34 +26,36 @@ logger = logging.getLogger(__name__)
 # AGENT_ID = UUID("3fe4ab11-64a1-4666-bcc7-c0dd7e55cdad")
 
 
+@dataclass
 class Agent:
-    def __init__(self, channel: Channel) -> None:
-        self.agent_id: UUID = uuid4()
-        self.session_id: UUID = uuid4()
-        self.broker: Broker = Broker()
-        self.channel = channel
-        self.is_active: bool = True
-        self.thinker = Thinker()
-        self.memory_store = create_memory_store()
-        self.evaluator = EvaluationManager(
-            thinker=self.thinker,
-            memory_store=self.memory_store,
-            evaluator_registry=EvaluatorRegistry(self.agent_id),
-        )
-        self.perspective_manager = PerspectiveManager(
-            perspective_registry=PerspectiveRegistry(),
-            memory_store=self.memory_store,
-        )
+    agent_id: UUID
+    session_id: UUID
+    broker: Broker
+    thinker: Thinker
+    channel: Channel
+    is_active: bool
+    memory_store: MemoryStore
+
+    def __post_init__(self) -> None:
         self.interview_manager = InterviewManager(
             agent_id=self.agent_id,
             session_id=self.session_id,
             broker=self.broker,
             thinker=self.thinker,
             memory_store=self.memory_store,
-            eval_manager=self.evaluator,
-            perspective_manager=self.perspective_manager,
-            notification_manager=NotificationManager(self.broker),
             max_time_allowed=10 * 60,  # 10 minutes
+        )
+
+    @classmethod
+    def create(cls, channel: Channel) -> "Agent":
+        return cls(
+            agent_id=uuid4(),
+            session_id=uuid4(),
+            broker=Broker(),
+            thinker=Thinker(),
+            channel=channel,
+            is_active=True,
+            memory_store=create_memory_store(),
         )
 
     async def stop(self) -> None:
