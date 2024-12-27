@@ -1,9 +1,16 @@
-from app.event_agents.memory.providers import YAMLConfigProvider, PubSubMessagePublisher
-from app.types.websocket_types import CompletionFrameChunk, WebsocketFrame
+from app.event_agents.memory.providers import (
+    PubSubMessagePublisher,
+    YAMLConfigProvider,
+)
+from app.types.websocket_types import (
+    CompletionFrameChunk,
+    WebsocketFrame,
+)
+
 from .conftest import MockConfigProvider, MockMessagePublisher
 
 
-def test_mock_config_provider_matches_real_behavior():
+def test_mock_config_provider_matches_real_behavior() -> None:
     # Create both real and mock providers
     real_provider = YAMLConfigProvider("config/agent_v2.yaml")
     mock_provider = MockConfigProvider()
@@ -16,11 +23,15 @@ def test_mock_config_provider_matches_real_behavior():
     assert isinstance(mock_result, list)
     assert all(isinstance(item, dict) for item in real_result)
     assert all(isinstance(item, dict) for item in mock_result)
-    assert all("role" in item and "content" in item for item in real_result)
-    assert all("role" in item and "content" in item for item in mock_result)
+    assert all(
+        "role" in item and "content" in item for item in real_result
+    )
+    assert all(
+        "role" in item and "content" in item for item in mock_result
+    )
 
 
-def test_mock_publisher_matches_real_behavior():
+def test_mock_publisher_matches_real_behavior() -> None:
     real_publisher = PubSubMessagePublisher()
     mock_publisher = MockMessagePublisher()
 
