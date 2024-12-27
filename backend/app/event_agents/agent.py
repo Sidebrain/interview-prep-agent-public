@@ -44,9 +44,11 @@ class Agent:
         )
 
     @classmethod
-    def create(cls, channel: Channel) -> "Agent":
+    def create(
+        cls, channel: Channel, agent_id: UUID | None = None
+    ) -> "Agent":
         return cls(
-            agent_id=uuid4(),
+            agent_id=agent_id or uuid4(),
             session_id=uuid4(),
             broker=Broker(),
             thinker=Thinker(),

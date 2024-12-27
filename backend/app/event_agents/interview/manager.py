@@ -18,7 +18,6 @@ from app.event_agents.interview import (
     QuestionManager,
     TimeManager,
 )
-from app.event_agents.memory.config_builder import save_state
 from app.event_agents.perspectives.registry import PerspectiveRegistry
 from app.types.websocket_types import WebsocketFrame
 
@@ -257,18 +256,7 @@ class InterviewManager:
     async def initialize(self) -> list[QuestionAndAnswer]:
         logger.info("Starting new interview session: %s", self)
 
-        await NotificationManager.send_notification(
-            self.agent_context,
-            "Interview started. Gathering questions...",
-        )
-        questions = await self.collect_and_store_questions()
-
-        await save_state(self.agent_id, "questions", questions)
-
-        await NotificationManager.send_notification(
-            self.agent_context,
-            "Questions gathered. Starting interview timer...",
-        )
+        await self.question_manager.initialize()
 
         timer_notification_string = await self.start_interview_timer()
 
@@ -280,21 +268,9 @@ class InterviewManager:
         await self.initialize_evaluation_systems()
         await self.begin_questioning()
 
-        return questions
+        self.save_state()
 
-    async def collect_and_store_questions(
-        self,
-    ) -> list[QuestionAndAnswer]:
-        """Gather and store interview questions."""
-        questions = await self.question_manager.gather_questions()
-        logger.info(
-            "Questions gathered",
-            extra={
-                "session": self.session_id.hex[:8],
-                "question_count": len(questions),
-            },
-        )
-        return questions
+        return self.question_manager.questions
 
     async def start_interview_timer(self) -> str:
         """Start the interview timer and notify the user."""
@@ -312,6 +288,10 @@ class InterviewManager:
 
         timer_notification_string = f"Timer started. You have {time_to_answer} {time_unit} to answer the questions."
         return timer_notification_string
+
+    def save_state(self) -> None:
+        self.question_manager.save_state()
+        self.eval_manager.evaluator_registry.save_state()
 
     async def initialize_evaluation_systems(self) -> None:
         """Initialize evaluation and perspective systems."""

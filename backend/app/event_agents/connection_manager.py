@@ -10,6 +10,8 @@ from app.event_agents.websocket_handler import Channel
 
 logger = logging.getLogger(__name__)
 
+# testing_agent_id = UUID("70a77ee4-de04-4e29-bb73-4a4aeff33fcf")
+
 
 class ConnectionManager:
     def __init__(self) -> None:
@@ -20,34 +22,42 @@ class ConnectionManager:
 
     async def connect(self, websocket: WebSocket, token: str) -> Agent:
         logger.info(f"Connection attempt for token: {token}")
-        
+
         # Clean up any existing connection first
         if token in self.active_connections:
-            logger.warning("Cleaning up existing connection for token", 
-                         extra={"context": {"token": token}})
+            logger.warning(
+                "Cleaning up existing connection for token",
+                extra={"context": {"token": token}},
+            )
             await self._cleanup_connection(token)
 
         await websocket.accept()
-        
+
         # Create new connection
         channel = Channel(websocket)
         agent = Agent.create(channel)
         channel.agent = agent
-        
+
         # Initialize agent
         await agent.start()
-        
+
         # Create and emit start event
         start_event = StartEvent(
             session_id=agent.session_id,
             client_id=UUID(token),
         )
         await agent.broker.publish(start_event)
-        
+
         self.active_connections[token] = channel
-        logger.info("New connection established", 
-                   extra={"context": {"token": token, 
-                                    "session_id": str(agent.session_id)}})
+        logger.info(
+            "New connection established",
+            extra={
+                "context": {
+                    "token": token,
+                    "session_id": str(agent.session_id),
+                }
+            },
+        )
         return agent
 
     async def disconnect(self, token: str) -> None:
@@ -61,5 +71,7 @@ class ConnectionManager:
             if channel.agent:
                 await channel.agent.stop()
             del self.active_connections[token]
-            logger.info("Connection cleaned up", 
-                       extra={"context": {"token": token}})
+            logger.info(
+                "Connection cleaned up",
+                extra={"context": {"token": token}},
+            )

@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Any
 
@@ -14,6 +13,9 @@ from app.event_agents.evaluations.evaluators import (
 from app.event_agents.evaluations.rating_rubric_evaluator import (
     RatingRubricEvaluationBuilder,
 )
+from app.event_agents.memory.config_builder import (
+    ConfigBuilder,
+)
 from app.event_agents.orchestrator.thinker import Thinker
 from app.event_agents.types import AgentContext
 
@@ -28,13 +30,38 @@ class EvaluatorRegistry:
         self.agent_id = agent_context.agent_id
 
     async def initialize(self) -> None:
-        logger.info("Initializing evaluator registry")
-        await self.add_default_async_evaluators()
-        self.add_default_sync_evaluators()
-        logger.info(
-            "Initialized evaluator registry",
-        )
-        await self.save_state()
+        if self.are_evaluations_gathered_in_memory():
+            evaluations_loaded_successfully = (
+                self.load_evaluations_from_memory()
+            )
+
+            if evaluations_loaded_successfully:
+                return
+        else:
+            logger.info("Initializing evaluator registry")
+            await self.add_default_async_evaluators()
+            self.add_default_sync_evaluators()
+            logger.info(
+                "Initialized evaluator registry",
+            )
+            self.save_state()
+
+    def are_evaluations_gathered_in_memory(self) -> bool:
+        try:
+            return "evaluators" in ConfigBuilder.load_state(
+                self.agent_id
+            )
+        except FileNotFoundError:
+            return False
+
+    def load_evaluations_from_memory(self) -> bool:
+        loaded_state = ConfigBuilder.load_state(self.agent_id)
+        if "evaluators" in loaded_state:
+            self._evaluators = loaded_state["evaluators"]
+            return True
+        else:
+            logger.info("No evaluators found in memory")
+            return False
 
     def add_default_sync_evaluators(self) -> None:
         self._evaluators.update(
@@ -68,20 +95,16 @@ class EvaluatorRegistry:
     def get_evaluators(self) -> dict[str, EvaluatorBase[Any]]:
         return self._evaluators
 
-    async def save_state(self) -> None:
-        # First read the existing content
-        try:
-            with open(f"config/agent_{self.agent_id}.json", "r") as f:
-                content = f.read()
-                data = json.loads(content) if content.strip() else {}
-        except FileNotFoundError:
-            data = {}
+    def save_state(self) -> None:
+        ConfigBuilder.save_state(
+            self.agent_context.agent_id,
+            {"evaluators": self._evaluators},
+        )
 
-        # Update with new evaluators
-        data["evaluators"] = {
-            k: v.save_object() for k, v in self._evaluators.items()
-        }
+    #         data = {}
 
-        # Write the updated content
-        with open(f"config/agent_{self.agent_id}.json", "w") as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
+    #     # Update with new evaluators
+    #     data["evaluators"] = self._evaluators
+    #     # Write the updated content
+    #     with open(f"config/agent_{self.agent_id}.json", "w") as f:
+    #         json.dump(data, f, cls=AgentConfigJSONEncoder, indent=4)

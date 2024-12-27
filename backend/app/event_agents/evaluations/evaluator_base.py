@@ -51,9 +51,9 @@ class EvaluatorBase(ABC, Generic[T]):
         return json.dumps(
             {
                 "evaluation_schema": (
-                    self.evaluation_schema.model_dump()
-                    if isinstance(self.evaluation_schema, BaseModel)
-                    else self.evaluation_schema
+                    self.evaluation_schema
+                    if isinstance(self.evaluation_schema, str)
+                    else self.evaluation_schema.model_json_schema()
                 ),
             },
             indent=2,
@@ -118,7 +118,7 @@ class EvaluatorBase(ABC, Generic[T]):
                 custom_user_instruction=(
                     self.evaluation_schema
                     if isinstance(self.evaluation_schema, str)
-                    else None
+                    else ""
                 ),
             )
         )

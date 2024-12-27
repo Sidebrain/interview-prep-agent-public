@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import yaml
 from pydantic import BaseModel
 
+from app.event_agents.interview.notifications import NotificationManager
+from app.event_agents.memory.config_builder import ConfigBuilder
 from app.event_agents.types import AgentContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
@@ -47,6 +49,55 @@ class QuestionManager:
             },
             indent=2,
         )
+
+    def are_questions_gathered_in_memory(self) -> bool:
+        try:
+            return "questions" in ConfigBuilder.load_state(
+                self.agent_context.agent_id
+            )
+        except FileNotFoundError:
+            return False
+
+    async def load_questions_from_memory(self) -> bool:
+        loaded_state = ConfigBuilder.load_state(
+            self.agent_context.agent_id
+        )
+        if "questions" in loaded_state:
+            self.questions = loaded_state["questions"]
+            await NotificationManager.send_notification(
+                self.agent_context,
+                "Questions loaded from memory",
+            )
+            return True
+        else:
+            logger.info("No questions found in memory")
+            return False
+
+    async def initialize(self) -> None:
+        if self.are_questions_gathered_in_memory():
+            questions_loaded_successfully = (
+                await self.load_questions_from_memory()
+            )
+
+            if questions_loaded_successfully:
+                return
+
+        # If questions are not loaded from memory, gather them
+        await NotificationManager.send_notification(
+            self.agent_context,
+            "Interview started. Gathering questions...",
+        )
+        await self.gather_questions()
+
+        await NotificationManager.send_notification(
+            self.agent_context,
+            "Questions gathered. Starting interview timer...",
+        )
+        return None
+
+    # async def load_questions(self) -> None:
+    #     questions = ConfigBuilder.load_state(self.agent_context.agent_id)
+    #     self.questions = questions.questions
 
     def get_question_generation_messages(
         self, question_file_path: str | None = None
@@ -105,3 +156,9 @@ class QuestionManager:
         except IndexError:
             logger.info("No more questions: %s", self)
             return None
+
+    def save_state(self) -> None:
+        ConfigBuilder.save_state(
+            self.agent_context.agent_id,
+            {"questions": self.questions},
+        )

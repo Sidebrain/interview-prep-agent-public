@@ -1,28 +1,41 @@
 import json
+import logging
+from pprint import PrettyPrinter
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from app.event_agents.memory.json_decoders import AgentConfigJSONDecoder
+from app.event_agents.memory.json_encoders import AgentConfigJSONEncoder
+
+logger = logging.getLogger(__name__)
+
+pp = PrettyPrinter(indent=4, width=120, compact=True)
 
 
-async def save_state(
-    agent_id: UUID, field: str, value: str | BaseModel | list[BaseModel]
-) -> None:
-    """Save the current state of the interview to long term memory."""
-    try:
-        with open(f"config/agent_{agent_id}.json", "r+") as f:
-            content = f.read()
-            data = json.loads(content) if content.strip() else {}
-    except FileNotFoundError:
-        data = {}
+class ConfigBuilder:
+    @staticmethod
+    def save_state(
+        agent_id: UUID,
+        dct: dict[str, Any],
+    ) -> None:
+        """Save the current state of the interview to long term memory."""
+        try:
+            with open(f"config/agent_{agent_id}.json", "r+") as f:
+                content = f.read()
+                data = json.loads(content) if content.strip() else {}
+        except FileNotFoundError:
+            data = {}
 
-    if isinstance(value, BaseModel):
-        data[field] = value.model_dump()
-    elif isinstance(value, list):
-        data[field] = [
-            v.model_dump() for v in value if isinstance(v, BaseModel)
-        ]
-    else:
-        data[field] = value
+        data.update(dct)
 
-    with open(f"config/agent_{agent_id}.json", "w") as f:
-        json.dump(data, f, indent=4)
+        with open(f"config/agent_{agent_id}.json", "w") as f:
+            json.dump(data, f, cls=AgentConfigJSONEncoder, indent=4)
+
+    @staticmethod
+    def load_state(agent_id: UUID) -> Any:
+        """Load the state of the interview from long term memory."""
+        try:
+            with open(f"config/agent_{agent_id}.json", "r") as f:
+                return json.load(f, cls=AgentConfigJSONDecoder)
+        except FileNotFoundError:
+            return {}

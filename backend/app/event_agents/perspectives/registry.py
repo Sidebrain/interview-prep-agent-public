@@ -1,5 +1,6 @@
 import asyncio
 
+from app.event_agents.memory.config_builder import ConfigBuilder
 from app.event_agents.perspectives.perspective_base import (
     PerspectiveBase,
 )
@@ -51,3 +52,9 @@ class PerspectiveRegistry:
 
     def get_perspectives(self) -> dict[str, PerspectiveBase]:
         return self._perspectives
+
+    def save_state(self) -> None:
+        ConfigBuilder.save_state(
+            self.agent_context.agent_id,
+            {"perspectives": self._perspectives},
+        )
