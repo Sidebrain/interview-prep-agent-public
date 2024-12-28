@@ -1,7 +1,6 @@
 import logging
 from typing import Dict, List, Optional
 
-from app.event_agents.memory.types import LongTermMemory
 from app.types.websocket_types import (
     AddressType,
     CompletionFrameChunk,
