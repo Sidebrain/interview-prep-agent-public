@@ -1,29 +1,33 @@
 import asyncio
-from collections import defaultdict
-from typing import Callable, TypeVar, Type
-from uuid import uuid4
-
-
-
 import logging
+from collections import defaultdict
+from typing import Awaitable, Callable, Type, TypeVar
+from uuid import uuid4
 
 from app.event_agents.orchestrator.events import BaseEvent
 from app.types.websocket_types import WebsocketFrame
 
-
 logger = logging.getLogger(__name__)
 
-Event = TypeVar("Event", bound= BaseEvent | WebsocketFrame)
+Event = TypeVar("Event", bound=BaseEvent | WebsocketFrame)
 
 
 class Broker:
     def __init__(self) -> None:
         self.session_id: str = str(uuid4())
-        self._subscribers: dict[str, list[Callable]] = defaultdict(list)
-        self._event_queue: asyncio.Queue = asyncio.Queue()
+        self._subscribers: dict[
+            str, list[Callable[..., Awaitable[None]]]
+        ] = defaultdict(list)
+        self._event_queue: asyncio.Queue[BaseEvent | WebsocketFrame] = (
+            asyncio.Queue()
+        )
         self._is_running: bool = False
 
-    async def subscribe(self, event_type: Type[Event], handler: Callable) -> None:
+    async def subscribe(
+        self,
+        event_type: Type[Event],
+        handler: Callable[..., Awaitable[None]],
+    ) -> None:
         """
         Subscribe to an event type with a handler function.
 
@@ -35,7 +39,11 @@ class Broker:
         """
         self._subscribers[event_type.__name__].append(handler)
 
-    async def unsubscribe(self, event_type: Type[Event], handler: Callable) -> None:
+    async def unsubscribe(
+        self,
+        event_type: Type[Event],
+        handler: Callable[..., Awaitable[None]],
+    ) -> None:
         """
         Unsubscribe from an event type with a handler function.
 
@@ -106,4 +114,3 @@ class Broker:
             self._process_events_task = asyncio.create_task(
                 self._process_events()
             )
-
