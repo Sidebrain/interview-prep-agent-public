@@ -128,7 +128,7 @@ class InterviewManager:
 
         summary = await self.thinker.generate(context)
         frame = Dispatcher.package_and_transform_to_webframe(
-            summary,
+            summary,  # type: ignore
             "content",
             frame_id=str(uuid4()),
         )
@@ -198,6 +198,8 @@ class InterviewManager:
 
     async def _generate_evaluations(self) -> list[WebsocketFrame]:
         """Generate evaluations for the current question."""
+        if self.question_manager.current_question is None:
+            return []
         evaluations = await self.eval_manager.handle_evaluation(
             questions=[self.question_manager.current_question]
         )
@@ -214,6 +216,8 @@ class InterviewManager:
 
     async def _generate_perspectives(self) -> list[WebsocketFrame]:
         """Generate perspectives for the current question."""
+        if self.question_manager.current_question is None:
+            return []
         perspectives = (
             await self.perspective_manager.handle_perspective(
                 questions=[self.question_manager.current_question]
@@ -353,13 +357,13 @@ class InterviewManager:
         frame_id = str(uuid4())
         question_thought_frame = (
             Dispatcher.package_and_transform_to_webframe(
-                event.question,
+                event.question,  # type: ignore
                 "thought",
                 frame_id=frame_id,
             )
         )
         question_frame = Dispatcher.package_and_transform_to_webframe(
-            event.question.question,
+            event.question.question,  # type: ignore
             "content",
             frame_id=frame_id,
         )
@@ -371,7 +375,7 @@ class InterviewManager:
     ) -> None:
         """Add questions to memory."""
         question_frame = Dispatcher.package_and_transform_to_webframe(
-            question.question,
+            question.question,  # type: ignore
             "content",
             frame_id=str(uuid4()),
         )
