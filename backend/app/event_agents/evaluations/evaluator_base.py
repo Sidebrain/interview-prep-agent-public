@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.orchestrator.thinker import Thinker
-from app.event_agents.types import AgentContext
+from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
@@ -45,7 +45,7 @@ class EvaluatorBase(ABC, Generic[T]):
         self,
         evaluation_schema: T,
     ) -> None:
-        self.evaluation_schema = evaluation_schema
+        self.evaluation_schema = evaluation_schema  # type: ignore
 
     def __repr__(self) -> str:
         return json.dumps(
@@ -70,14 +70,14 @@ class EvaluatorBase(ABC, Generic[T]):
     async def evaluate(
         self,
         questions: List[QuestionAndAnswer],
-        agent_context: "AgentContext",
+        interview_context: InterviewContext,
         debug: bool = False,
     ) -> WebsocketFrame:
         """
         Evaluate an answer.
         """
-        memory_store = agent_context.memory_store
-        thinker = agent_context.thinker
+        memory_store = interview_context.memory_store
+        thinker = interview_context.thinker
         debug and print(f"\033[91m{self.__class__.__name__}\033[0m")
         # Get the correlation id from the last message in the memory store
         # this is the user input
@@ -129,7 +129,7 @@ class EvaluatorBase(ABC, Generic[T]):
         )
 
         evaluation_frame = Dispatcher.package_and_transform_to_webframe(
-            evaluation,
+            evaluation,  # type: ignore
             address="evaluation",
             frame_id=str(uuid4()),
             correlation_id=correlation_id,

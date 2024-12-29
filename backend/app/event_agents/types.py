@@ -6,10 +6,10 @@ from app.event_agents.orchestrator.broker import Broker
 from app.event_agents.orchestrator.thinker import Thinker
 
 
-@dataclass
-class AgentContext:
-    agent_id: UUID
+@dataclass(frozen=True)
+class InterviewContext:
     interview_id: UUID
+    agent_id: UUID
+    memory_store: MemoryStore
     broker: Broker
     thinker: Thinker
-    memory_store: MemoryStore

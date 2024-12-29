@@ -16,18 +16,15 @@ from app.event_agents.evaluations.rating_rubric_evaluator import (
 from app.event_agents.memory.config_builder import (
     ConfigBuilder,
 )
-from app.event_agents.orchestrator.thinker import Thinker
-from app.event_agents.types import AgentContext
+from app.event_agents.types import InterviewContext
 
 logger = logging.getLogger(__name__)
 
 
 class EvaluatorRegistry:
-    def __init__(self, agent_context: "AgentContext") -> None:
-        self.agent_context = agent_context
+    def __init__(self, interview_context: "InterviewContext") -> None:
+        self.interview_context = interview_context
         self._evaluators: dict[str, EvaluatorBase[Any]] = {}
-        self._thinker: Thinker = agent_context.thinker
-        self.agent_id = agent_context.agent_id
 
     async def initialize(self) -> None:
         if self.are_evaluations_gathered_in_memory():
@@ -49,13 +46,15 @@ class EvaluatorRegistry:
     def are_evaluations_gathered_in_memory(self) -> bool:
         try:
             return "evaluators" in ConfigBuilder.load_state(
-                self.agent_id
+                self.interview_context.agent_id
             )
         except FileNotFoundError:
             return False
 
     def load_evaluations_from_memory(self) -> bool:
-        loaded_state = ConfigBuilder.load_state(self.agent_id)
+        loaded_state = ConfigBuilder.load_state(
+            self.interview_context.agent_id
+        )
         if "evaluators" in loaded_state:
             self._evaluators = loaded_state["evaluators"]
             return True
@@ -97,14 +96,6 @@ class EvaluatorRegistry:
 
     def save_state(self) -> None:
         ConfigBuilder.save_state(
-            self.agent_context.agent_id,
+            self.interview_context.agent_id,
             {"evaluators": self._evaluators},
         )
-
-    #         data = {}
-
-    #     # Update with new evaluators
-    #     data["evaluators"] = self._evaluators
-    #     # Write the updated content
-    #     with open(f"config/agent_{self.agent_id}.json", "w") as f:
-    #         json.dump(data, f, cls=AgentConfigJSONEncoder, indent=4)

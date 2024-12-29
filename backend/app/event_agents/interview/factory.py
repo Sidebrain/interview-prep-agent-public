@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.orchestrator import Broker, Thinker
-from app.event_agents.types import AgentContext
+from app.event_agents.types import InterviewContext
 from app.event_agents.websocket_handler import Channel
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ def load_all_interviews() -> InterviewCollection:
 
 def create_interview(
     websocket: WebSocket, interview_id: UUID
-) -> InterviewManager:
+) -> "InterviewManager":
     interview_config = load_all_interviews().find_by_interview_id(
         interview_id
     )
@@ -84,23 +84,18 @@ def create_interview(
     thinker = Thinker()
     memory_store = create_memory_store()
 
-    agent_context = AgentContext(
-        agent_id=interview_config.agent_id,
+    interview_context = InterviewContext(
         interview_id=interview_config.interview_id,
+        agent_id=interview_config.agent_id,
         memory_store=memory_store,
         broker=broker,
         thinker=thinker,
     )
 
     interview_manager = InterviewManager(
-        agent_context=agent_context,
-        memory_store=memory_store,
-        agent_id=interview_config.agent_id,
-        interview_id=interview_config.interview_id,
-        channel=channel,
-        broker=broker,
-        thinker=thinker,
+        interview_context=interview_context,
         max_time_allowed=max_time_allowed,
+        channel=channel,
     )
 
     return interview_manager

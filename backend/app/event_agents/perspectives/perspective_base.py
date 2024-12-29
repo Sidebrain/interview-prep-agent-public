@@ -6,7 +6,7 @@ from openai.types.chat import ChatCompletion
 
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.memory.protocols import MemoryStore
-from app.event_agents.types import AgentContext
+from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
@@ -33,7 +33,7 @@ class PerspectiveBase:
     async def evaluate(
         self,
         questions: List[QuestionAndAnswer],
-        agent_context: "AgentContext",
+        interview_context: InterviewContext,
     ) -> WebsocketFrame:
         """Main evaluation pipeline for a perspective's analysis"""
         logger.debug(
@@ -44,22 +44,25 @@ class PerspectiveBase:
                 }
             },
         )
-        memory_store = agent_context.memory_store
 
-        correlation_id = self._get_correlation_id(memory_store)
+        correlation_id = self._get_correlation_id(
+            memory_store=interview_context.memory_store
+        )
         # self._ensure_description_exists()
 
         instruction = self._create_evaluation_instruction()
         context = await self._build_evaluation_context(
             questions=questions,
             custom_user_instruction=instruction,
-            memory_store=memory_store,
+            memory_store=interview_context.memory_store,
         )
         logger.debug(
             "Built evaluation context",
-            extra={"context": {"context": len(context)}},
+            extra={"context": {"perspective context": len(context)}},
         )
-        analysis = await self._generate_analysis(context, agent_context)
+        analysis = await self._generate_analysis(
+            context, interview_context
+        )
 
         logger.debug(
             "Generated analysis",
@@ -129,10 +132,10 @@ class PerspectiveBase:
     async def _generate_analysis(
         self,
         context: List[dict[str, str]],
-        agent_context: "AgentContext",
+        interview_context: "InterviewContext",
     ) -> ChatCompletion:
         """Generate the perspective's analysis"""
-        thinker = agent_context.thinker
+        thinker = interview_context.thinker
         return await thinker.generate(
             messages=context,
             max_tokens=200,
@@ -144,7 +147,7 @@ class PerspectiveBase:
     ) -> WebsocketFrame:
         """Package the analysis into a WebsocketFrame"""
         return Dispatcher.package_and_transform_to_webframe(
-            analysis,
+            analysis,  # type: ignore
             address="perspective",
             frame_id=str(uuid4()),
             correlation_id=correlation_id,
@@ -192,7 +195,9 @@ class PerspectiveBase:
             )
             raise
 
-    async def initialize(self, agent_context: "AgentContext") -> str:
+    async def initialize(
+        self, interview_context: InterviewContext
+    ) -> str | None:
         """Initialize the perspective by generating and saving its description"""
         logger.debug(
             "Initializing perspective description",
@@ -206,13 +211,13 @@ class PerspectiveBase:
 
         messages = self._create_initialization_messages()
         # description = await self._generate_description(
-        #     messages, agent_context
+        #     messages, interview_context
         # )
         # self._save_description(description)
 
         return self.description
 
-    def _create_initialization_messages(self) -> List[dict]:
+    def _create_initialization_messages(self) -> List[dict[str, str]]:
         """Create the messages used to generate the perspective description"""
         return [
             {
@@ -227,10 +232,12 @@ class PerspectiveBase:
         ]
 
     async def _generate_description(
-        self, messages: List[dict], agent_context: "AgentContext"
+        self,
+        messages: List[dict[str, str]],
+        interview_context: "InterviewContext",
     ) -> str:
         """Generate the perspective description using the thinker"""
-        thinker = agent_context.thinker
+        thinker = interview_context.thinker
         response = await thinker.generate(
             messages=messages,
             debug=True,
@@ -313,9 +320,6 @@ class PerspectiveBase:
             address_filter=address_filter,
             custom_user_instruction=custom_user_instruction,
         )
-
-        #! we likely dont need to do this because we are inserting the questions into the memory store
-        # self._insert_questions_before_answer(messages, questions)
 
         logger.debug(
             "Built context messages",

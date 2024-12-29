@@ -1,19 +1,15 @@
 import json
 import logging
-from typing import TYPE_CHECKING
 
 import yaml
 from pydantic import BaseModel
 
 from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.memory.config_builder import ConfigBuilder
-from app.event_agents.types import AgentContext
+from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +21,10 @@ class Questions(BaseModel):
 class QuestionManager:
     def __init__(
         self,
-        agent_context: "AgentContext",
+        interview_context: InterviewContext,
         question_file_path: str | None = None,
     ) -> None:
-        self.agent_context = agent_context
-        self.thinker = agent_context.thinker
+        self.interview_context = interview_context
         self.questions: list[QuestionAndAnswer] = []
         self.current_question: QuestionAndAnswer | None = None
         self.question_file_path = (
@@ -53,19 +48,19 @@ class QuestionManager:
     def are_questions_gathered_in_memory(self) -> bool:
         try:
             return "questions" in ConfigBuilder.load_state(
-                self.agent_context.agent_id
+                self.interview_context.agent_id
             )
         except FileNotFoundError:
             return False
 
     async def load_questions_from_memory(self) -> bool:
         loaded_state = ConfigBuilder.load_state(
-            self.agent_context.agent_id
+            self.interview_context.agent_id
         )
         if "questions" in loaded_state:
             self.questions = loaded_state["questions"]
             await NotificationManager.send_notification(
-                self.agent_context,
+                self.interview_context.broker,
                 "Questions loaded from memory",
             )
             return True
@@ -92,20 +87,16 @@ class QuestionManager:
 
         # If questions are not loaded from memory, gather them
         await NotificationManager.send_notification(
-            self.agent_context,
+            self.interview_context.broker,
             "Interview started. Gathering questions...",
         )
         await self.gather_questions()
 
         await NotificationManager.send_notification(
-            self.agent_context,
+            self.interview_context.broker,
             "Questions gathered. Starting interview timer...",
         )
         return None
-
-    # async def load_questions(self) -> None:
-    #     questions = ConfigBuilder.load_state(self.agent_context.agent_id)
-    #     self.questions = questions.questions
 
     def get_question_generation_messages(
         self, question_file_path: str | None = None
@@ -125,7 +116,7 @@ class QuestionManager:
     async def extract_structured_questions(
         self, messages: list[dict[str, str]]
     ) -> Questions:
-        return await self.thinker.extract_structured_response(
+        return await self.interview_context.thinker.extract_structured_response(
             Questions, messages=messages, debug=True
         )
 
@@ -167,6 +158,6 @@ class QuestionManager:
 
     def save_state(self) -> None:
         ConfigBuilder.save_state(
-            self.agent_context.agent_id,
+            self.interview_context.agent_id,
             {"questions": self.questions},
         )

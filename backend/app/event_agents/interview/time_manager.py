@@ -3,7 +3,7 @@ import json
 import logging
 
 from app.event_agents.interview.notifications import NotificationManager
-from app.event_agents.types import AgentContext
+from app.event_agents.orchestrator.broker import Broker
 
 logger = logging.getLogger(__name__)
 
@@ -11,11 +11,10 @@ logger = logging.getLogger(__name__)
 class TimeManager:
     def __init__(
         self,
-        agent_context: "AgentContext",
+        broker: Broker,
         max_time_allowed: int,
     ):
-        self.agent_context = agent_context
-        self.interview_id = agent_context.interview_id
+        self.broker = broker
         self.max_time_allowed = max_time_allowed
         self.time_elapsed = 0
 
@@ -23,7 +22,6 @@ class TimeManager:
         return json.dumps(
             {
                 "type": "TimeManager",
-                "session": self.interview_id.hex[:8],
                 "elapsed": self.time_elapsed,
                 "remaining": self.max_time_allowed - self.time_elapsed,
             },
@@ -44,7 +42,7 @@ class TimeManager:
 
             if self.time_elapsed >= self.max_time_allowed:
                 await NotificationManager.send_notification(
-                    self.agent_context,
+                    self.broker,
                     "Interview timeout reached. Ending interview...",
                 )
                 break

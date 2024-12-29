@@ -3,30 +3,25 @@ import json
 import logging
 import math
 import traceback
-from uuid import UUID, uuid4
+from uuid import uuid4
 
+from app.agents.dispatcher import Dispatcher
+from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.evaluations.registry import EvaluatorRegistry
-from app.event_agents.interview import (
+from app.event_agents.interview.notifications import NotificationManager
+from app.event_agents.interview.time_manager import TimeManager
+from app.event_agents.interview.question_manager import QuestionManager
+from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
     AskQuestionEvent,
-    Dispatcher,
-    EvaluationManager,
-    NotificationManager,
-    PerspectiveManager,
-    QuestionAndAnswer,
-    QuestionManager,
-    TimeManager,
-)
-from app.event_agents.memory.protocols import MemoryStore
-from app.event_agents.orchestrator.broker import Broker
-from app.event_agents.orchestrator.events import (
     MessageReceivedEvent,
     StartEvent,
 )
-from app.event_agents.orchestrator.thinker import Thinker
+from app.event_agents.perspectives.manager import PerspectiveManager
 from app.event_agents.perspectives.registry import PerspectiveRegistry
-from app.event_agents.types import AgentContext
+from app.event_agents.types import InterviewContext
 from app.event_agents.websocket_handler import Channel
+from app.types.interview_concept_types import QuestionAndAnswer
 from app.types.websocket_types import WebsocketFrame
 
 logger = logging.getLogger(__name__)
@@ -35,44 +30,39 @@ logger = logging.getLogger(__name__)
 class InterviewManager:
     def __init__(
         self,
-        agent_context: "AgentContext",
-        memory_store: MemoryStore,
-        agent_id: UUID,
+        interview_context: "InterviewContext",
         channel: Channel,
-        broker: Broker,
-        thinker: Thinker,
-        interview_id: UUID,  # drop in replacement for interview_id
         max_time_allowed: int | None = None,
     ) -> None:
         # from the parent agent
-        self.agent_context = agent_context
-        self.agent_id = agent_id
-        self.broker = broker
+        self.interview_context = interview_context
+        self.agent_id = interview_context.agent_id
+        self.broker = interview_context.broker
         self.channel = channel
-        self.thinker = thinker
-        self.interview_id = interview_id
-        self.memory_store = memory_store
+        self.thinker = interview_context.thinker
+        self.interview_id = interview_context.interview_id
+        self.memory_store = interview_context.memory_store
 
         self.max_time_allowed = (
             max_time_allowed if max_time_allowed else 2 * 60
         )  # 2 minutes default
         self.time_manager = TimeManager(
-            agent_context=self.agent_context,
+            broker=self.broker,
             max_time_allowed=self.max_time_allowed,
         )
         self.question_manager = QuestionManager(
-            agent_context=self.agent_context,
+            interview_context=self.interview_context,
         )
         self.eval_manager = EvaluationManager(
-            agent_context=self.agent_context,
+            interview_context=self.interview_context,
             evaluator_registry=EvaluatorRegistry(
-                agent_context=self.agent_context
+                interview_context=self.interview_context
             ),
         )
         self.perspective_manager = PerspectiveManager(
-            agent_context=self.agent_context,
+            interview_context=self.interview_context,
             perspective_registry=PerspectiveRegistry(
-                agent_context=self.agent_context
+                interview_context=self.interview_context
             ),
         )
 
@@ -344,7 +334,7 @@ class InterviewManager:
         timer_notification_string = await self.start_interview_timer()
 
         await NotificationManager.send_notification(
-            self.agent_context,
+            self.interview_context.broker,
             timer_notification_string,
         )
 
@@ -380,13 +370,13 @@ class InterviewManager:
         """Initialize evaluation and perspective systems."""
         await self.eval_manager.evaluator_registry.initialize()
         await NotificationManager.send_notification(
-            self.agent_context,
+            self.interview_context.broker,
             "Evaluator registry initialized.",
         )
 
         await self.perspective_manager.perspective_registry.initialize()
         await NotificationManager.send_notification(
-            self.agent_context,
+            self.interview_context.broker,
             "Perspective registry initialized.",
         )
 
@@ -412,7 +402,7 @@ class InterviewManager:
         if next_question is None:
             logger.info("Interview complete: %s", self)
             await NotificationManager.send_notification(
-                self.agent_context,
+                self.interview_context.broker,
                 "Questions exhausted. Interview ended.",
             )
         else:

@@ -1,20 +1,17 @@
 import asyncio
 import logging
-from typing import TYPE_CHECKING, List
+from typing import List
 
-from app.event_agents.evaluations.evaluator_base import T
-from app.event_agents.types import AgentContext
+from app.event_agents.evaluations.evaluator_base import (
+    EvaluatorBase,
+    T,
+)
+from app.event_agents.evaluations.registry import EvaluatorRegistry
+from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
 )
 from app.types.websocket_types import WebsocketFrame
-
-if TYPE_CHECKING:
-    from app.event_agents.evaluations.evaluator_base import (
-        EvaluatorBase,
-    )
-    from app.event_agents.evaluations.registry import EvaluatorRegistry
-    from app.types.websocket_types import WebsocketFrame
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +19,10 @@ logger = logging.getLogger(__name__)
 class EvaluationManager:
     def __init__(
         self,
-        agent_context: "AgentContext",
+        interview_context: InterviewContext,
         evaluator_registry: "EvaluatorRegistry",
     ) -> None:
-        self.agent_context = agent_context
+        self.interview_context = interview_context
         self.evaluator_registry = evaluator_registry
 
     async def handle_evaluation(
@@ -64,6 +61,6 @@ class EvaluationManager:
         """Helper method to run individual evaluations"""
         return await evaluator.evaluate(
             questions,
-            self.agent_context,
+            self.interview_context,
             debug=True,
         )

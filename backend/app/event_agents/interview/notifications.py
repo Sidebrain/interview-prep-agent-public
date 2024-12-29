@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from app.agents.dispatcher import Dispatcher
-from app.event_agents.types import AgentContext
+from app.event_agents.orchestrator.broker import Broker
 
 if TYPE_CHECKING:
     pass
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class NotificationManager:
     @staticmethod
     async def send_notification(
-        agent_context: "AgentContext", notification: str
+        broker: Broker, notification: str
     ) -> None:
         try:
             frame = Dispatcher.package_and_transform_to_webframe(
@@ -23,6 +23,6 @@ class NotificationManager:
                 "content",
                 frame_id=str(uuid4()),
             )
-            await agent_context.broker.publish(frame)
+            await broker.publish(frame)
         except Exception as e:
             logger.error(f"Error sending notification: {e}")
