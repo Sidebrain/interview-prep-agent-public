@@ -41,7 +41,7 @@ class InterviewManager:
         channel: Channel,
         broker: Broker,
         thinker: Thinker,
-        session_id: UUID,  # drop in replacement for interview_id
+        interview_id: UUID,  # drop in replacement for interview_id
         max_time_allowed: int | None = None,
     ) -> None:
         # from the parent agent
@@ -50,7 +50,7 @@ class InterviewManager:
         self.broker = broker
         self.channel = channel
         self.thinker = thinker
-        self.session_id = session_id
+        self.interview_id = interview_id
         self.memory_store = memory_store
 
         self.max_time_allowed = (
@@ -80,7 +80,7 @@ class InterviewManager:
         return json.dumps(
             {
                 "type": "InterviewManager",
-                "session": self.session_id.hex[:8],
+                "session": self.interview_id.hex[:8],
                 "time_remaining": self.max_time_allowed
                 - self.time_manager.time_elapsed,
                 "questions_remaining": len(
@@ -140,7 +140,7 @@ class InterviewManager:
                     "context": {
                         "event": event.model_dump(by_alias=True),
                         "agent_id": str(self.agent_id),
-                        "session_id": str(self.session_id),
+                        "interview_id": str(self.interview_id),
                         "traceback": traceback.format_exc(),
                     }
                 },
@@ -176,7 +176,7 @@ class InterviewManager:
             )
             new_memory = AddToMemoryEvent(
                 frame=parsed_message,
-                session_id=self.session_id,
+                interview_id=self.interview_id,
             )
             await self.broker.publish(new_memory)
 
@@ -329,7 +329,7 @@ class InterviewManager:
 
     async def stop(self) -> None:
         """Stop the interview manager and clean up all resources."""
-        logger.info("Stopping interview manager %s", self.session_id)
+        logger.info("Stopping interview manager %s", self.interview_id)
         await self.broker.stop()
 
     async def initialize(self) -> list[QuestionAndAnswer]:
@@ -398,7 +398,7 @@ class InterviewManager:
             logger.error(
                 "Failed to ask first question",
                 extra={
-                    "session_id": self.session_id,
+                    "interview_id": self.interview_id,
                     "manager_state": repr(self),
                     "error": str(e),
                 },
@@ -425,7 +425,7 @@ class InterviewManager:
             await self.broker.publish(
                 AskQuestionEvent(
                     question=next_question,
-                    session_id=self.session_id,
+                    interview_id=self.interview_id,
                 )
             )
 

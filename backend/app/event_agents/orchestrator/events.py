@@ -9,33 +9,39 @@ from app.types.websocket_types import WebsocketFrame
 
 class BaseEvent(BaseModel):
     event_id: UUID = Field(default_factory=uuid4)
-    timestamp: int = Field(default_factory=lambda: int(datetime.now().timestamp()))
-    correlation_id: UUID = Field(default_factory=uuid4)  # to track related events
+    timestamp: int = Field(
+        default_factory=lambda: int(datetime.now().timestamp())
+    )
+    correlation_id: UUID = Field(
+        default_factory=uuid4
+    )  # to track related events
 
 
 class StartEvent(BaseEvent):
-    session_id: UUID
+    interview_id: UUID
     client_id: UUID
 
 
 class WebsocketMessageEvent(BaseEvent):
     frame: WebsocketFrame
-    session_id: UUID
+    interview_id: UUID
     client_id: UUID
 
 
 class AddToMemoryEvent(BaseEvent):
-    session_id: UUID
+    interview_id: UUID
     frame: WebsocketFrame
 
 
 class MessageReceivedEvent(BaseEvent):
     message: str
-    session_id: UUID
+    interview_id: UUID
+
 
 class AskQuestionEvent(BaseEvent):
     question: QuestionAndAnswer
-    session_id: UUID
+    interview_id: UUID
+
 
 class AnswerReceivedEvent(MessageReceivedEvent):
     question: QuestionAndAnswer

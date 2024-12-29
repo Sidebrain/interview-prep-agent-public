@@ -15,7 +15,7 @@ class TimeManager:
         max_time_allowed: int,
     ):
         self.agent_context = agent_context
-        self.session_id = agent_context.session_id
+        self.interview_id = agent_context.interview_id
         self.max_time_allowed = max_time_allowed
         self.time_elapsed = 0
 
@@ -23,7 +23,7 @@ class TimeManager:
         return json.dumps(
             {
                 "type": "TimeManager",
-                "session": self.session_id.hex[:8],
+                "session": self.interview_id.hex[:8],
                 "elapsed": self.time_elapsed,
                 "remaining": self.max_time_allowed - self.time_elapsed,
             },

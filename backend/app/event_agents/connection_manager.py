@@ -48,7 +48,7 @@ class ConnectionManager:
             extra={
                 "context": {
                     "token": token,
-                    "session_id": str(interview_manager.session_id),
+                    "interview_id": str(interview_manager.interview_id),
                 }
             },
         )

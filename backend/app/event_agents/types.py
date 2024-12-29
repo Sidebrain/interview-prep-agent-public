@@ -9,7 +9,7 @@ from app.event_agents.orchestrator.thinker import Thinker
 @dataclass
 class AgentContext:
     agent_id: UUID
-    session_id: UUID
+    interview_id: UUID
     broker: Broker
     thinker: Thinker
     memory_store: MemoryStore

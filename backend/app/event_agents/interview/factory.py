@@ -86,7 +86,7 @@ def create_interview(
 
     agent_context = AgentContext(
         agent_id=interview_config.agent_id,
-        session_id=interview_config.interview_id,
+        interview_id=interview_config.interview_id,
         memory_store=memory_store,
         broker=broker,
         thinker=thinker,
@@ -96,7 +96,7 @@ def create_interview(
         agent_context=agent_context,
         memory_store=memory_store,
         agent_id=interview_config.agent_id,
-        session_id=interview_config.interview_id,
+        interview_id=interview_config.interview_id,
         channel=channel,
         broker=broker,
         thinker=thinker,

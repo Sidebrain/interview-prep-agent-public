@@ -38,13 +38,12 @@ class Channel:
             case _:
                 event = MessageReceivedEvent(
                     message=message_from_client,
-                    # TODO change this to interview_id in all events
-                    session_id=self.interview_id,
+                    interview_id=self.interview_id,
                 )
                 logger.debug(
                     {
                         "event": "message_received",
-                        "session_id": str(self.interview_id),
+                        "interview_id": str(self.interview_id),
                         "message": message_from_client,
                     }
                 )
@@ -53,12 +52,6 @@ class Channel:
 
                 await self.broker.publish(event)
                 return message_from_client
-
-    async def route_message(self, message: str) -> None:
-        # send to the agent or the maanger agent that is responsible for the client
-        print(f"Message received: {message}")
-        print("Routing message to the appropriate handler")
-        pass
 
     async def process_heartbeat(self) -> None:
         await self.send_message("pong")
