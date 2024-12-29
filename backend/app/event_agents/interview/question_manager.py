@@ -78,6 +78,14 @@ class QuestionManager:
             questions_loaded_successfully = (
                 await self.load_questions_from_memory()
             )
+            logger.debug(
+                "Questions loaded from memory",
+                extra={
+                    "context": {
+                        "#questions": len(self.questions),
+                    }
+                },
+            )
 
             if questions_loaded_successfully:
                 return

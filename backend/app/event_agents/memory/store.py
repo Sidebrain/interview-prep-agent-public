@@ -27,6 +27,7 @@ class InMemoryStore:
         self,
         config_provider: ConfigProvider,
         debug: bool = False,
+
     ) -> None:
         self.memory: List[WebsocketFrame] = []
         self.config_provider = config_provider

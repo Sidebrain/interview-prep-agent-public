@@ -22,6 +22,7 @@ class Broker:
             asyncio.Queue()
         )
         self._is_running: bool = False
+        self._process_events_task: asyncio.Task[None] | None = None
 
     async def subscribe(
         self,
