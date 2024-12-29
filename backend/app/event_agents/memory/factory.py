@@ -7,7 +7,7 @@ from .store import InMemoryStore
 def create_memory_store(
     config_path: str | None = None,
     debug: bool = False,
-) -> InMemoryStore:
+) -> MemoryStore:
     """Create a new memory store instance with all required dependencies."""
     return InMemoryStore(
         config_provider=YAMLConfigProvider(config_path),

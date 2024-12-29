@@ -4,12 +4,8 @@ from uuid import UUID
 
 from fastapi import WebSocket
 
-from app.event_agents.interview.manager import (
-    InterviewManager,
-    create_interview,
-)
-from app.event_agents.orchestrator.events import StartEvent
-from app.event_agents.websocket_handler import Channel
+from app.event_agents.interview.factory import create_interview
+from app.event_agents.interview.manager import InterviewManager
 
 logger = logging.getLogger(__name__)
 
@@ -39,20 +35,12 @@ class ConnectionManager:
         await websocket.accept()
 
         # Create new connection
-        #! instead we create a interview here
         interview_manager = create_interview(
             websocket=websocket, interview_id=test_interview_id
         )
 
         # Initialize agent
         await interview_manager.initialize()
-
-        # Create and emit start event
-        # start_event = StartEvent(
-        #     session_id=test_interview_id,
-        #     client_id=UUID(token),
-        # )
-        # await interview_manager.broker.publish(start_event)
 
         self.active_connections[token] = interview_manager
         logger.info(
