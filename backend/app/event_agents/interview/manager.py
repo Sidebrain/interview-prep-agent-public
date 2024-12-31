@@ -8,9 +8,12 @@ from uuid import uuid4
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.evaluations.registry import EvaluatorRegistry
+from app.event_agents.event_handlers import (
+    MessageEventHandler,
+)
 from app.event_agents.interview.notifications import NotificationManager
-from app.event_agents.interview.time_manager import TimeManager
 from app.event_agents.interview.question_manager import QuestionManager
+from app.event_agents.interview.time_manager import TimeManager
 from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
     AskQuestionEvent,
@@ -88,10 +91,13 @@ class InterviewManager:
 
     async def setup_subscribers(self) -> None:
         await self.broker.subscribe(StartEvent, self.handle_start_event)
+
+        message_handler = MessageEventHandler(self.interview_context)
         await self.broker.subscribe(
             MessageReceivedEvent,
-            self.handle_message_received_event,
+            message_handler.handle_message_received_event,
         )
+
         await self.broker.subscribe(
             WebsocketFrame,
             self.handle_websocket_frame,
@@ -137,48 +143,6 @@ class InterviewManager:
             )
             # mark as inactive on error
             await self.stop()
-            raise
-
-    async def handle_message_received_event(
-        self, event: MessageReceivedEvent
-    ) -> None:
-        """
-        Process incoming messages from the websocket.
-
-        Args:
-            event (MessageReceivedEvent): Event containing the received message
-
-        1. Validates and parses the message into a WebsocketFrame
-        2. Creates and publishes an AddToMemoryEvent
-        3. Triggers the next interview question
-
-        Handles JSON decode errors and logs any processing errors.
-        """
-        try:
-            message = event.message
-            if message is None:
-                return
-            parsed_message = WebsocketFrame.model_validate_json(
-                message, strict=False
-            )
-            logger.info(
-                f"Received message, parsed into websocket frame: {parsed_message}"
-            )
-            new_memory = AddToMemoryEvent(
-                frame=parsed_message,
-                interview_id=self.interview_id,
-            )
-            await self.broker.publish(new_memory)
-
-            # From here on, the interview manager will take over
-            # it will react to the AddToMemoryEvent and ask the next question
-        except json.JSONDecodeError:
-            logger.error("Failed to decode the message")
-            return
-        except Exception as e:
-            logger.error(
-                f"Error in handle_message_received_event: {str(e)}"
-            )
             raise
 
     async def handle_start_event(self, event: StartEvent) -> None:
