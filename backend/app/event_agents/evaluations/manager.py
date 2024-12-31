@@ -7,6 +7,12 @@ from app.event_agents.evaluations.evaluator_base import (
     T,
 )
 from app.event_agents.evaluations.registry import EvaluatorRegistry
+from app.event_agents.orchestrator.commands import (
+    GenerateEvaluationCommand,
+)
+from app.event_agents.orchestrator.events import (
+    EvaluationsGeneratedEvent,
+)
 from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
@@ -25,7 +31,20 @@ class EvaluationManager:
         self.interview_context = interview_context
         self.evaluator_registry = evaluator_registry
 
-    async def handle_evaluation(
+    async def handle_evaluation_command(
+        self, event: GenerateEvaluationCommand
+    ) -> None:
+        """Handle the evaluation command."""
+        evaluations = await self.generate_evaluations(event.questions)
+        evaluations_generated_event = EvaluationsGeneratedEvent(
+            evaluations=evaluations,
+            interview_id=self.interview_context.interview_id,
+        )
+        await self.interview_context.broker.publish(
+            evaluations_generated_event
+        )
+
+    async def generate_evaluations(
         self,
         questions: List[QuestionAndAnswer],
     ) -> list["WebsocketFrame"]:
@@ -64,3 +83,10 @@ class EvaluationManager:
             self.interview_context,
             debug=True,
         )
+
+    async def handle_evaluations_generated(
+        self, event: EvaluationsGeneratedEvent
+    ) -> None:
+        """Handle the evaluations generated event."""
+        for evaluation in event.evaluations:
+            await self.interview_context.broker.publish(evaluation)

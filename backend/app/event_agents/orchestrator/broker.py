@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from typing import Awaitable, Callable, Type, TypeVar
 
+from app.event_agents.orchestrator.commands import CommandBase
 from app.event_agents.orchestrator.events import BaseEvent
 from app.types.websocket_types import WebsocketFrame
 
@@ -16,15 +17,15 @@ class Broker:
         self._subscribers: dict[
             str, list[Callable[..., Awaitable[None]]]
         ] = defaultdict(list)
-        self._event_queue: asyncio.Queue[BaseEvent | WebsocketFrame] = (
-            asyncio.Queue()
-        )
+        self._event_queue: asyncio.Queue[
+            BaseEvent | WebsocketFrame | CommandBase
+        ] = asyncio.Queue()
         self._is_running: bool = False
         self._process_events_task: asyncio.Task[None] | None = None
 
     async def subscribe(
         self,
-        event_type: Type[Event],
+        event_type: Type[Event] | Type[CommandBase],
         handler: Callable[..., Awaitable[None]],
     ) -> None:
         """
@@ -40,7 +41,7 @@ class Broker:
 
     async def unsubscribe(
         self,
-        event_type: Type[Event],
+        event_type: Type[Event] | Type[CommandBase],
         handler: Callable[..., Awaitable[None]],
     ) -> None:
         """
@@ -54,7 +55,9 @@ class Broker:
         """
         self._subscribers[event_type.__name__].remove(handler)
 
-    async def publish(self, event: BaseEvent | WebsocketFrame) -> None:
+    async def publish(
+        self, event: BaseEvent | WebsocketFrame | CommandBase
+    ) -> None:
         """
         Publish an event to the message queue.
 

@@ -1,6 +1,12 @@
 import asyncio
 import logging
 
+from app.event_agents.orchestrator.commands import (
+    GeneratePerspectiveCommand,
+)
+from app.event_agents.orchestrator.events import (
+    PerspectivesGeneratedEvent,
+)
 from app.event_agents.perspectives.perspective_base import (
     PerspectiveBase,
 )
@@ -25,7 +31,20 @@ class PerspectiveManager:
         print("\033[91mgetting perspectives\033[0m")
         return self.perspective_registry.get_perspectives()
 
-    async def handle_perspective(
+    async def handle_perspective_command(
+        self, event: GeneratePerspectiveCommand
+    ) -> None:
+        """Handle the perspective command."""
+        perspectives = await self.generate_perspectives(event.questions)
+        perspectives_generated_event = PerspectivesGeneratedEvent(
+            perspectives=perspectives,
+            interview_id=self.interview_context.interview_id,
+        )
+        await self.interview_context.broker.publish(
+            perspectives_generated_event
+        )
+
+    async def generate_perspectives(
         self, questions: list[QuestionAndAnswer]
     ) -> list[WebsocketFrame]:
         perspective_tasks = []
@@ -56,3 +75,10 @@ class PerspectiveManager:
             else:
                 filtered_frames.append(result)
         return filtered_frames
+
+    async def handle_perspectives_generated(
+        self, event: PerspectivesGeneratedEvent
+    ) -> None:
+        """Handle the perspectives generated event."""
+        for perspective in event.perspectives:
+            await self.interview_context.broker.publish(perspective)

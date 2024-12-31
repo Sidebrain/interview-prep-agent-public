@@ -6,7 +6,9 @@ from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.interview.answer_processor import AnswerProcessor
 from app.event_agents.interview.event_handlers import (
     AskQuestionEventHandler,
+    EvaluationsGeneratedEventHandler,
     MessageEventHandler,
+    PerspectiveGeneratedEventHandler,
     WebsocketMessageEventHandler,
 )
 from app.event_agents.interview.lifecycle_manager import (
@@ -14,11 +16,17 @@ from app.event_agents.interview.lifecycle_manager import (
 )
 from app.event_agents.interview.question_manager import QuestionManager
 from app.event_agents.interview.time_manager import TimeManager
+from app.event_agents.orchestrator.commands import (
+    GenerateEvaluationCommand,
+    GeneratePerspectiveCommand,
+)
 from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
     AskQuestionEvent,
     ErrorEvent,
+    EvaluationsGeneratedEvent,
     MessageReceivedEvent,
+    PerspectivesGeneratedEvent,
 )
 from app.event_agents.perspectives.manager import PerspectiveManager
 from app.event_agents.perspectives.registry import PerspectiveRegistry
@@ -70,6 +78,7 @@ class InterviewManager:
             evaluation_manager=self.eval_manager,
             perspective_manager=self.perspective_manager,
             setup_subscribers=self.setup_subscribers,
+            setup_command_subscribers=self.setup_command_subscribers,
         )
 
     def __repr__(self) -> str:
@@ -114,8 +123,6 @@ class InterviewManager:
             AnswerProcessor(
                 interview_context=self.interview_context,
                 question_manager=self.question_manager,
-                evaluation_manager=self.eval_manager,
-                perspective_manager=self.perspective_manager,
             ).handler,
         )
 
@@ -124,6 +131,31 @@ class InterviewManager:
             AskQuestionEventHandler(
                 interview_context=self.interview_context
             ).handler,
+        )
+
+        await self.broker.subscribe(
+            EvaluationsGeneratedEvent,
+            EvaluationsGeneratedEventHandler(
+                interview_context=self.interview_context
+            ).handler,
+        )
+
+        await self.broker.subscribe(
+            PerspectivesGeneratedEvent,
+            PerspectiveGeneratedEventHandler(
+                interview_context=self.interview_context
+            ).handler,
+        )
+
+    async def setup_command_subscribers(self) -> None:
+        await self.broker.subscribe(
+            GenerateEvaluationCommand,
+            self.eval_manager.handle_evaluation_command,
+        )
+
+        await self.broker.subscribe(
+            GeneratePerspectiveCommand,
+            self.perspective_manager.handle_perspective_command,
         )
 
     ######### ######## ######## ######## ######## ######## #######

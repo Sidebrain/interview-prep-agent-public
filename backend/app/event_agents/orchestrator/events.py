@@ -45,3 +45,13 @@ class AskQuestionEvent(BaseEvent):
 
 class AnswerReceivedEvent(MessageReceivedEvent):
     question: QuestionAndAnswer
+
+
+class EvaluationsGeneratedEvent(BaseEvent):
+    evaluations: list[WebsocketFrame]
+    interview_id: UUID
+
+
+class PerspectivesGeneratedEvent(BaseEvent):
+    perspectives: list[WebsocketFrame]
+    interview_id: UUID

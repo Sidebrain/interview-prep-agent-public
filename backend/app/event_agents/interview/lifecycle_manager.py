@@ -23,6 +23,7 @@ class InterviewLifecyceManager:
         evaluation_manager: EvaluationManager,
         perspective_manager: PerspectiveManager,
         setup_subscribers: Callable[[], Awaitable[None]],
+        setup_command_subscribers: Callable[[], Awaitable[None]],
     ) -> None:
         self.interview_context = interview_context
         self.question_manager = question_manager
@@ -30,6 +31,7 @@ class InterviewLifecyceManager:
         self.evaluation_manager = evaluation_manager
         self.perspective_manager = perspective_manager
         self.setup_subscribers = setup_subscribers
+        self.setup_command_subscribers = setup_command_subscribers
 
     async def stop(self) -> None:
         """Stop the interview manager and clean up all resources."""
@@ -40,6 +42,7 @@ class InterviewLifecyceManager:
 
         # originally part of start function of agent
         await self.setup_subscribers()
+        await self.setup_command_subscribers()
         await self.interview_context.broker.start()
 
         await self.question_manager.initialize()
