@@ -18,7 +18,6 @@ from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
     AskQuestionEvent,
     MessageReceivedEvent,
-    StartEvent,
 )
 from app.event_agents.perspectives.manager import PerspectiveManager
 from app.event_agents.perspectives.registry import PerspectiveRegistry
@@ -90,8 +89,6 @@ class InterviewManager:
         )
 
     async def setup_subscribers(self) -> None:
-        await self.broker.subscribe(StartEvent, self.handle_start_event)
-
         message_handler = MessageEventHandler(self.interview_context)
         await self.broker.subscribe(
             MessageReceivedEvent,
@@ -143,25 +140,6 @@ class InterviewManager:
             )
             # mark as inactive on error
             await self.stop()
-            raise
-
-    async def handle_start_event(self, event: StartEvent) -> None:
-        print(
-            "\033[91m" + "initializing the intervew manager" + "\033[0m"
-        )
-        try:
-            await self.initialize()
-        except Exception as e:
-            logger.error(
-                "Error in handle_start_event",
-                extra={
-                    "context": {
-                        "manager": self,
-                        "error": str(e),
-                        "stacktrace": traceback.format_exc(),
-                    }
-                },
-            )
             raise
 
     async def handle_add_to_memory_event(

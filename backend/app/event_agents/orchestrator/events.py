@@ -17,11 +17,6 @@ class BaseEvent(BaseModel):
     )  # to track related events
 
 
-class StartEvent(BaseEvent):
-    interview_id: UUID
-    client_id: UUID
-
-
 class WebsocketMessageEvent(BaseEvent):
     frame: WebsocketFrame
     interview_id: UUID
