@@ -9,6 +9,7 @@ from app.agents.dispatcher import Dispatcher
 from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.event_handlers import (
+    AskQuestionEventHandler,
     MessageEventHandler,
     WebsocketEventHandler,
 )
@@ -95,23 +96,26 @@ class InterviewManager:
             MessageReceivedEvent,
             MessageEventHandler(
                 interview_context=self.interview_context
-            ).handle_message_received_event,
+            ).handler,
         )
 
         await self.broker.subscribe(
             WebsocketFrame,
             WebsocketEventHandler(
                 interview_context=self.interview_context
-            ).handle_websocket_frame,
+            ).handler,
         )
 
         await self.broker.subscribe(
             AddToMemoryEvent,
             self.handle_add_to_memory_event,
         )
+
         await self.broker.subscribe(
             AskQuestionEvent,
-            self.handle_ask_question_event,
+            AskQuestionEventHandler(
+                interview_context=self.interview_context
+            ).handler,
         )
 
     ######### ######## ######## ######## ######## ######## #######
@@ -341,26 +345,6 @@ class InterviewManager:
                     interview_id=self.interview_id,
                 )
             )
-
-    async def handle_ask_question_event(
-        self, event: AskQuestionEvent
-    ) -> None:
-        """Send the question to the user."""
-        frame_id = str(uuid4())
-        question_thought_frame = (
-            Dispatcher.package_and_transform_to_webframe(
-                event.question,  # type: ignore
-                "thought",
-                frame_id=frame_id,
-            )
-        )
-        question_frame = Dispatcher.package_and_transform_to_webframe(
-            event.question.question,  # type: ignore
-            "content",
-            frame_id=frame_id,
-        )
-        await self.broker.publish(question_thought_frame)
-        await self.broker.publish(question_frame)
 
     async def add_questions_to_memory(
         self, question: QuestionAndAnswer
