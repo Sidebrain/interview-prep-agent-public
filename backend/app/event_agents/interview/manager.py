@@ -91,10 +91,11 @@ class InterviewManager:
     async def setup_subscribers(self) -> None:
         await self.broker.subscribe(ErrorEvent, self.handle_error_event)
 
-        message_handler = MessageEventHandler(self.interview_context)
         await self.broker.subscribe(
             MessageReceivedEvent,
-            message_handler.handle_message_received_event,
+            MessageEventHandler(
+                interview_context=self.interview_context
+            ).handle_message_received_event,
         )
 
         await self.broker.subscribe(
@@ -114,6 +115,14 @@ class InterviewManager:
         )
 
     ######### ######## ######## ######## ######## ######## #######
+
+    async def handle_error_event(self, event: ErrorEvent) -> None:
+        """Handle an error event."""
+        logger.info(
+            "Error event. Stopping interview manager.",
+            extra={"context": {"error": event.error}},
+        )
+        await self.stop()
 
     async def handle_add_to_memory_event(
         self, new_memory_event: AddToMemoryEvent
@@ -231,14 +240,6 @@ class InterviewManager:
         )
 
     ########## ########## ########## ########## ########## ########## ##########
-
-    async def handle_error_event(self, event: ErrorEvent) -> None:
-        """Handle an error event."""
-        logger.info(
-            "Error event. Stopping interview manager.",
-            extra={"context": {"error": event.error}},
-        )
-        await self.stop()
 
     async def stop(self) -> None:
         """Stop the interview manager and clean up all resources."""
