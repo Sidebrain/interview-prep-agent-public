@@ -3,12 +3,14 @@ import logging
 
 from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.evaluations.registry import EvaluatorRegistry
-from app.event_agents.event_handlers import (
-    AnswerProcessor,
+from app.event_agents.interview.answer_processor import AnswerProcessor
+from app.event_agents.interview.event_handlers import (
     AskQuestionEventHandler,
-    InterviewLifecyceManager,
     MessageEventHandler,
-    WebsocketEventHandler,
+    WebsocketMessageEventHandler,
+)
+from app.event_agents.interview.lifecycle_manager import (
+    InterviewLifecyceManager,
 )
 from app.event_agents.interview.question_manager import QuestionManager
 from app.event_agents.interview.time_manager import TimeManager
@@ -102,7 +104,7 @@ class InterviewManager:
 
         await self.broker.subscribe(
             WebsocketFrame,
-            WebsocketEventHandler(
+            WebsocketMessageEventHandler(
                 interview_context=self.interview_context
             ).handler,
         )
