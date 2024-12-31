@@ -15,3 +15,4 @@ class InterviewContext:
     broker: Broker
     thinker: Thinker
     channel: Channel
+    max_time_allowed: int = 10 * 60  # 10 minutes

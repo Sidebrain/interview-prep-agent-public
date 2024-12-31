@@ -91,11 +91,11 @@ def create_interview(
         broker=broker,
         thinker=thinker,
         channel=channel,
+        max_time_allowed=max_time_allowed,
     )
 
     interview_manager = InterviewManager(
         interview_context=interview_context,
-        max_time_allowed=max_time_allowed,
     )
 
     return interview_manager
