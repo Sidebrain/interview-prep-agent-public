@@ -90,12 +90,12 @@ def create_interview(
         memory_store=memory_store,
         broker=broker,
         thinker=thinker,
+        channel=channel,
     )
 
     interview_manager = InterviewManager(
         interview_context=interview_context,
         max_time_allowed=max_time_allowed,
-        channel=channel,
     )
 
     return interview_manager

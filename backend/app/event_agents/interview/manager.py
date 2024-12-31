@@ -10,6 +10,7 @@ from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.event_handlers import (
     MessageEventHandler,
+    WebsocketEventHandler,
 )
 from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.interview.question_manager import QuestionManager
@@ -17,12 +18,12 @@ from app.event_agents.interview.time_manager import TimeManager
 from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
     AskQuestionEvent,
+    ErrorEvent,
     MessageReceivedEvent,
 )
 from app.event_agents.perspectives.manager import PerspectiveManager
 from app.event_agents.perspectives.registry import PerspectiveRegistry
 from app.event_agents.types import InterviewContext
-from app.event_agents.websocket_handler import Channel
 from app.types.interview_concept_types import QuestionAndAnswer
 from app.types.websocket_types import WebsocketFrame
 
@@ -33,14 +34,13 @@ class InterviewManager:
     def __init__(
         self,
         interview_context: "InterviewContext",
-        channel: Channel,
         max_time_allowed: int | None = None,
     ) -> None:
         # from the parent agent
         self.interview_context = interview_context
         self.agent_id = interview_context.agent_id
         self.broker = interview_context.broker
-        self.channel = channel
+        self.channel = interview_context.channel
         self.thinker = interview_context.thinker
         self.interview_id = interview_context.interview_id
         self.memory_store = interview_context.memory_store
@@ -89,6 +89,8 @@ class InterviewManager:
         )
 
     async def setup_subscribers(self) -> None:
+        await self.broker.subscribe(ErrorEvent, self.handle_error_event)
+
         message_handler = MessageEventHandler(self.interview_context)
         await self.broker.subscribe(
             MessageReceivedEvent,
@@ -97,8 +99,11 @@ class InterviewManager:
 
         await self.broker.subscribe(
             WebsocketFrame,
-            self.handle_websocket_frame,
+            WebsocketEventHandler(
+                interview_context=self.interview_context
+            ).handle_websocket_frame,
         )
+
         await self.broker.subscribe(
             AddToMemoryEvent,
             self.handle_add_to_memory_event,
@@ -109,38 +114,6 @@ class InterviewManager:
         )
 
     ######### ######## ######## ######## ######## ######## #######
-
-    async def handle_websocket_frame(
-        self, event: WebsocketFrame
-    ) -> None:
-        """
-        Send a websocket frame to the client.
-
-        Args:
-            event (WebsocketFrame): The frame to be sent to the client
-
-        Serializes the frame to JSON and sends it through the websocket channel.
-        Logs any errors that occur during sending.
-        """
-        try:
-            await self.channel.send_message(
-                event.model_dump_json(by_alias=True)
-            )
-        except Exception as e:
-            logger.error(
-                f"Error in handle_websocket_frame: {str(e)}",
-                extra={
-                    "context": {
-                        "event": event.model_dump(by_alias=True),
-                        "agent_id": str(self.agent_id),
-                        "interview_id": str(self.interview_id),
-                        "traceback": traceback.format_exc(),
-                    }
-                },
-            )
-            # mark as inactive on error
-            await self.stop()
-            raise
 
     async def handle_add_to_memory_event(
         self, new_memory_event: AddToMemoryEvent
@@ -259,9 +232,16 @@ class InterviewManager:
 
     ########## ########## ########## ########## ########## ########## ##########
 
+    async def handle_error_event(self, event: ErrorEvent) -> None:
+        """Handle an error event."""
+        logger.info(
+            "Error event. Stopping interview manager.",
+            extra={"context": {"error": event.error}},
+        )
+        await self.stop()
+
     async def stop(self) -> None:
         """Stop the interview manager and clean up all resources."""
-        logger.info("Stopping interview manager %s", self.interview_id)
         await self.broker.stop()
 
     async def initialize(self) -> list[QuestionAndAnswer]:

@@ -23,6 +23,11 @@ class WebsocketMessageEvent(BaseEvent):
     client_id: UUID
 
 
+class ErrorEvent(BaseEvent):
+    error: str
+    interview_id: UUID
+
+
 class AddToMemoryEvent(BaseEvent):
     interview_id: UUID
     frame: WebsocketFrame
