@@ -2,13 +2,11 @@ import asyncio
 import json
 import logging
 import math
-import traceback
-from uuid import uuid4
 
-from app.agents.dispatcher import Dispatcher
 from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.event_handlers import (
+    AnswerProcessor,
     AskQuestionEventHandler,
     MessageEventHandler,
     WebsocketEventHandler,
@@ -108,7 +106,12 @@ class InterviewManager:
 
         await self.broker.subscribe(
             AddToMemoryEvent,
-            self.handle_add_to_memory_event,
+            AnswerProcessor(
+                interview_context=self.interview_context,
+                question_manager=self.question_manager,
+                evaluation_manager=self.eval_manager,
+                perspective_manager=self.perspective_manager,
+            ).handler,
         )
 
         await self.broker.subscribe(
@@ -127,121 +130,6 @@ class InterviewManager:
             extra={"context": {"error": event.error}},
         )
         await self.stop()
-
-    async def handle_add_to_memory_event(
-        self, new_memory_event: AddToMemoryEvent
-    ) -> None:
-        """
-        Process a new answer, evaluate it, generate perspectives, and advance to next question.
-        """
-        logger.info(
-            "Processing answer",
-            extra={
-                "manager": self,
-                "answer_length": self._get_answer_length(
-                    new_memory_event
-                ),
-            },
-        )
-
-        try:
-            await self._process_answer(new_memory_event)
-            await self._generate_evaluations_and_perspectives()
-            await self.ask_next_question()
-        except Exception as e:
-            logger.error(
-                "Answer processing failed",
-                extra={
-                    "context": {
-                        "manager": self,
-                        "error": str(e),
-                        "stacktrace": traceback.format_exc(),
-                    }
-                },
-            )
-            raise
-
-    async def _process_answer(
-        self, new_memory_event: AddToMemoryEvent
-    ) -> None:
-        """Store the answer in memory."""
-        await self.memory_store.add(new_memory_event.frame)
-
-    async def _generate_evaluations_and_perspectives(self) -> None:
-        """Generate and publish evaluations and perspectives for the current question."""
-        evaluations, perspectives = await asyncio.gather(
-            self._generate_evaluations(), self._generate_perspectives()
-        )
-
-        logger.info(
-            "Answer processed",
-            extra={
-                "manager": self,
-                "evaluation_count": len(evaluations),
-                "perspective_count": len(perspectives),
-            },
-        )
-
-        await self._publish_results(evaluations, perspectives)
-
-    async def _generate_evaluations(self) -> list[WebsocketFrame]:
-        """Generate evaluations for the current question."""
-        if self.question_manager.current_question is None:
-            return []
-        evaluations = await self.eval_manager.handle_evaluation(
-            questions=[self.question_manager.current_question]
-        )
-        logger.info(
-            "Evaluations generated",
-            extra={
-                "context": {
-                    # "manager": self,
-                    "evaluation_count": len(evaluations),
-                }
-            },
-        )
-        return evaluations
-
-    async def _generate_perspectives(self) -> list[WebsocketFrame]:
-        """Generate perspectives for the current question."""
-        if self.question_manager.current_question is None:
-            return []
-        perspectives = (
-            await self.perspective_manager.handle_perspective(
-                questions=[self.question_manager.current_question]
-            )
-        )
-        logger.info(
-            "Perspectives generated",
-            extra={
-                "context": {
-                    "manager": self,
-                    "perspective_count": len(perspectives),
-                }
-            },
-        )
-        return perspectives
-
-    async def _publish_results(
-        self,
-        evaluations: list[WebsocketFrame],
-        perspectives: list[WebsocketFrame],
-    ) -> None:
-        """Publish evaluations and perspectives to the broker."""
-        for evaluation in evaluations:
-            await self.broker.publish(evaluation)
-        for perspective in perspectives:
-            await self.broker.publish(perspective)
-
-    def _get_answer_length(
-        self, new_memory_event: AddToMemoryEvent
-    ) -> int:
-        """Calculate the length of the answer content."""
-        return (
-            len(new_memory_event.frame.frame.content)
-            if new_memory_event.frame.frame.content
-            else 0
-        )
 
     ########## ########## ########## ########## ########## ########## ##########
 
@@ -310,7 +198,7 @@ class InterviewManager:
     async def begin_questioning(self) -> None:
         """Start the question-asking process."""
         try:
-            await self.ask_next_question()
+            await self.question_manager.ask_next_question()
         except Exception as e:
             logger.error(
                 "Failed to ask first question",
@@ -321,38 +209,3 @@ class InterviewManager:
                 },
                 exc_info=True,
             )
-
-    async def ask_next_question(self) -> None:
-        """Request and publish next question."""
-        next_question = await self.question_manager.get_next_question()
-
-        if next_question is None:
-            logger.info("Interview complete: %s", self)
-            await NotificationManager.send_notification(
-                self.interview_context.broker,
-                "Questions exhausted. Interview ended.",
-            )
-        else:
-            logger.info("Asking question: %s", self.question_manager)
-
-            # add the question to memory
-            #! this needs a CQRS
-            await self.add_questions_to_memory(next_question)
-
-            await self.broker.publish(
-                AskQuestionEvent(
-                    question=next_question,
-                    interview_id=self.interview_id,
-                )
-            )
-
-    async def add_questions_to_memory(
-        self, question: QuestionAndAnswer
-    ) -> None:
-        """Add questions to memory."""
-        question_frame = Dispatcher.package_and_transform_to_webframe(
-            question.question,  # type: ignore
-            "content",
-            frame_id=str(uuid4()),
-        )
-        await self.memory_store.add(question_frame)

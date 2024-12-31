@@ -1,11 +1,14 @@
 import json
 import logging
+from uuid import uuid4
 
 import yaml
 from pydantic import BaseModel
 
+from app.agents.dispatcher import Dispatcher
 from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.memory.config_builder import ConfigBuilder
+from app.event_agents.orchestrator.events import AskQuestionEvent
 from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
@@ -161,3 +164,36 @@ class QuestionManager:
             self.interview_context.agent_id,
             {"questions": self.questions},
         )
+
+    async def ask_next_question(self) -> None:
+        """Request and publish next question."""
+        next_question = await self.get_next_question()
+
+        if next_question is None:
+            logger.info("Interview complete: %s", self)
+            await NotificationManager.send_notification(
+                self.interview_context.broker,
+                "Questions exhausted. Interview ended.",
+            )
+        else:
+            # add the question to memory
+            #! this needs a CQRS
+            await self.add_questions_to_memory(next_question)
+
+            await self.interview_context.broker.publish(
+                AskQuestionEvent(
+                    question=next_question,
+                    interview_id=self.interview_context.interview_id,
+                )
+            )
+
+    async def add_questions_to_memory(
+        self, question: QuestionAndAnswer
+    ) -> None:
+        """Add questions to memory."""
+        question_frame = Dispatcher.package_and_transform_to_webframe(
+            question.question,  # type: ignore
+            "content",
+            frame_id=str(uuid4()),
+        )
+        await self.interview_context.memory_store.add(question_frame)
