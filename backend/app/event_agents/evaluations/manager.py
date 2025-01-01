@@ -8,7 +8,7 @@ from app.event_agents.evaluations.evaluator_base import (
 )
 from app.event_agents.evaluations.registry import EvaluatorRegistry
 from app.event_agents.orchestrator.commands import (
-    GenerateEvaluationCommand,
+    GenerateEvaluationsCommand,
 )
 from app.event_agents.orchestrator.events import (
     EvaluationsGeneratedEvent,
@@ -32,7 +32,7 @@ class EvaluationManager:
         self.evaluator_registry = evaluator_registry
 
     async def handle_evaluation_command(
-        self, event: GenerateEvaluationCommand
+        self, event: GenerateEvaluationsCommand
     ) -> None:
         """Handle the evaluation command."""
         evaluations = await self.generate_evaluations(event.questions)

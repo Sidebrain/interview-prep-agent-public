@@ -2,8 +2,8 @@ import logging
 
 from app.event_agents.interview.question_manager import QuestionManager
 from app.event_agents.orchestrator.commands import (
-    GenerateEvaluationCommand,
-    GeneratePerspectiveCommand,
+    GenerateEvaluationsCommand,
+    GeneratePerspectivesCommand,
 )
 from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
@@ -44,13 +44,13 @@ class AnswerProcessor:
         try:
             if self.question_manager.current_question is None:
                 return
-            generate_evaluations_command = GenerateEvaluationCommand(
+            generate_evaluations_command = GenerateEvaluationsCommand(
                 questions=[self.question_manager.current_question]
             )
             await self.interview_context.broker.publish(
                 generate_evaluations_command
             )
-            generate_perspectives_command = GeneratePerspectiveCommand(
+            generate_perspectives_command = GeneratePerspectivesCommand(
                 questions=[self.question_manager.current_question]
             )
             await self.interview_context.broker.publish(

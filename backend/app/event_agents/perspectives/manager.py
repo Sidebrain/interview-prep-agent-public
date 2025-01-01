@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from app.event_agents.orchestrator.commands import (
-    GeneratePerspectiveCommand,
+    GeneratePerspectivesCommand,
 )
 from app.event_agents.orchestrator.events import (
     PerspectivesGeneratedEvent,
@@ -32,7 +32,7 @@ class PerspectiveManager:
         return self.perspective_registry.get_perspectives()
 
     async def handle_perspective_command(
-        self, event: GeneratePerspectiveCommand
+        self, event: GeneratePerspectivesCommand
     ) -> None:
         """Handle the perspective command."""
         perspectives = await self.generate_perspectives(event.questions)

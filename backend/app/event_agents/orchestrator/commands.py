@@ -9,11 +9,11 @@ class CommandBase(BaseModel):
     pass
 
 
-class GenerateEvaluationCommand(CommandBase):
+class GenerateEvaluationsCommand(CommandBase):
     questions: List[QuestionAndAnswer]
     pass
 
 
-class GeneratePerspectiveCommand(CommandBase):
+class GeneratePerspectivesCommand(CommandBase):
     questions: List[QuestionAndAnswer]
     pass

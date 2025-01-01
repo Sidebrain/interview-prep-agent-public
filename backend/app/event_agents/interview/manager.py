@@ -17,8 +17,8 @@ from app.event_agents.interview.lifecycle_manager import (
 from app.event_agents.interview.question_manager import QuestionManager
 from app.event_agents.interview.time_manager import TimeManager
 from app.event_agents.orchestrator.commands import (
-    GenerateEvaluationCommand,
-    GeneratePerspectiveCommand,
+    GenerateEvaluationsCommand,
+    GeneratePerspectivesCommand,
 )
 from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
@@ -149,12 +149,12 @@ class InterviewManager:
 
     async def setup_command_subscribers(self) -> None:
         await self.broker.subscribe(
-            GenerateEvaluationCommand,
+            GenerateEvaluationsCommand,
             self.eval_manager.handle_evaluation_command,
         )
 
         await self.broker.subscribe(
-            GeneratePerspectiveCommand,
+            GeneratePerspectivesCommand,
             self.perspective_manager.handle_perspective_command,
         )
 
