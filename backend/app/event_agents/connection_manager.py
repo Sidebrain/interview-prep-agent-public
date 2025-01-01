@@ -64,7 +64,7 @@ class ConnectionManager:
             interview_manager: InterviewManager = (
                 self.active_connections[token]
             )
-            await interview_manager.stop()
+            await interview_manager.lifecycle_manager.stop()
             del self.active_connections[token]
             logger.info(
                 "Connection cleaned up",

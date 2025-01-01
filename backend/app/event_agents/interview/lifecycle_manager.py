@@ -35,7 +35,15 @@ class InterviewLifecyceManager:
 
     async def stop(self) -> None:
         """Stop the interview manager and clean up all resources."""
-        await self.interview_context.broker.stop()
+        try:
+            await self.interview_context.broker.stop()
+            logger.info("Interview manager stopped and cleaned up")
+        except Exception as e:
+            logger.error(
+                "Error in the cleanup process",
+                extra={"error": str(e)},
+                exc_info=True,
+            )
 
     async def initialize(self) -> list[QuestionAndAnswer]:
         logger.info("Starting new interview session: %s", self)
@@ -57,8 +65,6 @@ class InterviewLifecyceManager:
         await self.initialize_evaluation_systems()
         await self.begin_questioning()
 
-        self.save_state()
-
         return self.question_manager.questions
 
     async def start_interview_timer(self) -> str:
@@ -79,10 +85,6 @@ class InterviewLifecyceManager:
 
         timer_notification_string = f"Timer started. You have {time_to_answer} {time_unit} to answer the questions."
         return timer_notification_string
-
-    def save_state(self) -> None:
-        self.question_manager.save_state()
-        self.evaluation_manager.evaluator_registry.save_state()
 
     async def initialize_evaluation_systems(self) -> None:
         """Initialize evaluation and perspective systems."""

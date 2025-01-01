@@ -26,7 +26,12 @@ class ConfigBuilder:
         except FileNotFoundError:
             data = {}
 
-        data.update(dct)
+        # Add defensibility, only update non empty values
+        for key, value in dct.items():
+            if value or isinstance(
+                value, (bool, int)
+            ):  # allow explicit Falsy values
+                data[key] = value
 
         with open(f"config/agent_{agent_id}.json", "w") as f:
             json.dump(data, f, cls=AgentConfigJSONEncoder, indent=4)

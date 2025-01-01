@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Any
 from uuid import uuid4
 
 import yaml
@@ -48,11 +49,20 @@ class QuestionManager:
             indent=2,
         )
 
+    def is_question_list_populated(
+        self, loaded_state: dict[str, Any]
+    ) -> bool:
+        return bool(loaded_state["questions"])
+
     def are_questions_gathered_in_memory(self) -> bool:
         try:
-            return "questions" in ConfigBuilder.load_state(
+            loaded_state = ConfigBuilder.load_state(
                 self.interview_context.agent_id
             )
+            if "questions" in loaded_state:
+                return self.is_question_list_populated(loaded_state)
+            else:
+                return False
         except FileNotFoundError:
             return False
 
@@ -60,16 +70,12 @@ class QuestionManager:
         loaded_state = ConfigBuilder.load_state(
             self.interview_context.agent_id
         )
-        if "questions" in loaded_state:
-            self.questions = loaded_state["questions"]
-            await NotificationManager.send_notification(
-                self.interview_context.broker,
-                "Questions loaded from memory",
-            )
-            return True
-        else:
-            logger.info("No questions found in memory")
-            return False
+        self.questions = loaded_state["questions"]
+        await NotificationManager.send_notification(
+            self.interview_context.broker,
+            "Questions loaded from memory",
+        )
+        return True
 
     async def initialize(self) -> None:
         if self.are_questions_gathered_in_memory():
@@ -94,6 +100,7 @@ class QuestionManager:
             "Interview started. Gathering questions...",
         )
         await self.gather_questions()
+        self.save_state()
 
         await NotificationManager.send_notification(
             self.interview_context.broker,
