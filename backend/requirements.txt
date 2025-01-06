@@ -17,3 +17,5 @@ pytest-mock
 python-multipart
 instructor
 pypubsub
+motor
+beanie

@@ -78,11 +78,13 @@ class EvaluationManager:
         questions: List[QuestionAndAnswer],
     ) -> "WebsocketFrame":
         """Helper method to run individual evaluations"""
-        return await evaluator.evaluate(
+        evaluation = await evaluator.evaluate(
             questions,
             self.interview_context,
             debug=True,
         )
+        await self.interview_context.memory_store.add(evaluation)
+        return evaluation
 
     async def handle_evaluations_generated(
         self, event: EvaluationsGeneratedEvent

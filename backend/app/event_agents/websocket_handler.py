@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+import starlette.websockets
 from fastapi import WebSocket
 
 from app.event_agents.orchestrator.events import MessageReceivedEvent
@@ -27,7 +28,14 @@ class Channel:
         return f"Channel(interview_id={self.interview_id})"
 
     async def send_message(self, message: str) -> None:
-        await self.websocket.send_text(message)
+        try:
+            await self.websocket.send_text(message)
+        except starlette.websockets.WebSocketDisconnect:
+            logger.info("Client disconnected during message send")
+            # Handle cleanup if needed
+        except Exception as e:
+            logger.error(f"Error sending message: {str(e)}")
+            raise
 
     async def receive_message(self) -> str | None:
         message_from_client = await self.websocket.receive_text()

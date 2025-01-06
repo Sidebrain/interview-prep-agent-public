@@ -11,6 +11,7 @@ from app.api.v1.router import router as api_v1_router
 from app.api.v2.router import router as api_v2_router
 from app.api.v3.router import router as api_v3_router
 from app.services import setup_logging
+from app.services.database.get_mongo_dep import init_db
 
 
 def verify_secrets() -> None:
@@ -39,6 +40,8 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # will use this to setup beanie
+    await init_db()
+
     yield
 
     # cleanup beanie

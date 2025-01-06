@@ -1,7 +1,7 @@
 from app.event_agents.memory.protocols import MemoryStore
+from app.event_agents.memory.stores import MongoStore
 
 from .providers import YAMLConfigProvider
-from .store import InMemoryStore
 
 
 def create_memory_store(
@@ -9,7 +9,7 @@ def create_memory_store(
     debug: bool = False,
 ) -> MemoryStore:
     """Create a new memory store instance with all required dependencies."""
-    return InMemoryStore(
+    return MongoStore(
         config_provider=YAMLConfigProvider(config_path),
         debug=debug,
     )

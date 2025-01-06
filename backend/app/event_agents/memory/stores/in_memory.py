@@ -6,7 +6,7 @@ from app.types.websocket_types import (
     WebsocketFrame,
 )
 
-from .protocols import ConfigProvider
+from ..protocols import ConfigProvider
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,6 @@ class InMemoryStore(BaseMemoryStore):
     ) -> None:
         super().__init__(config_provider, debug)
 
-
     async def add(self, frame: WebsocketFrame) -> None:
         if not isinstance(frame, WebsocketFrame):
             raise TypeError(
@@ -49,7 +48,7 @@ class InMemoryStore(BaseMemoryStore):
                 )
             )
 
-    def clear(self) -> None:
+    async def clear(self) -> None:
         """Clear all frames from memory."""
         self.memory = []
 

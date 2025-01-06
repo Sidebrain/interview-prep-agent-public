@@ -39,7 +39,7 @@ class BaseMemoryStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def clear(self) -> None:
+    async def clear(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
