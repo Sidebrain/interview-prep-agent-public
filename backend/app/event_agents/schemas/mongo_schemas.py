@@ -79,3 +79,33 @@ class Candidate(Document):
 
     class Settings:
         name = "candidates"
+
+
+class InterviewSessionStatusEnum(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class InterviewSession(Document):
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    interviewer_id: str
+    candidate_id: str
+    status: InterviewSessionStatusEnum = Field(
+        default=InterviewSessionStatusEnum.PENDING
+    )
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+
+    @property
+    def duration(self) -> int:
+        if self.start_time and self.end_time:
+            return int(
+                (self.end_time - self.start_time).total_seconds()
+            )
+        return 0
+
+    class Settings:
+        name = "interview_sessions"

@@ -8,6 +8,7 @@ from app.event_agents.schemas.mongo_schemas import (
     EducationEnum,
     GenderEnum,
     Interviewer,
+    InterviewSession,
 )
 
 router = APIRouter()
@@ -35,8 +36,6 @@ async def create_interviewer(
 ) -> Interviewer:
     interviewer = Interviewer(interviewer_id=interviewer_string)
     await interviewer.insert()
-    # Refresh from DB to get all fields populated
-    # await interviewer.fetch_all()
     return interviewer
 
 
@@ -58,3 +57,14 @@ async def create_candidate() -> Candidate:
     )
     await default_candidate.insert()
     return default_candidate
+
+
+@router.post("/session")
+async def create_interview_session() -> InterviewSession:
+    interview_session = InterviewSession(
+        interviewer_id="123",
+        candidate_id="456",
+        
+    )
+    await interview_session.insert()
+    return interview_session
