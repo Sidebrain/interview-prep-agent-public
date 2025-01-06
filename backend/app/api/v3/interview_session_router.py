@@ -1,6 +1,14 @@
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
 
-from app.event_agents.schemas.mongo_schemas import Interviewer
+from app.event_agents.schemas.mongo_schemas import (
+    Candidate,
+    CitizenshipEnum,
+    EducationEnum,
+    GenderEnum,
+    Interviewer,
+)
 
 router = APIRouter()
 
@@ -21,7 +29,7 @@ async def validate_interview(
     }
 
 
-@router.post("/")
+@router.post("/", response_model=Interviewer)
 async def create_interviewer(
     interviewer_string: str,
 ) -> Interviewer:
@@ -30,3 +38,23 @@ async def create_interviewer(
     # Refresh from DB to get all fields populated
     # await interviewer.fetch_all()
     return interviewer
+
+
+@router.post("/candidate")
+async def create_candidate() -> Candidate:
+    default_candidate = Candidate(
+        name="Anudeep",
+        email="anudeep@sidebrain.co",
+        phone="7304448472",
+        links=[
+            "https://www.linkedin.com/in/anudeepyegireddi/",
+            "https://twitter.com/anudeepy_",
+        ],
+        dob=datetime(1998, 1, 1),
+        location="Bengaluru, Karnataka, India",
+        education=EducationEnum.BACHELORS,
+        citizenship=CitizenshipEnum.CITIZEN,
+        gender=GenderEnum.MALE,
+    )
+    await default_candidate.insert()
+    return default_candidate

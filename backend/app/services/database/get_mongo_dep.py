@@ -5,7 +5,10 @@ from beanie import init_beanie
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from app.event_agents.schemas.mongo_schemas import Interviewer
+from app.event_agents.schemas.mongo_schemas import (
+    Candidate,
+    Interviewer,
+)
 
 load_dotenv()
 
@@ -20,5 +23,5 @@ async def init_db() -> None:
         raise ValueError("DATABASE_NAME is not set")
     await init_beanie(
         database=client[DATABASE_NAME],
-        document_models=[Interviewer],
+        document_models=[Interviewer, Candidate],
     )
