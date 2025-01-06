@@ -1,9 +1,11 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-
 import logging
 import os
 import sys
+from contextlib import asynccontextmanager
+from typing import AsyncIterator, Awaitable, Callable
+
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import router as api_v1_router
 from app.api.v2.router import router as api_v2_router
@@ -11,10 +13,12 @@ from app.api.v3.router import router as api_v3_router
 from app.services import setup_logging
 
 
-def verify_secrets():
+def verify_secrets() -> None:
     required_secrets = ["OPENAI_API_KEY", "STRIPE_API_KEY"]
     missing_secrets = [
-        secret for secret in required_secrets if not os.environ.get(secret)
+        secret
+        for secret in required_secrets
+        if not os.environ.get(secret)
     ]
 
     if missing_secrets:
@@ -31,11 +35,23 @@ verify_secrets()
 setup_logging(debug=True)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # will use this to setup beanie
+    yield
+
+    # cleanup beanie
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def log_requests(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
     logger.info(f"Request: {request.method} {request.url}")
     response = await call_next(request)
     logger.info(f"Response: {response.status_code}")
@@ -60,5 +76,5 @@ app.include_router(api_v3_router, prefix="/api/v3", tags=["v3"])
 
 
 @app.get("/")
-async def index() -> dict:
+async def index() -> dict[str, str]:
     return {"Hello": "World"}
