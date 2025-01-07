@@ -1,4 +1,5 @@
 from uuid import uuid4
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.connection_manager import ConnectionManager
@@ -9,7 +10,7 @@ manager = ConnectionManager()
 
 
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket) -> None:
     client_id = str(uuid4())
     agent = await manager.connect(websocket=websocket, token=client_id)
     await agent.think()
@@ -19,6 +20,5 @@ async def websocket_endpoint(websocket: WebSocket):
             await agent.receive_message()
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        agent.cleanup()
+        manager.disconnect(client_id)
         print(f"Client #{client_id} diconnected")

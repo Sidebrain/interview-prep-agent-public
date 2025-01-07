@@ -16,6 +16,7 @@ class Interviewer(Document):
     job_description: str
     rating_rubric: str
     question_bank: str
+    memory: List[WebsocketFrame] = Field(default_factory=list)
 
     class Settings:
         name = "interviewers"

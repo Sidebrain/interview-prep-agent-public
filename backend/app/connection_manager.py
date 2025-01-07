@@ -7,7 +7,7 @@ from app.websocket_handler import Channel
 
 
 class ConnectionManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: Dict[str, Channel] = {}
 
     async def connect(self, websocket: WebSocket, token: str) -> Agent:
@@ -30,6 +30,6 @@ class ConnectionManager:
         print(f"Client connected: {token}")
         return agent
 
-    def disconnect(self, token: str):
+    def disconnect(self, token: str) -> None:
         if token in self.active_connections:
             del self.active_connections[token]
