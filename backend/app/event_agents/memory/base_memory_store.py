@@ -1,8 +1,10 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
+from uuid import UUID
 
 from app.event_agents.memory.protocols import ConfigProvider
+from app.event_agents.memory.stores.types import EntityType
 from app.types.websocket_types import (
     AddressType,
     CompletionFrameChunk,
@@ -19,19 +21,29 @@ class BaseMemoryStore(ABC):
         self,
         config_provider: ConfigProvider,
         debug: bool = False,
+        agent_id: Optional[UUID] = None,
+        entity: Optional[EntityType] = None,
     ) -> None:
         self.config_provider = config_provider
         self.debug = debug
+        self.agent_id = agent_id
+        self.entity = entity
         self.memory: List[WebsocketFrame] = []
 
     def __repr__(self) -> str:
-        return (
-            f"MemoryStore(\n"
-            f"  config_provider={self.config_provider},\n"
-            f"  debug={self.debug},\n"
-            f"  memory_frames={len(self.memory)},\n"
-            f")"
-        )
+        base_repr = {
+            "config_provider": self.config_provider,
+            "debug": self.debug,
+            "memory_frames": len(self.memory),
+        }
+
+        # Only include optional fields if they're set
+        if self.agent_id:
+            base_repr["agent_id"] = self.agent_id
+        if self.entity:
+            base_repr["entity"] = self.entity
+
+        return "\n".join(f"  {k}={v}," for k, v in base_repr.items())
 
     @abstractmethod
     async def add(self, frame: WebsocketFrame) -> None:

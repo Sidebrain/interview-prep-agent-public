@@ -35,7 +35,7 @@ class ConnectionManager:
         await websocket.accept()
 
         # Create new connection
-        interview_manager = create_interview(
+        interview_manager = await create_interview(
             websocket=websocket, interview_id=test_interview_id
         )
 

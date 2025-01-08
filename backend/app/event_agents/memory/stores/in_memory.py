@@ -27,7 +27,10 @@ class InMemoryStore(BaseMemoryStore):
         config_provider: ConfigProvider,
         debug: bool = False,
     ) -> None:
-        super().__init__(config_provider, debug)
+        super().__init__(
+            config_provider=config_provider,
+            debug=debug,
+        )
 
     async def add(self, frame: WebsocketFrame) -> None:
         if not isinstance(frame, WebsocketFrame):

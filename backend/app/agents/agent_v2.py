@@ -13,6 +13,7 @@ from app.constants import DEBUG_CONFIG, model
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.orchestrator.thinker import Thinker
+from app.event_agents.schemas.mongo_schemas import Interviewer
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
     hiring_requirements,
@@ -30,12 +31,16 @@ logger = logging.getLogger(__name__)
 class Agent:
     debug = DEBUG_CONFIG["agent"]
 
-    def __init__(self, channel: Channel):
+    def __init__(
+        self, channel: Channel, interviewer: Interviewer
+    ) -> None:
         self.agent_id = str(uuid4())
         self.thinker = Thinker()
-        # define topic for the agent's memory
+        self.interviewer = interviewer
         self.memory = create_memory_store(
-            config_path="config/agent_v2.yaml"
+            agent_id=self.interviewer.id,
+            entity=self.interviewer,
+            config_path="config/agent_v2.yaml",
         )
         self.channel = channel
         self.interview = Interview(

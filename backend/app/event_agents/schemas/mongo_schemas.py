@@ -9,17 +9,23 @@ from pydantic import Field
 from app.types.websocket_types import WebsocketFrame
 
 
+class CollectionName(str, Enum):
+    INTERVIEWERS = "interviewers"
+    CANDIDATES = "candidates"
+    INTERVIEW_SESSIONS = "interview_sessions"
+
+
 class Interviewer(Document):
     id: UUID = Field(default_factory=uuid4)  # type: ignore
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
-    job_description: str
-    rating_rubric: str
-    question_bank: str
+    job_description: str = Field(default="")
+    rating_rubric: str = Field(default="")
+    question_bank: str = Field(default="")
     memory: List[WebsocketFrame] = Field(default_factory=list)
 
     class Settings:
-        name = "interviewers"
+        name = CollectionName.INTERVIEWERS.value
 
 
 class Candidate(Document):
@@ -28,9 +34,10 @@ class Candidate(Document):
     updated_at: datetime = Field(default_factory=datetime.now)
     name: str
     email: str
+    memory: List[WebsocketFrame] = Field(default_factory=list)
 
     class Settings:
-        name = "candidates"
+        name = CollectionName.CANDIDATES.value
 
 
 class InterviewSessionStatusEnum(str, Enum):
@@ -54,4 +61,4 @@ class InterviewSession(Document):
     memory: List[WebsocketFrame] = Field(default_factory=list)
 
     class Settings:
-        name = "interview_sessions"
+        name = CollectionName.INTERVIEW_SESSIONS.value

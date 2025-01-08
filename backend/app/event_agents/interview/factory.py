@@ -8,6 +8,7 @@ from pydantic import BaseModel, ValidationError
 from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.orchestrator import Broker, Thinker
+from app.event_agents.schemas.mongo_schemas import InterviewSession
 from app.event_agents.types import InterviewContext
 from app.event_agents.websocket_handler import Channel
 
@@ -56,7 +57,7 @@ def load_all_interviews() -> InterviewCollection:
             )
 
 
-def create_interview(
+async def create_interview(
     websocket: WebSocket, interview_id: UUID
 ) -> "InterviewManager":
     interview_config = load_all_interviews().find_by_interview_id(
@@ -81,8 +82,20 @@ def create_interview(
         broker=broker,
     )
 
+    interview_session = await InterviewSession.find_one(
+        {"interview_id": interview_id}
+    )
+
+    if not interview_session:
+        raise HTTPException(
+            status_code=404, detail="Interview session not found"
+        )
+
     thinker = Thinker()
-    memory_store = create_memory_store()
+    memory_store = create_memory_store(
+        agent_id=interview_config.agent_id,
+        entity=interview_session,
+    )
 
     interview_context = InterviewContext(
         interview_id=interview_config.interview_id,

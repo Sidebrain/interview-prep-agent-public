@@ -3,6 +3,7 @@ from typing import Dict
 from fastapi import WebSocket
 
 from app.agents.agent_v2 import Agent
+from app.event_agents.schemas.mongo_schemas import Interviewer
 from app.websocket_handler import Channel
 
 
@@ -24,7 +25,11 @@ class ConnectionManager:
         if token not in self.active_connections:
             # creating a channel with an agent
             channel = Channel(websocket)
-            agent = Agent(channel=channel)
+            interviewer = await Interviewer.get(token)
+            if not interviewer:
+                interviewer = Interviewer(id=token)
+                await interviewer.insert()
+            agent = Agent(channel=channel, interviewer=interviewer)
             channel.agent = agent
             self.active_connections[token] = channel
         print(f"Client connected: {token}")
