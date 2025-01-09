@@ -3,13 +3,13 @@ import logging
 from typing import Any
 from uuid import uuid4
 
-import yaml
 from pydantic import BaseModel
 
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.memory.config_builder import ConfigBuilder
 from app.event_agents.orchestrator.events import AskQuestionEvent
+from app.event_agents.schemas.mongo_schemas import Interviewer
 from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import (
     QuestionAndAnswer,
@@ -26,6 +26,7 @@ class QuestionManager:
     def __init__(
         self,
         interview_context: InterviewContext,
+        interviewer: Interviewer,
         question_file_path: str | None = None,
     ) -> None:
         self.interview_context = interview_context
@@ -34,6 +35,7 @@ class QuestionManager:
         self.question_file_path = (
             question_file_path or "config/artifacts_v2.yaml"
         )
+        self.interviewer = interviewer
 
     def __repr__(self) -> str:
         return json.dumps(
@@ -111,15 +113,15 @@ class QuestionManager:
     def get_question_generation_messages(
         self, question_file_path: str | None = None
     ) -> list[dict[str, str]]:
-        question_file_path = (
-            question_file_path or self.question_file_path
-        )
-        with open(self.question_file_path, "r") as f:
-            artifacts = yaml.safe_load(f)
-        question_string = artifacts["interview questions"]
+        # question_file_path = (
+        #     question_file_path or self.question_file_path
+        # )
+        # with open(self.question_file_path, "r") as f:
+        #     artifacts = yaml.safe_load(f)
+        # question_string = artifacts["interview questions"]
 
         messages = [
-            {"role": "user", "content": question_string},
+            {"role": "user", "content": self.interviewer.question_bank},
         ]
         return messages
 

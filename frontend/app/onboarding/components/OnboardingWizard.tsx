@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Candidate, CandidateRequest, CandidateSchema, Interviewer } from "../types"
+import { Candidate, CandidateRequest, CandidateSchema, Interviewer, InterviewSession, InterviewSessionSchema } from "../types"
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
     name: z.string().min(1, { message: "Name is required" }),
@@ -96,8 +97,10 @@ const UserProfileForm = ({onSubmit}: {onSubmit: (data: z.infer<typeof formSchema
     )
 }
 
-const createCandidate = async (data: CandidateRequest) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v3/interview/candidate`, {
+const createCandidate = async (data: CandidateRequest, interviewer_id: string) => {
+    const params = new URLSearchParams();
+    params.set('interviewer_id', interviewer_id);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v3/interview/candidate?${params.toString()}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -108,16 +111,19 @@ const createCandidate = async (data: CandidateRequest) => {
         throw new Error('Failed to create candidate');
     }
     try {
-        const candidate = CandidateSchema.parse(await response.json());
-        return candidate;
+        const interviewSession: InterviewSession = InterviewSessionSchema.parse(await response.json());
+        return interviewSession;
     } catch (error) {
         console.error(error);
-        throw new Error('Failed to parse candidate');
+        throw new Error('Failed to parse interview session');
     }
 }
 
-const OnboardingWizard = () => {
+
+
+const OnboardingWizard = ({interviewer_id}: {interviewer_id: string}) => {
     const [candidateData, setCandidateData] = useState<CandidateRequest | null>(null);
+    const router = useRouter();
 
     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
         // Simulate API call
@@ -127,8 +133,9 @@ const OnboardingWizard = () => {
             phone_number: data.phone_number,
         }
         setCandidateData(candidateRequest);
-        const candidate = await createCandidate(candidateRequest);
-        console.log(candidate);
+        const interviewSession = await createCandidate(candidateRequest, interviewer_id);
+        console.log(interviewSession);
+        router.push(`/interview?interview_session_id=${interviewSession._id}`);
     }
 
   return (
@@ -138,4 +145,4 @@ const OnboardingWizard = () => {
   )
 }
 
-export default OnboardingWizard
+export default OnboardingWizard;

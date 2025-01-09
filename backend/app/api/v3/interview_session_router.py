@@ -39,10 +39,18 @@ async def create_interviewer() -> Interviewer:
 
 
 @router.post("/candidate")
-async def create_candidate(candidate: Candidate) -> Candidate:
-    print(candidate)
+async def create_candidate_return_interview_session(
+    candidate: Candidate,
+    interviewer_id: str,
+) -> InterviewSession:
     await candidate.insert()
-    return candidate
+    interviewer = await validate_and_return_interviewer(interviewer_id)
+    interview_session = InterviewSession(
+        interviewer_id=interviewer.id,
+        candidate_id=candidate.id,
+    )
+    await interview_session.insert()
+    return interview_session
 
 
 @router.post("/session")

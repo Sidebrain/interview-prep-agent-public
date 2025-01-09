@@ -2,10 +2,11 @@ import logging
 from typing import Dict
 from uuid import UUID
 
-from fastapi import WebSocket
+from fastapi import HTTPException, WebSocket
 
 from app.event_agents.interview.factory import create_interview
 from app.event_agents.interview.manager import InterviewManager
+from app.event_agents.schemas.mongo_schemas import InterviewSession
 
 logger = logging.getLogger(__name__)
 
@@ -20,34 +21,47 @@ class ConnectionManager:
         return f"ConnectionManager(active_connections={len(self.active_connections)})"
 
     async def connect(
-        self, websocket: WebSocket, token: str
+        self, websocket: WebSocket, interview_session_id: str
     ) -> InterviewManager:
-        logger.info(f"Connection attempt for token: {token}")
+        logger.info(
+            f"Connection attempt for token: {interview_session_id}"
+        )
 
         # Clean up any existing connection first
-        if token in self.active_connections:
+        if interview_session_id in self.active_connections:
             logger.warning(
                 "Cleaning up existing connection for token",
-                extra={"context": {"token": token}},
+                extra={"context": {"token": interview_session_id}},
             )
-            await self._cleanup_connection(token)
+            await self._cleanup_connection(interview_session_id)
+
+        interview_session = await InterviewSession.get(
+            interview_session_id
+        )
+        if not interview_session:
+            raise HTTPException(
+                status_code=404, detail="Interview session not found"
+            )
 
         await websocket.accept()
 
         # Create new connection
         interview_manager = await create_interview(
-            websocket=websocket, interview_id=test_interview_id
+            websocket=websocket,
+            interview_session_id=interview_session.id,
         )
 
         # Initialize agent
         await interview_manager.initialize()
 
-        self.active_connections[token] = interview_manager
+        self.active_connections[interview_session_id] = (
+            interview_manager
+        )
         logger.info(
             "New interview established",
             extra={
                 "context": {
-                    "token": token,
+                    "token": interview_session_id,
                     "interview_id": str(interview_manager.interview_id),
                 }
             },

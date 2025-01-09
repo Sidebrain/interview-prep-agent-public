@@ -42,10 +42,10 @@ class Candidate(Document):
 
 
 class InterviewSessionStatusEnum(str, Enum):
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
 
 
 class InterviewSession(Document):
@@ -60,6 +60,7 @@ class InterviewSession(Document):
     start_time: datetime | None = None
     end_time: datetime | None = None
     memory: List[WebsocketFrame] = Field(default_factory=list)
+    max_time_allowed: int = Field(default=10 * 60)
 
     class Settings:
         name = CollectionName.INTERVIEW_SESSIONS.value

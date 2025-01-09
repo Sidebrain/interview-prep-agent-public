@@ -48,6 +48,7 @@ class InterviewManager:
         self.channel = interview_context.channel
         self.thinker = interview_context.thinker
         self.interview_id = interview_context.interview_id
+        self.interviewer = interview_context.interviewer
         self.memory_store = interview_context.memory_store
 
         self.max_time_allowed = interview_context.max_time_allowed
@@ -58,6 +59,7 @@ class InterviewManager:
         )
         self.question_manager = QuestionManager(
             interview_context=self.interview_context,
+            interviewer=self.interviewer,
         )
         self.eval_manager = EvaluationManager(
             interview_context=self.interview_context,

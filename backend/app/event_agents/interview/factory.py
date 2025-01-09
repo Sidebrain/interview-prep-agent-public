@@ -8,7 +8,10 @@ from pydantic import BaseModel, ValidationError
 from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.orchestrator import Broker, Thinker
-from app.event_agents.schemas.mongo_schemas import InterviewSession
+from app.event_agents.schemas.mongo_schemas import (
+    Interviewer,
+    InterviewSession,
+)
 from app.event_agents.types import InterviewContext
 from app.event_agents.websocket_handler import Channel
 
@@ -58,48 +61,42 @@ def load_all_interviews() -> InterviewCollection:
 
 
 async def create_interview(
-    websocket: WebSocket, interview_id: UUID
+    websocket: WebSocket, interview_session_id: UUID
 ) -> "InterviewManager":
-    interview_config = load_all_interviews().find_by_interview_id(
-        interview_id
-    )
-    logger.debug(
-        "Interview config",
-        extra={"context": {"interview_config": interview_config}},
-    )
-    if not interview_config:
-        raise HTTPException(
-            status_code=404, detail="Interview not found"
-        )
-
-    broker = Broker()
-
-    max_time_allowed = interview_config.max_time_allowed or 10 * 60
-
-    channel = Channel(
-        websocket=websocket,
-        interview_id=interview_id,
-        broker=broker,
-    )
-
-    interview_session = await InterviewSession.find_one(
-        {"interview_id": interview_id}
-    )
-
+    interview_session = await InterviewSession.get(interview_session_id)
     if not interview_session:
         raise HTTPException(
             status_code=404, detail="Interview session not found"
         )
 
+    interviewer = await Interviewer.get(
+        interview_session.interviewer_id
+    )
+    if not interviewer:
+        raise HTTPException(
+            status_code=404, detail="Interviewer not found"
+        )
+
+    broker = Broker()
+
+    max_time_allowed = interview_session.max_time_allowed or 10 * 60
+
+    channel = Channel(
+        websocket=websocket,
+        interview_id=interview_session_id,
+        broker=broker,
+    )
+
     thinker = Thinker()
     memory_store = create_memory_store(
-        agent_id=interview_config.agent_id,
+        agent_id=interview_session.interviewer_id,
         entity=interview_session,
     )
 
     interview_context = InterviewContext(
-        interview_id=interview_config.interview_id,
-        agent_id=interview_config.agent_id,
+        interview_id=interview_session.id,
+        agent_id=interviewer.id,
+        interviewer=interviewer,
         memory_store=memory_store,
         broker=broker,
         thinker=thinker,

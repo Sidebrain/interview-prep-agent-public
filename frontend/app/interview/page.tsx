@@ -6,12 +6,16 @@ import UserArea from "./components/UserArea";
 import EvaluationArea from "./components/EvaluationArea";
 import SuggestionArea from "./components/SuggestionArea";
 import PerspectiveArea from "./components/PerspectiveArea";
+import { useSearchParams } from "next/navigation";
 
 const InterviewPage = () => {
+  const searchParams = useSearchParams();
+  const interview_session_id = searchParams.get("interview_session_id");
+  
   return (
     <WebsocketProvider
       options={{
-        url: process.env.NEXT_PUBLIC_WS_URL_V3 || "",
+        url: process.env.NEXT_PUBLIC_WS_URL_V3 + "?interview_session_id=" + interview_session_id || "",
         enabled: true,
       }}
     >
