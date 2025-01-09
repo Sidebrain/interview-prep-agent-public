@@ -39,13 +39,10 @@ async def create_interviewer() -> Interviewer:
 
 
 @router.post("/candidate")
-async def create_candidate() -> Candidate:
-    default_candidate = Candidate(
-        name="Anudeep",
-        email="anudeep@sidebrain.co",
-    )
-    await default_candidate.insert()
-    return default_candidate
+async def create_candidate(candidate: Candidate) -> Candidate:
+    print(candidate)
+    await candidate.insert()
+    return candidate
 
 
 @router.post("/session")

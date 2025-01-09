@@ -34,6 +34,7 @@ class Candidate(Document):
     updated_at: datetime = Field(default_factory=datetime.now)
     name: str
     email: str
+    phone_number: str
     memory: List[WebsocketFrame] = Field(default_factory=list)
 
     class Settings:
