@@ -12,9 +12,9 @@ router = APIRouter()
 
 
 @router.get("/{id}")
-async def validate_interview(
+async def validate_and_return_interviewer(
     id: str,
-) -> dict[str, str | bool]:
+) -> Interviewer:
     # try coercing to UUID
     try:
         interviewer = await Interviewer.get(UUID(id))
@@ -24,10 +24,7 @@ async def validate_interview(
         raise HTTPException(
             status_code=404, detail="Interviewer not found"
         )
-    return {
-        "interviewer_id": str(interviewer.id),
-        "validated": True,
-    }
+    return interviewer
 
 
 @router.post("/interviewer", response_model=Interviewer)
