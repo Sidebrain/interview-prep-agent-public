@@ -94,8 +94,8 @@ async def create_interview(
     )
 
     interview_context = InterviewContext(
-        interview_id=interview_session.id,
-        agent_id=interviewer.id,
+        interview_id=interview_session.id,  # type: ignore
+        agent_id=interviewer.id,  # type: ignore
         interviewer=interviewer,
         memory_store=memory_store,
         broker=broker,

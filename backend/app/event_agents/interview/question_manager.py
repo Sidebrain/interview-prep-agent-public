@@ -1,13 +1,13 @@
 import json
 import logging
-from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel
 
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.interview.notifications import NotificationManager
-from app.event_agents.memory.config_builder import ConfigBuilder
+from app.event_agents.memory.json_decoders import AgentConfigJSONDecoder
+from app.event_agents.memory.json_encoders import AgentConfigJSONEncoder
 from app.event_agents.orchestrator.events import AskQuestionEvent
 from app.event_agents.schemas.mongo_schemas import Interviewer
 from app.event_agents.types import InterviewContext
@@ -27,14 +27,10 @@ class QuestionManager:
         self,
         interview_context: InterviewContext,
         interviewer: Interviewer,
-        question_file_path: str | None = None,
     ) -> None:
         self.interview_context = interview_context
         self.questions: list[QuestionAndAnswer] = []
         self.current_question: QuestionAndAnswer | None = None
-        self.question_file_path = (
-            question_file_path or "config/artifacts_v2.yaml"
-        )
         self.interviewer = interviewer
 
     def __repr__(self) -> str:
@@ -51,38 +47,54 @@ class QuestionManager:
             indent=2,
         )
 
-    def is_question_list_populated(
-        self, loaded_state: dict[str, Any]
-    ) -> bool:
-        return bool(loaded_state["questions"])
-
     def are_questions_gathered_in_memory(self) -> bool:
-        try:
-            loaded_state = ConfigBuilder.load_state(
-                self.interview_context.agent_id
-            )
-            if "questions" in loaded_state:
-                return self.is_question_list_populated(loaded_state)
-            else:
-                return False
-        except FileNotFoundError:
+        if self.interviewer.question_bank_structured:
+            return True
+        else:
             return False
 
     async def load_questions_from_memory(self) -> bool:
-        loaded_state = ConfigBuilder.load_state(
-            self.interview_context.agent_id
-        )
-        self.questions = loaded_state["questions"]
-        await NotificationManager.send_notification(
-            self.interview_context.broker,
-            "Questions loaded from memory",
-        )
-        return True
+        try:
+            #! this is a hack to get the questions from the mongo memory
+            #! we need to fix this later
+            # First parse the string into a Python list
+            questions_list = json.loads(
+                self.interviewer.question_bank_structured
+            )
+            # Then create the structure expected by the decoder
+            dct = {"questions": questions_list}
+            # Finally decode with our custom decoder
+            decoded = json.loads(
+                json.dumps(dct),  # Convert dict to JSON string
+                cls=AgentConfigJSONDecoder,
+            )
+            self.questions = decoded["questions"]
+
+            logger.info(
+                "Questions loaded from mongo memory",
+                extra={
+                    "context": {
+                        "#questions": len(self.questions),
+                        "question #1": self.questions[0],
+                    }
+                },
+            )
+            return True
+        except Exception as e:
+            logger.error(
+                "Error loading questions from mongo memory",
+                extra={"context": {"error": str(e)}},
+            )
+            return False
 
     async def initialize(self) -> None:
         if self.are_questions_gathered_in_memory():
             questions_loaded_successfully = (
                 await self.load_questions_from_memory()
+            )
+            await NotificationManager.send_notification(
+                self.interview_context.broker,
+                f"{len(self.questions)} questions loaded from mongo memory",
             )
             logger.debug(
                 "Questions loaded from memory",
@@ -97,12 +109,15 @@ class QuestionManager:
                 return
 
         # If questions are not loaded from memory, gather them
+        await self.build_structured_question_bank()
+
+    async def build_structured_question_bank(self) -> None:
         await NotificationManager.send_notification(
             self.interview_context.broker,
-            "Interview started. Gathering questions...",
+            "Interview started. Gathering questions from mongo...",
         )
         await self.gather_questions()
-        self.save_state()
+        await self.save_state()
 
         await NotificationManager.send_notification(
             self.interview_context.broker,
@@ -110,16 +125,9 @@ class QuestionManager:
         )
         return None
 
-    def get_question_generation_messages(
-        self, question_file_path: str | None = None
+    def build_context_to_generate_structured_questions(
+        self,
     ) -> list[dict[str, str]]:
-        # question_file_path = (
-        #     question_file_path or self.question_file_path
-        # )
-        # with open(self.question_file_path, "r") as f:
-        #     artifacts = yaml.safe_load(f)
-        # question_string = artifacts["interview questions"]
-
         messages = [
             {"role": "user", "content": self.interviewer.question_bank},
         ]
@@ -135,21 +143,7 @@ class QuestionManager:
     async def gather_questions(
         self,
     ) -> list[QuestionAndAnswer]:
-        logger.info(
-            "Gathering questions",
-            extra={
-                "context": {
-                    "questions_remaining": len(self.questions),
-                    "current_question": (
-                        self.current_question.question[:30] + "..."
-                        if self.current_question
-                        else None
-                    ),
-                }
-            },
-        )
-
-        context = self.get_question_generation_messages()
+        context = self.build_context_to_generate_structured_questions()
 
         response = await self.extract_structured_questions(context)
         self.questions = response.questions
@@ -168,11 +162,14 @@ class QuestionManager:
             logger.info("No more questions: %s", self)
             return None
 
-    def save_state(self) -> None:
-        ConfigBuilder.save_state(
-            self.interview_context.agent_id,
-            {"questions": self.questions},
+    async def save_state(self) -> None:
+        question_bank_structured = json.dumps(
+            self.questions, cls=AgentConfigJSONEncoder
         )
+        self.interviewer.question_bank_structured = (
+            question_bank_structured
+        )
+        await self.interviewer.save()
 
     async def ask_next_question(self) -> None:
         """Request and publish next question."""

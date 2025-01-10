@@ -4,6 +4,8 @@ from pprint import PrettyPrinter
 from typing import Any
 from uuid import UUID
 
+from beanie import Document
+
 from app.event_agents.memory.json_decoders import AgentConfigJSONDecoder
 from app.event_agents.memory.json_encoders import AgentConfigJSONEncoder
 

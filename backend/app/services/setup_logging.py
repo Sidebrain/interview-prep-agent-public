@@ -6,7 +6,17 @@ from pydantic import BaseModel
 
 
 class JsonFormatter(logging.Formatter):
+    COLORS = {
+        "DEBUG": "\x1b[38;20m",  # grey
+        "INFO": "\x1b[32;20m",  # green
+        "WARNING": "\x1b[33;20m",  # yellow
+        "ERROR": "\x1b[31;20m",  # red
+        "CRITICAL": "\x1b[31;1m",  # bold red
+    }
+    RESET = "\x1b[0m"
+
     def format(self, record: logging.LogRecord) -> str:
+        color = self.COLORS.get(record.levelname, self.COLORS["DEBUG"])
         log_data = {
             "timestamp": self.formatTime(record),
             "logger": record.name,
@@ -48,6 +58,11 @@ class JsonFormatter(logging.Formatter):
                 record.exc_info
             )
 
+        # Add color to console output, but not to file output
+        if getattr(
+            record, "colored", True
+        ):  # Default to colored output
+            return f"{color}{json.dumps(log_data, indent=2, default=str)}{self.RESET}"
         return json.dumps(log_data, indent=2, default=str)
 
 
@@ -56,20 +71,20 @@ def setup_logging(debug: bool = False) -> None:
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "standard": {
+            "json": {
                 "()": JsonFormatter,
             },
         },
         "handlers": {
-            "default": {
+            "console": {
                 "level": "DEBUG" if debug else "INFO",
-                "formatter": "standard",
+                "formatter": "json",
                 "class": "logging.StreamHandler",
                 "stream": "ext://sys.stdout",
             },
             "file": {
                 "level": "DEBUG",
-                "formatter": "standard",
+                "formatter": "json",
                 "class": "logging.FileHandler",
                 "filename": "logs/app.log",
                 "mode": "a",
@@ -77,12 +92,12 @@ def setup_logging(debug: bool = False) -> None:
         },
         "loggers": {
             "": {
-                "handlers": ["default"],
+                "handlers": ["console"],  # updated handler name
                 "level": "WARNING",
                 "propagate": True,
             },
             "app": {
-                "handlers": ["default"],
+                "handlers": ["console", "file"],  # both handlers
                 "level": "DEBUG" if debug else "INFO",
                 "propagate": False,
             },

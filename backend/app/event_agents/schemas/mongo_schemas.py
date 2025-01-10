@@ -22,6 +22,8 @@ class Interviewer(Document):
     job_description: str = Field(default="")
     rating_rubric: str = Field(default="")
     question_bank: str = Field(default="")
+    question_bank_structured: str = Field(default="")
+    
     memory: List[WebsocketFrame] = Field(default_factory=list)
 
     class Settings:
