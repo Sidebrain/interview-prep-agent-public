@@ -76,6 +76,19 @@ class Agent:
         with open("config/artifacts_v2.yaml", "w") as file:
             yaml.dump(self.artifact_dict, file)
 
+    async def save_artifacts_to_mongo(self) -> None:
+        # save the artifacts to the mongo memory
+        self.interviewer.question_bank = self.artifact_dict[
+            "interview questions"
+        ]
+        self.interviewer.rating_rubric = self.artifact_dict[
+            "rating rubric in table format"
+        ]
+        self.interviewer.job_description = self.artifact_dict[
+            "job description"
+        ]
+        await self.interviewer.save()
+
     def add_artifact_to_dict(self, artifact: str, content: str) -> None:
         self.artifact_dict[artifact] = content
         logger.info(
@@ -112,6 +125,7 @@ class Agent:
             ]
         )
         self.save_artifacts_to_yaml()
+        await self.save_artifacts_to_mongo()
         frames, responses = zip(*generated_items)
         return frames, responses
 
