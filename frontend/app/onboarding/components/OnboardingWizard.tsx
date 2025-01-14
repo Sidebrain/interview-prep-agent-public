@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Candidate, CandidateRequest, CandidateSchema, Interviewer, InterviewerSchema, InterviewSession, InterviewSessionSchema } from "../types"
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -191,11 +191,123 @@ const InterviewDetails = ({interviewer_id, handleClick}: InterviewDetailsProps) 
     )
 }
 
+const ProvidePermissions = ({ onPermissionsGranted }: { onPermissionsGranted: () => void }) => {
+    const [permissions, setPermissions] = useState({
+        microphone: false,
+        camera: false,
+        screen: false
+    });
+    const [error, setError] = useState<string | null>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [stream, setStream] = useState<MediaStream | null>(null);
 
+    const requestMicrophonePermission = async () => {
+        try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            setPermissions(prev => ({ ...prev, microphone: true }));
+        } catch (err) {
+            setError('Please allow access to your microphone');
+        }
+    };
+
+    const requestCameraPermission = async () => {
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+                await videoRef.current.play();
+            }
+            setPermissions(prev => ({ ...prev, camera: true }));
+        } catch (err) {
+            console.error('Camera permission error:', err);
+            setError('Please allow access to your camera');
+        }
+    };
+
+    const requestScreenPermission = async () => {
+        try {
+            await navigator.mediaDevices.getDisplayMedia({ video: true });
+            setPermissions(prev => ({ ...prev, screen: true }));
+        } catch (err) {
+            setError('Please allow screen sharing access');
+        }
+    };
+
+    useEffect(() => {
+        if (permissions.microphone && permissions.camera && permissions.screen) {
+            onPermissionsGranted();
+        }
+    }, [permissions, onPermissionsGranted]);
+
+    useEffect(() => {
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [stream]);
+
+    return (
+        <div className="flex flex-col items-center gap-6 p-8">
+            <h2 className="text-2xl font-bold">Device Permissions</h2>
+            <p className="text-gray-600 text-center max-w-md">
+                Please grant the following permissions to continue:
+            </p>
+            
+            {error && <p className="text-red-500">{error}</p>}
+            
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                    <Button 
+                        onClick={requestMicrophonePermission}
+                        disabled={permissions.microphone}
+                        variant={permissions.microphone ? "outline" : "default"}
+                    >
+                        {permissions.microphone ? "✓ Microphone" : "Enable Microphone"}
+                    </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Button 
+                        onClick={requestCameraPermission}
+                        disabled={permissions.camera}
+                        variant={permissions.camera ? "outline" : "default"}
+                    >
+                        {permissions.camera ? "✓ Camera" : "Enable Camera"}
+                    </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Button 
+                        onClick={requestScreenPermission}
+                        disabled={permissions.screen}
+                        variant={permissions.screen ? "outline" : "default"}
+                    >
+                        {permissions.screen ? "✓ Screen Sharing" : "Enable Screen Sharing"}
+                    </Button>
+                </div>
+            </div>
+
+                <div className="mt-4 rounded-lg overflow-hidden border border-gray-200">
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-[320px] h-[240px] object-cover"
+                        style={{ transform: 'scaleX(-1)' }}
+                        onLoadedMetadata={(e) => e.currentTarget.play()}
+                    />
+                </div>
+        </div>
+    );
+};
 
 const OnboardingWizard = ({interviewer_id}: {interviewer_id: string}) => {
     const [candidateData, setCandidateData] = useState<CandidateRequest | null>(null);
-    const [stage, setStage] = useState<"interview_details" | "user_profile">("interview_details");
+    const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(null);
+    const [stage, setStage] = useState<"interview_details" | "user_profile" | "provide_permissions">("interview_details");
     const router = useRouter();
 
     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -207,17 +319,26 @@ const OnboardingWizard = ({interviewer_id}: {interviewer_id: string}) => {
         }
         setCandidateData(candidateRequest);
         const interviewSession = await createCandidate(candidateRequest, interviewer_id);
+        setInterviewSession(interviewSession);
         console.log(interviewSession);
-        router.push(`/interview?interview_session_id=${interviewSession._id}`);
-        // setStage("user_profile");
+        setStage("provide_permissions");
     }
 
-    const renderStage = (stage: "interview_details" | "user_profile", interviewer_id: string) => {  
+    const handlePermissionsGranted = () => {
+        if (interviewSession) {
+            router.push(`/interview?interview_session_id=${interviewSession._id}`);
+        }
+        console.log(interviewSession);
+    };
+
+    const renderStage = (stage: "interview_details" | "user_profile" | "provide_permissions", interviewer_id: string) => {  
         switch (stage) {
             case "interview_details":
                 return <InterviewDetails interviewer_id={interviewer_id} handleClick={() => setStage("user_profile")} />;
             case "user_profile":
                 return <UserProfileForm onSubmit={handleSubmit} />;
+            case "provide_permissions":
+                return <ProvidePermissions onPermissionsGranted={handlePermissionsGranted} />;
         }
     }
 
