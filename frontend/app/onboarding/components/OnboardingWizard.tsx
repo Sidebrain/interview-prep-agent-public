@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Candidate, CandidateRequest, CandidateSchema, Interviewer, InterviewSession, InterviewSessionSchema } from "../types"
+import { useEffect, useState } from "react";
+import { Candidate, CandidateRequest, CandidateSchema, Interviewer, InterviewerSchema, InterviewSession, InterviewSessionSchema } from "../types"
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,8 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDes
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const formSchema = z.object({
     name: z.string().min(1, { message: "Name is required" }),
@@ -119,10 +121,63 @@ const createCandidate = async (data: CandidateRequest, interviewer_id: string) =
     }
 }
 
+const getInterviewer = async (interviewer_id: string) => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v3/interview/${interviewer_id}`);
+    if (!response.ok) {
+        throw new Error('Failed to get interviewer');
+    }
+    try {
+        const interviewer: Interviewer = InterviewerSchema.parse(await response.json());
+        return interviewer;
+    } catch (error) {
+        console.error(error);
+        throw new Error('Failed to parse interviewer');
+    }
+}
+
+type InterviewDetailsProps = {
+    interviewer_id: string;
+    handleClick: () => void;
+}
+
+const InterviewDetails = ({interviewer_id, handleClick}: InterviewDetailsProps) => {
+    const [interviewer, setInterviewer] = useState<Interviewer | null>(null);
+    useEffect(() => {
+        getInterviewer(interviewer_id).then(setInterviewer);
+    }, [interviewer_id]);
+    
+    return (
+        <div className="relative flex flex-col gap-8 w-full max-w-4xl p-8">
+            <h1 className="absolute text-2xl font-bold">Interview Details</h1>
+            
+            <Button onClick={handleClick} className="sticky top-2 self-end">
+            Start Interview
+            </Button>
+            <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-lg font-semibold">Interviewer ID</h2>
+                    <div className="prose prose-sm">
+                        <code>{interviewer_id}</code>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-lg font-semibold">Job Description</h2>
+                    <div className="prose prose-sm max-w-none">
+                        <Markdown>{interviewer?.job_description || ''}</Markdown>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    )
+}
+
 
 
 const OnboardingWizard = ({interviewer_id}: {interviewer_id: string}) => {
     const [candidateData, setCandidateData] = useState<CandidateRequest | null>(null);
+    const [stage, setStage] = useState<"interview_details" | "user_profile">("interview_details");
     const router = useRouter();
 
     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -136,11 +191,21 @@ const OnboardingWizard = ({interviewer_id}: {interviewer_id: string}) => {
         const interviewSession = await createCandidate(candidateRequest, interviewer_id);
         console.log(interviewSession);
         router.push(`/interview?interview_session_id=${interviewSession._id}`);
+        // setStage("user_profile");
+    }
+
+    const renderStage = (stage: "interview_details" | "user_profile", interviewer_id: string) => {  
+        switch (stage) {
+            case "interview_details":
+                return <InterviewDetails interviewer_id={interviewer_id} handleClick={() => setStage("user_profile")} />;
+            case "user_profile":
+                return <UserProfileForm onSubmit={handleSubmit} />;
+        }
     }
 
   return (
     <div className="flex flex-col w-full items-center ">
-        <UserProfileForm onSubmit={handleSubmit} />
+        {renderStage(stage, interviewer_id)}
     </div>
   )
 }

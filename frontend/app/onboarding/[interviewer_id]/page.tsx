@@ -100,7 +100,7 @@ const EntryPage = async ({ params }: { params: { interviewer_id: string } }) => 
     return <div>Invalid interviewer_id</div>;
   }
   return (
-    <div className="flex flex-col gap-4 items-center justify-center h-screen w-full">
+    <div className="flex flex-col gap-4 items-center justify-center h-full w-full">
       <OnboardingWizard interviewer_id={interviewer._id} />
       {/* <EntityViewer interviewer={interviewer} /> */}
     </div>

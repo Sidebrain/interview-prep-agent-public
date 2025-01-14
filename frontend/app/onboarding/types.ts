@@ -1,16 +1,6 @@
 import { WebsocketFrame, WebsocketFrameSchema } from "@/types/ScalableWebsocketTypes";
 import { z } from "zod";
 
-export type Interviewer = {
-  _id: string; // UUID stored as string
-  created_at: string; // ISO datetime string
-  updated_at: string; // ISO datetime string
-  job_description: string;
-  rating_rubric: string;
-  question_bank: string;
-  memory: WebsocketFrame[];
-}
-
 export interface CandidateRequest {
   name: string;
   email: string;
@@ -55,3 +45,17 @@ export const InterviewSessionSchema = z.object({
 });
 
 export type InterviewSession = z.infer<typeof InterviewSessionSchema>;
+
+export const InterviewerSchema = z.object({
+  _id: z.string().uuid(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+  job_description: z.string(),
+  rating_rubric: z.string(),
+  question_bank: z.string(),
+  question_bank_structured: z.string(),
+  memory: z.array(WebsocketFrameSchema)
+});
+
+export type Interviewer = z.infer<typeof InterviewerSchema>;
+
