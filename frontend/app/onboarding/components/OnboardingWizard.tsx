@@ -40,62 +40,80 @@ const UserProfileForm = ({onSubmit}: {onSubmit: (data: z.infer<typeof formSchema
     };
 
     return (
-        <Form {...form} >
-            <form className="flex flex-col gap-4 justify-center w-1/2" onSubmit={form.handleSubmit(handleFormSubmit)}>
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Candidate Name" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                                This is the name of the candidate.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Candidate Email" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                                This is the email of the candidate.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="phone_number"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Candidate Phone Number" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                                This is the phone number of the candidate.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <Button disabled={isLoading} type="submit">
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Submit
-                </Button>
-            </form>
-        </Form>
+        <div className="flex flex-col w-full items-center min-w-1/3">
+            <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg">
+                <div className="text-center">
+                    <h2 className="text-3xl font-bold text-gray-900">Register for Interview</h2>
+                    <p className="mt-2 text-sm text-gray-600">Please fill in your details below</p>
+                </div>
+                <Form {...form}>
+                    <form className="space-y-6" onSubmit={form.handleSubmit(handleFormSubmit)}>
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-gray-700">Full Name</FormLabel>
+                                    <FormControl>
+                                        <Input className="w-full" placeholder="John Doe" {...field} />
+                                    </FormControl>
+                                    <FormDescription className="text-gray-500 text-sm">
+                                        Enter your full legal name
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-gray-700">Email Address</FormLabel>
+                                    <FormControl>
+                                        <Input className="w-full" placeholder="you@example.com" {...field} />
+                                    </FormControl>
+                                    <FormDescription className="text-gray-500 text-sm">
+                                        We'll use this to send interview details
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="phone_number"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-gray-700">Phone Number</FormLabel>
+                                    <FormControl>
+                                        <Input className="w-full" placeholder="+1 (555) 000-0000" {...field} />
+                                    </FormControl>
+                                    <FormDescription className="text-gray-500 text-sm">
+                                        For interview-related communications
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button 
+                            disabled={isLoading} 
+                            type="submit"
+                            className="w-full py-2 transition-colors"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Registering...
+                                </>
+                            ) : (
+                                'Register'
+                            )}
+                        </Button>
+                    </form>
+                </Form>
+            </div>
+        </div>
     )
 }
 
@@ -204,7 +222,7 @@ const OnboardingWizard = ({interviewer_id}: {interviewer_id: string}) => {
     }
 
   return (
-    <div className="flex flex-col w-full items-center ">
+    <div className="flex flex-col w-full items-center min-h-screen justify-center" >
         {renderStage(stage, interviewer_id)}
     </div>
   )
