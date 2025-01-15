@@ -4,7 +4,7 @@ import { MediaProcessor, MediaProcessorMap, MediaServiceConfig, MediaServiceInte
 
 
 export class MediaService implements MediaServiceInterface {
-  private streamManager: StreamManager;
+  public streamManager: StreamManager;
   private recorder: MediaStreamRecorder;
   private processors: MediaProcessorMap;
 

@@ -1,9 +1,32 @@
 "use client";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { WebsocketProvider } from "../shared/context/WebsocketContext";
 import { InputProvider } from "../shared/context/InputContext";
 import UserArea from "../shared/components/UserArea";
 import { useSearchParams } from "next/navigation";
+import useVideo from "../shared/hooks/useVideo";
+import Draggable from "react-draggable";
+
+const VideoPlayer = () => {
+  const videoElementRef = useRef<HTMLVideoElement>(null);
+  const { isRecording, error, startStream, stopStream } = useVideo({ videoElementRef });
+
+  useEffect(() => {
+    startStream();
+    return () => {
+      stopStream();
+    };
+  }, [startStream, stopStream]);
+
+  return (
+    <Draggable bounds="parent" handle=".handle">
+      <div className="absolute cursor-move">
+        <div className="handle bg-gray-800 p-1 text-xs text-gray-400 text-center">Drag here</div>
+        <video className="w-32 h-32" ref={videoElementRef} autoPlay playsInline />
+      </div>
+    </Draggable>
+  );
+};
 
 const InterviewPage = () => {
   const searchParams = useSearchParams();
@@ -17,8 +40,8 @@ const InterviewPage = () => {
       }}
     >
       <InputProvider>
-        <p>Placeholder for Video camera feed</p>
-        <div className="flex justify-center md:min-w-1/3 w-full m-2 gap-2">
+        <div className="relative flex justify-center md:min-w-1/3 w-full h-screen m-2 gap-2">
+          <VideoPlayer />
           <UserArea />
         </div>
       </InputProvider>

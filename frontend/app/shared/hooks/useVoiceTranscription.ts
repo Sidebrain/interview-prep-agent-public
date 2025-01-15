@@ -3,9 +3,10 @@ import useMedia from "./useMedia";
 
 type UseVoiceProps = {
   onTranscription: (transcription: string) => void;
+  onError?: (error: string) => void;
 };
 
-const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {
+const useVoiceTranscription = ({ onTranscription, onError }: UseVoiceProps) => {
   const {
     playbackUrl,
     isRecording,
@@ -14,12 +15,12 @@ const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {
     stopRecording,
     runProcessor,
   } = useMedia({
-    onTranscription,
     config: {
       mimeType: "audio/webm",
       constraints: { audio: true },
       processors: { "audio/transcriber": new AudioTranscriber() },
     },
+    onError,
   });
 
 

@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { MediaService } from "../infrastructure/media/MediaService";
 import { MediaServiceConfig, ProcessorType } from "../infrastructure/media/types";
 
-type UseVoiceProps = {
-  onTranscription: (transcription: string) => void;
+type UseMediaProps = {
   config: MediaServiceConfig;
   onError?: (error: string) => void;
 };
@@ -12,7 +11,7 @@ type UseVoiceProps = {
 const useMedia = ({
   config,
   onError,
-}: UseVoiceProps) => {
+}: UseMediaProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mediaServiceRef = useRef<MediaService | null>(null);
