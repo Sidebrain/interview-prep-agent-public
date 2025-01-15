@@ -6,7 +6,7 @@ import clientLogger from "@/app/lib/clientLogger";
 import {
   MessageFormatter,
   MessageSender,
-} from "@/app/interview/handlers/websocketMessageSender/types";
+} from "@/app/shared/handlers/websocketMessageSender/types";
 import { PingMessageFormatter, UserInputMessageFormatter } from "./formatters";
 
 export class WebsocketMessageSender implements MessageSender {

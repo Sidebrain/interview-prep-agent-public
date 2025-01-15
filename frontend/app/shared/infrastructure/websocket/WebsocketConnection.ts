@@ -2,7 +2,7 @@ import clientLogger from "@/app/lib/clientLogger";
 import {
   createWebsocketMessageSender,
   WebsocketMessageSender,
-} from "@/app/interview/handlers/websocketMessageSender/sender";
+} from "@/app/shared/handlers/websocketMessageSender/sender";
 import { WebSocketHookOptions } from "@/types/websocketTypes";
 import EventEmitter from "events";
 import { HeartbeatHandler } from "./handlers/HeartbeatHandler";

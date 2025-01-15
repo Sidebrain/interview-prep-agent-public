@@ -1,11 +1,11 @@
 "use client";
 import React from "react";
-import { WebsocketProvider } from "./context/WebsocketContext";
-import { InputProvider } from "./context/InputContext";
-import UserArea from "./components/UserArea";
-import EvaluationArea from "./components/EvaluationArea";
-import SuggestionArea from "./components/SuggestionArea";
-import PerspectiveArea from "./components/PerspectiveArea";
+import { WebsocketProvider } from "../shared/context/WebsocketContext";
+import { InputProvider } from "../shared/context/InputContext";
+import UserArea from "../shared/components/UserArea";
+import EvaluationArea from "../shared/components/EvaluationArea";
+import SuggestionArea from "../shared/components/SuggestionArea";
+import PerspectiveArea from "../shared/components/PerspectiveArea";
 import { useSearchParams } from "next/navigation";
 
 const InterviewPage = () => {

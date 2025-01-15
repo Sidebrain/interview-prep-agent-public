@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext } from "react";
 import { WebSocketHookOptions } from "@/types/websocketTypes";
-import { useWebSocket } from "@/app/interview/hooks/useWebSocket";
+import { useWebSocket } from "../hooks/useWebSocket";
 
 const WebsocketContext = createContext<ReturnType<typeof useWebSocket> | null>(
   null
