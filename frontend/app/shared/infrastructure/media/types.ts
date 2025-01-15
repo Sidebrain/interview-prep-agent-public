@@ -1,0 +1,1 @@
+export type MediaMimeType = "audio/webm" | "video/webm" 

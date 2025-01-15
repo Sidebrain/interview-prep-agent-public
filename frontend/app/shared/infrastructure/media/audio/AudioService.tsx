@@ -1,7 +1,8 @@
 import clientLogger from "@/app/lib/clientLogger";
-import { StreamManager } from "./StreamManager";
-import { AudioRecorder, mimeType } from "./AudioRecorder";
+import { StreamManager } from "../StreamManager";
 import { AudioTranscriber } from "./AudioTranscriber";
+import { MediaMimeType } from "../types";
+import { MediaStreamRecorder } from "../MediaStreamRecorder";
 
 export interface AudioServiceInterface {
   initializeAudioStream: () => Promise<void>;
@@ -13,12 +14,12 @@ export interface AudioServiceInterface {
 
 export class AudioService implements AudioServiceInterface {
   private streamManager: StreamManager;
-  private audioRecorder: AudioRecorder;
+  private audioRecorder: MediaStreamRecorder;
   private audioTranscriber: AudioTranscriber;
 
-  constructor(mimeType: mimeType = "audio/webm", timeslice: number = 1000) {
+  constructor(mimeType: MediaMimeType = "audio/webm", timeslice: number = 1000) {
     this.streamManager = new StreamManager();
-    this.audioRecorder = new AudioRecorder(mimeType, timeslice);
+    this.audioRecorder = new MediaStreamRecorder(mimeType, timeslice);
     this.audioTranscriber = new AudioTranscriber();
   }
 

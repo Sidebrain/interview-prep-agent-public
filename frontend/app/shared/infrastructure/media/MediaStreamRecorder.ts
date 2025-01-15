@@ -1,15 +1,14 @@
 import clientLogger from "@/app/lib/clientLogger";
+import { MediaMimeType } from "./types";
 
-export type mimeType = "audio/webm";
-
-export class AudioRecorder {
+export class MediaStreamRecorder {
   private mediaRecorder: MediaRecorder | null = null;
-  private mimeType: mimeType;
+  private mimeType: MediaMimeType;
   private timeslice: number;
-  private audioChunks: Blob[] = [];
+  private mediaChunks: Blob[] = [];
   private playbackUrl: string | null = null;
 
-  constructor(mimeType: mimeType = "audio/webm", timeslice: number = 1000) {
+  constructor(mimeType: MediaMimeType, timeslice: number = 1000) {
     this.mimeType = mimeType;
     this.timeslice = timeslice;
   }
@@ -19,11 +18,11 @@ export class AudioRecorder {
   public createPlaybackUrl = () => {
     this.revokePlaybackUrl();
 
-    if (this.audioChunks.length === 0) {
+    if (this.mediaChunks.length === 0) {
       return null;
     }
-    const audioBlob = new Blob(this.audioChunks, { type: this.mimeType });
-    this.playbackUrl = URL.createObjectURL(audioBlob);
+    const mediaBlob = new Blob(this.mediaChunks, { type: this.mimeType });
+    this.playbackUrl = URL.createObjectURL(mediaBlob);
     return this.playbackUrl;
   };
 
@@ -37,7 +36,7 @@ export class AudioRecorder {
   public initialize = (stream: MediaStream) => {
     this.mediaRecorder = new MediaRecorder(stream, { mimeType: this.mimeType });
     this.addEventListeners();
-    clientLogger.debug("AudioRecorder initialized", {
+    clientLogger.debug("MediaStreamRecorder initialized", {
       mediaRecorder: this.mediaRecorder,
       mimeType: this.mimeType,
       timeslice: this.timeslice,
@@ -46,7 +45,7 @@ export class AudioRecorder {
   };
 
   public startRecording = () => {
-    this.audioChunks = [];
+    this.mediaChunks = [];
     this.mediaRecorder!.start(this.timeslice);
   };
 
@@ -62,12 +61,12 @@ export class AudioRecorder {
 
     return new Promise<Blob | null>((resolve) => {
       this.mediaRecorder!.onstop = () => {
-        if (this.audioChunks.length === 0) {
+        if (this.mediaChunks.length === 0) {
           clientLogger.warn("No audio chunks to stop recording");
           resolve(null);
           return;
         }
-        const audioBlob = new Blob(this.audioChunks, { type: this.mimeType });
+        const audioBlob = new Blob(this.mediaChunks, { type: this.mimeType });
         resolve(audioBlob);
       };
       this.mediaRecorder!.stop();
@@ -83,14 +82,14 @@ export class AudioRecorder {
   };
 
   private handleDataAvailable = (event: BlobEvent) => {
-    this.audioChunks.push(event.data);
+    this.mediaChunks.push(event.data);
   };
 
   public cleanup = async () => {
     if (this.mediaRecorder?.state === "recording") {
       await this.mediaRecorder.stop();
     }
-    this.audioChunks = [];
+    this.mediaChunks = [];
     this.mediaRecorder = null;
     this.revokePlaybackUrl();
   };

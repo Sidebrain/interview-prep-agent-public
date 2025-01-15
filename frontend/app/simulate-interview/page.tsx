@@ -3,6 +3,9 @@ import React from "react";
 import { WebsocketProvider } from "../shared/context/WebsocketContext";
 import { InputProvider } from "../shared/context/InputContext";
 import UserArea from "../shared/components/UserArea";
+import EvaluationArea from "../shared/components/EvaluationArea";
+import SuggestionArea from "../shared/components/SuggestionArea";
+import PerspectiveArea from "../shared/components/PerspectiveArea";
 import { useSearchParams } from "next/navigation";
 
 const InterviewPage = () => {
@@ -17,9 +20,11 @@ const InterviewPage = () => {
       }}
     >
       <InputProvider>
-        <p>Placeholder for Video camera feed</p>
         <div className="flex justify-center md:min-w-1/3 w-full m-2 gap-2">
+          <EvaluationArea />
           <UserArea />
+          <PerspectiveArea />
+          {/* <SuggestionArea /> */}
         </div>
       </InputProvider>
     </WebsocketProvider>

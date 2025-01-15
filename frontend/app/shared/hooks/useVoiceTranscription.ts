@@ -1,6 +1,6 @@
 import clientLogger from "@/app/lib/clientLogger";
 import { useEffect, useRef, useState } from "react";
-import { AudioService } from "../infrastructure/audio/AudioService";
+import { AudioService } from "../infrastructure/media/audio/AudioService";
 
 type UseVoiceProps = {
   onTranscription: (transcription: string) => void;
