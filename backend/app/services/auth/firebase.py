@@ -1,14 +1,23 @@
-from firebase_admin import credentials, initialize_app, auth
 import os
+from typing import Any
+
+from firebase_admin import (  # type: ignore
+    auth,
+    credentials,
+    initialize_app,
+)
 
 default_app = initialize_app(
     credential=credentials.Certificate(
-        os.getenv("FIREBASE_ADMIN_CREDENTIALS", "secrets/firebase-admin-key.json")
+        os.getenv(
+            "FIREBASE_ADMIN_CREDENTIALS",
+            "secrets/firebase-admin-key.json",
+        )
     )
 )
 
 
-async def verify_token(token: str) -> dict:
+async def verify_token(token: str) -> dict[str, Any]:
     try:
         # verify the token
         decoded_token = auth.verify_id_token(token, app=default_app)

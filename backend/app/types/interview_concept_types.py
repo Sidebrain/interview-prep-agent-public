@@ -98,14 +98,14 @@ class InternalRequirements(Concept):
 
 hiring_requirements = [
     Role,
-    # Designation,
-    # Company,
-    # Requirement,
-    # Budget,
-    # # # Expected,
-    # # Backup,
-    # CultureFit,
-    # InternalRequirements,
+    Designation,
+    Company,
+    Requirement,
+    Budget,
+    # # Expected,
+    # Backup,
+    CultureFit,
+    InternalRequirements,
 ]
 
 
@@ -150,10 +150,3 @@ class MockInterviewQuestion(BaseModel):
 
 
 ################################################################################
-
-
-def main(): ...
-
-
-if __name__ == "__main__":
-    main()
