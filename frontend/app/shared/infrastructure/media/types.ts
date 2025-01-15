@@ -2,6 +2,12 @@ import clientLogger from "@/app/lib/clientLogger";
 
 export type MediaMimeType = "audio/webm" | "video/webm" 
 
+export type ProcessorType = "audio/transcriber" 
+
+export type MediaProcessorMap = {
+    [K in ProcessorType]?: MediaProcessor<any>;
+}
+
 export interface MediaProcessor<T> {
     process: (media: Blob | null) => Promise<T | null>;
 }
@@ -24,4 +30,19 @@ export abstract class BaseMediaProcessor<T> implements MediaProcessor<T> {
         }
         return true;
     }
+}
+
+export interface MediaServiceConfig {
+  mimeType: MediaMimeType;
+  constraints: MediaStreamConstraints;
+  timeslice?: number;
+  processors?: MediaProcessorMap;
+}
+
+export interface MediaServiceInterface {
+  initializeMediaStream: () => Promise<void>;
+  startRecording: () => Promise<void>;
+  stopRecording: () => Promise<Blob | null>;
+  // transcribeAudio: (audioBlob: Blob) => Promise<string | null>;
+  cleanup: () => Promise<void>;
 }

@@ -1,33 +1,18 @@
 import { StreamManager } from "./StreamManager";
-import { AudioTranscriber } from "./audio/AudioTranscriber";
 import { MediaStreamRecorder } from "./MediaStreamRecorder";
-import { MediaMimeType, MediaProcessor } from "./types";
+import { MediaProcessor, MediaProcessorMap, MediaServiceConfig, MediaServiceInterface } from "./types";
 
-export interface MediaServiceConfig {
-  mimeType: MediaMimeType;
-  constraints: MediaStreamConstraints;
-  timeslice?: number;
-  processors?: MediaProcessor<any>[];
-}
-
-export interface MediaServiceInterface {
-  initializeMediaStream: () => Promise<void>;
-  startRecording: () => Promise<void>;
-  stopRecording: () => Promise<Blob | null>;
-  // transcribeAudio: (audioBlob: Blob) => Promise<string | null>;
-  cleanup: () => Promise<void>;
-}
 
 export class MediaService implements MediaServiceInterface {
   private streamManager: StreamManager;
   private recorder: MediaStreamRecorder;
-  private processors: MediaProcessor<any>[];
+  private processors: MediaProcessorMap;
 
   constructor({ 
     mimeType = "audio/webm", 
     constraints = {audio: true}, 
     timeslice, 
-    processors = []
+    processors = {}
   }: MediaServiceConfig) {
     this.streamManager = new StreamManager(constraints);
     this.recorder = new MediaStreamRecorder(mimeType, timeslice);
@@ -62,12 +47,24 @@ export class MediaService implements MediaServiceInterface {
 
   public createPlaybackUrl = () => this.recorder.createPlaybackUrl();
 
-  public processMedia = async (media: Blob | null) => {
-    for (const processor of this.processors) {
+  public runAllProcessors = async (media: Blob | null) => {
+    for (const processor of Object.values(this.processors)) {
       const result = await processor.process(media);
       if (result) {
         return result;
       }
+    }
+    return null;
+  };
+
+  public runProcessor = async (media: Blob | null, processorType: keyof MediaProcessorMap) => {
+    const processor = this.processors[processorType];
+    if (!processor) {
+      throw new Error(`Processor ${processorType} not found`);
+    }
+    const result = await processor.process(media);
+    if (result) {
+      return result;
     }
     return null;
   };
