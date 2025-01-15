@@ -4,13 +4,13 @@ import { MediaMimeType } from "./types";
 export class MediaStreamRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private mimeType: MediaMimeType;
-  private timeslice: number;
+  private timeslice?: number;
   private mediaChunks: Blob[] = [];
   private playbackUrl: string | null = null;
 
-  constructor(mimeType: MediaMimeType, timeslice: number = 1000) {
+  constructor(mimeType: MediaMimeType, timeslice?: number ) {
     this.mimeType = mimeType;
-    this.timeslice = timeslice;
+    this.timeslice = timeslice 
   }
 
   public isReady = () => this.mediaRecorder !== null;

@@ -1,6 +1,7 @@
 import clientLogger from "@/app/lib/clientLogger";
 import { useEffect, useRef, useState } from "react";
-import { AudioService } from "../infrastructure/media/audio/AudioService";
+import { MediaService } from "../infrastructure/media/MediaService";
+import { AudioTranscriber } from "../infrastructure/media/audio/AudioTranscriber";
 
 type UseVoiceProps = {
   onTranscription: (transcription: string) => void;
@@ -9,12 +10,16 @@ type UseVoiceProps = {
 const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const audioServiceRef = useRef<AudioService | null>(null);
+  const audioServiceRef = useRef<MediaService | null>(null);
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   useEffect(() => {
-    audioServiceRef.current = new AudioService("audio/webm");
+    audioServiceRef.current = new MediaService({
+      mimeType: "audio/webm",
+      constraints: { audio: true },
+      transcriber: new AudioTranscriber(),
+    });
 
     return () => {
       audioServiceRef.current?.cleanup();

@@ -3,9 +3,11 @@ import clientLogger from "@/app/lib/clientLogger";
 export class StreamManager {
   private stream: MediaStream | null = null;
 
+  constructor(private constraints: MediaStreamConstraints) {}
+
   public initialize = async () => {
-    const audioStream = await this.requestAudioStream();
-    this.stream = audioStream;
+    const mediaStream = await this.requestMediaStream();
+    this.stream = mediaStream;
   };
 
   public isReady = () => this.stream !== null;
@@ -22,19 +24,17 @@ export class StreamManager {
     }
   };
 
-  private requestAudioStream = async () => {
+  private requestMediaStream = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
+      const stream = await navigator.mediaDevices.getUserMedia(this.constraints);
 
-      clientLogger.debug("Audio permissions granted", {
+      clientLogger.debug("Media permissions granted", {
         stream: stream,
       });
 
       return stream;
     } catch (error) {
-      clientLogger.error("Failed to get audio permissions", error);
+      clientLogger.error("Failed to get media permissions", error);
       throw error;
     }
   };
