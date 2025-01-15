@@ -1,14 +1,13 @@
-import clientLogger from "@/app/lib/clientLogger";
 import { StreamManager } from "./StreamManager";
 import { AudioTranscriber } from "./audio/AudioTranscriber";
 import { MediaStreamRecorder } from "./MediaStreamRecorder";
-import { MediaMimeType } from "./types";
+import { MediaMimeType, MediaProcessor } from "./types";
 
 export interface MediaServiceConfig {
   mimeType: MediaMimeType;
   constraints: MediaStreamConstraints;
   timeslice?: number;
-  transcriber?: AudioTranscriber;
+  processors?: MediaProcessor<any>[];
 }
 
 export interface MediaServiceInterface {
@@ -22,17 +21,17 @@ export interface MediaServiceInterface {
 export class MediaService implements MediaServiceInterface {
   private streamManager: StreamManager;
   private recorder: MediaStreamRecorder;
-  private transcriber?: AudioTranscriber;
+  private processors: MediaProcessor<any>[];
 
   constructor({ 
     mimeType = "audio/webm", 
     constraints = {audio: true}, 
     timeslice, 
-    transcriber 
+    processors = []
   }: MediaServiceConfig) {
     this.streamManager = new StreamManager(constraints);
     this.recorder = new MediaStreamRecorder(mimeType, timeslice);
-    this.transcriber = transcriber;
+    this.processors = processors;
   }
 
   public initializeMediaStream = async () => {
@@ -63,19 +62,14 @@ export class MediaService implements MediaServiceInterface {
 
   public createPlaybackUrl = () => this.recorder.createPlaybackUrl();
 
-  public transcribeAudio = async (mediaBlob: Blob | null) => {
-    if (!this.transcriber) {
-      clientLogger.warn("No transcriber provided");
-      return null;
+  public processMedia = async (media: Blob | null) => {
+    for (const processor of this.processors) {
+      const result = await processor.process(media);
+      if (result) {
+        return result;
+      }
     }
-    if (!mediaBlob) {
-      clientLogger.warn("No audio blob provided to transcribe");
-      return null;
-    }
-    const transcription = await this.transcriber.transcribeAudio(
-      mediaBlob
-    );
-    return transcription;
+    return null;
   };
 
   public cleanup = async () => {

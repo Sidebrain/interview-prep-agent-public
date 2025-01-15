@@ -1,35 +1,23 @@
 import clientLogger from "@/app/lib/clientLogger";
+import { BaseMediaProcessor, MediaProcessor, TranscriptionResult } from "../types";
 
-export class AudioTranscriber {
-  public transcribeAudio = async (audioBlob: Blob) => {
-    if (!this.validateAudioBlob(audioBlob)) {
+export class AudioTranscriber extends BaseMediaProcessor<TranscriptionResult> {
+  public process = async (media: Blob | null) => {
+    if (!this.validateMedia(media)) {
       return null;
     }
 
     const data = new FormData();
     clientLogger.debug("Transcribing audio", {
-      audioBlobSize: audioBlob.size,
-      audioBlobType: audioBlob.type,
+      audioBlobSize: media.size,
+      audioBlobType: media.type,
     });
-    data.append("file", audioBlob, "audio.webm");
+    data.append("file", media, "audio.webm");
 
     const transcription = await this.makeTranscriptionRequest(data);
-    return transcription;
+    return { transcription: transcription ?? "" };
   };
 
-  private validateAudioBlob = (audioBlob: Blob) => {
-    if (!audioBlob) {
-      clientLogger.warn("No audio blob provided to transcribe");
-      return false;
-    }
-
-    if (audioBlob.size === 0) {
-      clientLogger.warn("Audio blob is empty");
-      return false;
-    }
-
-    return true;
-  };
 
   private makeTranscriptionRequest = async (formData: FormData) => {
     try {

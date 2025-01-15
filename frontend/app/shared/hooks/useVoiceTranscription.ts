@@ -18,7 +18,7 @@ const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {
     audioServiceRef.current = new MediaService({
       mimeType: "audio/webm",
       constraints: { audio: true },
-      transcriber: new AudioTranscriber(),
+      processors: [new AudioTranscriber()],
     });
 
     return () => {
@@ -71,7 +71,7 @@ const useVoiceTranscription = ({ onTranscription }: UseVoiceProps) => {
     }
 
     try {
-      const transcription = await audioService.transcribeAudio(blob);
+      const { transcription } = await audioService.processMedia(blob);
       if (!transcription) {
         clientLogger.warn("No transcription to return");
         return;
