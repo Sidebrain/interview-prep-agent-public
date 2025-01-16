@@ -1,8 +1,8 @@
 import clientLogger from "@/app/lib/clientLogger";
 
-export type MediaMimeType = "audio/webm" | "video/webm" 
+export type MediaMimeType = "audio/webm" | "video/webm" ;
 
-export type ProcessorType = "audio/transcriber" 
+export type ProcessorType = "audio/transcriber" | "video/upload";
 
 export type MediaProcessorMap = {
     [K in ProcessorType]?: MediaProcessor<any>;
@@ -46,3 +46,13 @@ export interface MediaServiceInterface {
   // transcribeAudio: (audioBlob: Blob) => Promise<string | null>;
   cleanup: () => Promise<void>;
 }
+
+import { z } from "zod";
+
+export const SignedUrlSchema = z.object({
+    url: z.string().url(),
+    storage_filename: z.string(),
+    expires_in: z.number().int().positive()
+});
+
+export type SignedUrlResponse = z.infer<typeof SignedUrlSchema>;
