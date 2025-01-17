@@ -16,19 +16,14 @@ const VideoPlayer = ({ interview_session_id }: { interview_session_id: string })
   });
 
   useEffect(() => {
-    // let mounted = true;
 
     const initStream = async () => {
-      // if (mounted) {
-      //   await startStream();
-      // }
       startStream();
     };
 
     initStream();
 
     return () => {
-      // mounted = false;
       stopStream();
     };
   }, []);

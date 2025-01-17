@@ -17,10 +17,9 @@ const useMedia = ({
   const mediaServiceRef = useRef<MediaService | null>(null);
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
-  const initializingRef = useRef(false);
 
   useEffect(() => {
-    if (!mediaServiceRef.current && !initializingRef.current) {
+    if (!mediaServiceRef.current) {
       mediaServiceRef.current = new MediaService(config);
     }
 
@@ -42,16 +41,11 @@ const useMedia = ({
 
   const startRecording = async () => {
     try {
-      if (initializingRef.current) return;
-      initializingRef.current = true;
-      
       setIsRecording(true);
       setError(null);
       await getMediaService().startRecording();
     } catch (error) {
       handleError(error);
-    } finally {
-      initializingRef.current = false;
     }
   };
 

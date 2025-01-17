@@ -27,10 +27,9 @@ export class VideoUploadProcessor extends BaseMediaProcessor<string> {
                     "x-goog-content-length-range": "0,1000000000",
                 },
             });
-            const data = await response.json();
-            clientLogger.debug("Uploaded video", {
-                data: data,
-            });
+            if (!response.ok) {
+                throw new Error(`Failed to upload video: ${response.statusText}`);
+            }
             return signedUrl.storage_filename;
         } catch (error) {
             clientLogger.error("Failed to upload video", {
