@@ -21,7 +21,7 @@ from app.types.websocket_types import (
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T", str, BaseModel)
+T = TypeVar("T", str, type[BaseModel])
 
 
 @dataclass
@@ -205,7 +205,7 @@ class EvaluatorBase(ABC, Generic[T]):
         self,
         messages: List[dict[str, str]],
         thinker: "Thinker",
-    ) -> T:
+    ) -> BaseModel | str:
         """
         Ask questions to the thinker.
         """
@@ -227,7 +227,7 @@ class EvaluatorSimple(EvaluatorBase[str]):
         return content
 
 
-class EvaluatorStructured(EvaluatorBase[BaseModel]):
+class EvaluatorStructured(EvaluatorBase[type[BaseModel]]):
     """
     Evaluator that extracts a structured response from the thinker.
     """

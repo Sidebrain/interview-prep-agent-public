@@ -24,7 +24,7 @@ const InterviewPage = () => {
           <EvaluationArea />
           <UserArea />
           <PerspectiveArea />
-          {/* <SuggestionArea /> */}
+          <SuggestionArea />
         </div>
       </InputProvider>
     </WebsocketProvider>

@@ -1,16 +1,16 @@
 from pydantic import BaseModel, Field
+
 from app.event_agents.evaluations.evaluator_base import (
     EvaluatorSimple,
     EvaluatorStructured,
 )
 
-
 relevance_evaluator = EvaluatorSimple(
-    evaluation_schema="check the relevance of the answer to the question"
+    evaluation_schema="what questions would you ask the user to check if the answer is relevant to the question?"
 )
 
 exaggeration_evaluator = EvaluatorSimple(
-    evaluation_schema="check the exaggeration of the answer"
+    evaluation_schema="what questions would you ask the user to check if they are exaggerating?"
 )
 
 

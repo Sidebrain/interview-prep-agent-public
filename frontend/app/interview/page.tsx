@@ -18,7 +18,7 @@ const VideoPlayer = ({ interview_session_id }: { interview_session_id: string })
   useEffect(() => {
 
     const initStream = async () => {
-      startStream();
+      await startStream();
     };
 
     initStream();

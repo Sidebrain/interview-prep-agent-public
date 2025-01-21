@@ -55,6 +55,10 @@ const useVideo = ({ videoElementRef, onError, interview_session_id }: UseVideoPr
   };
 
   const startStream = async () => {
+    clientLogger.info("Starting video stream");
+    clientLogger.info("Media service", {
+      mediaService: mediaService,
+    });
     try {
       await mediaService?.initializeMediaStream();
       const stream = mediaService?.streamManager.getStream();
