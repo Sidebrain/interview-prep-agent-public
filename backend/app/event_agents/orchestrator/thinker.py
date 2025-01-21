@@ -1,13 +1,14 @@
+import logging
 from typing import Type, TypeVar
+
 import instructor
 from openai import AsyncClient
 from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
 
 from app.constants import DEBUG_CONFIG, model
+from app.event_agents.schemas.mongo_schemas import Interviewer
 from app.services.llms.openai_client import openai_async_client
-
-import logging
 
 # Create a logger instance
 logger = logging.getLogger(__name__)
@@ -15,14 +16,24 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 
+class RoleBuilder:
+    def __init__(self, interviewer: Interviewer) -> None:
+        self.interviewer = interviewer
+
+    def build(self) -> str:
+        job_description = self.interviewer.job_description
+
 
 class Thinker:
     debug = DEBUG_CONFIG["thinker"]
 
-    def __init__(self, client: AsyncClient = None):
+    def __init__(
+        self, client: AsyncClient = None, role: str | None = None
+    ) -> None:
         if client is None:
             client = openai_async_client
         self.client = client
+        self.role = role
 
     async def generate(
         self,
@@ -36,11 +47,13 @@ class Thinker:
             "model": model,
         }
         if max_tokens is not None:
-            kwargs["max_tokens"] = max_tokens
+            kwargs["max_tokens"] = max_tokens  # type: ignore
 
         # having to manually specify type, because kwargs unpacking breaks the type inference
-        response: ChatCompletion = await self.client.chat.completions.create(
-            **kwargs
+        response: ChatCompletion = (
+            await self.client.chat.completions.create(
+                **kwargs  # type: ignore
+            )
         )
 
         if self.debug and debug:
@@ -55,10 +68,12 @@ class Thinker:
         debug: bool = False,
     ) -> T:
         instructor_client = instructor.from_openai(self.client)
-        extracted_structure = await instructor_client.chat.completions.create(
-            model=model,
-            response_model=pydantic_structure_to_extract,
-            messages=messages,
+        extracted_structure = (
+            await instructor_client.chat.completions.create(
+                model=model,
+                response_model=pydantic_structure_to_extract,
+                messages=messages,
+            )
         )
         if self.debug and debug:
             logger.debug(extracted_structure.model_dump_json(indent=4))

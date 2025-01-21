@@ -1,10 +1,9 @@
 import logging
-from typing import Annotated
 
-import yaml
 from pydantic import BaseModel, Field, create_model
 
 from app.event_agents.orchestrator.thinker import Thinker
+from app.event_agents.schemas.mongo_schemas import Interviewer
 
 logger = logging.getLogger(__name__)
 
@@ -28,29 +27,13 @@ class CandidateEvaluationRubric(BaseModel):
 
 
 class RatingRubricEvaluationBuilder:
-    def __init__(self) -> None:
+    def __init__(self, interviewer: Interviewer) -> None:
         self.thinker = Thinker()
         self.yaml_path = "config/artifacts_v2.yaml"
+        self.interviewer = interviewer
 
-    def get_rating_rubric_string_from_yaml(self) -> dict[str, str]:
-        logger.info(
-            "Loading rating rubric",
-            extra={"context": {"yaml_path": self.yaml_path}},
-        )
-        with open(self.yaml_path, "r") as file:
-            config = yaml.safe_load(file)
-        try:
-            rubric = config["rating rubric in table format"]
-            logger.debug("Successfully loaded rating rubric")
-            return rubric
-        except KeyError:
-            logger.error(
-                "Rating rubric not found",
-                extra={"context": {"yaml_path": self.yaml_path}},
-            )
-            raise ValueError(
-                f"Rating rubric not found in {self.yaml_path}"
-            )
+    def get_rating_rubric_string(self) -> str:
+        return self.interviewer.job_description
 
     async def extract_structured_rating_rubric(
         self, rubric_string: str
@@ -89,16 +72,17 @@ class RatingRubricEvaluationBuilder:
 
     async def build_evaluation_pydantic_model(
         self, rubric: CandidateEvaluationRubric
-    ) -> BaseModel:
+    ) -> type[BaseModel]:
         logger.info("Building evaluation Pydantic model")
         fields = {}
         for rating in rubric.ratings:
             field_name = (
                 rating.criteria.strip().replace(" ", "_").lower()
             )
-            fields[field_name] = Annotated[
-                str, Field(description=rating.description)
-            ]
+            fields[field_name] = (
+                str,
+                Field(description=rating.description),
+            )
             logger.debug(
                 "Added field",
                 extra={"context": {"criteria": rating.criteria}},
@@ -117,13 +101,14 @@ class RatingRubricEvaluationBuilder:
 
         try:
             evaluation_pydantic_schema = create_model(
-                "DynamicEvaluationModel", **fields
+                "DynamicEvaluationModel",
+                **fields,  # type: ignore
             )
             logger.info(
                 "Successfully created evaluation model",
                 extra={"context": {"field_count": len(fields)}},
             )
-            return evaluation_pydantic_schema
+            return evaluation_pydantic_schema  # type: ignore
         except Exception as e:
             logger.error(
                 "Failed to create evaluation model",
@@ -134,11 +119,11 @@ class RatingRubricEvaluationBuilder:
                 f"Failed to create evaluation model: {str(e)}"
             )
 
-    async def get_rating_evaluation_schema(self) -> BaseModel:
+    async def get_rating_evaluation_schema(self) -> type[BaseModel]:
         evaluation_pydantic_schema = (
             await self.build_evaluation_pydantic_model(
                 await self.extract_structured_rating_rubric(
-                    self.get_rating_rubric_string_from_yaml()
+                    self.get_rating_rubric_string()
                 )
             )
         )

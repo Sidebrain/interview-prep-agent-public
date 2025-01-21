@@ -78,7 +78,9 @@ class EvaluatorRegistry:
         )
 
     async def add_default_async_evaluators(self) -> None:
-        schema_builder = RatingRubricEvaluationBuilder()
+        schema_builder = RatingRubricEvaluationBuilder(
+            interviewer=self.interview_context.interviewer
+        )
         structured_evaluation_schema = (
             await schema_builder.get_rating_evaluation_schema()
         )
