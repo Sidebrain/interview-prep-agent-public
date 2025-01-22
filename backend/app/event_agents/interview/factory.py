@@ -9,6 +9,7 @@ from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.orchestrator import Broker, Thinker
 from app.event_agents.schemas.mongo_schemas import (
+    AgentProfile,
     Interviewer,
     InterviewSession,
 )
@@ -77,6 +78,14 @@ async def create_interview(
             status_code=404, detail="Interviewer not found"
         )
 
+    agent_profile = await AgentProfile.find_one(
+        {"interviewer_id": interviewer.id}
+    )
+    if not agent_profile:
+        raise HTTPException(
+            status_code=404, detail="Agent profile not found"
+        )
+
     broker = Broker()
 
     max_time_allowed = interview_session.max_time_allowed or 10 * 60
@@ -97,6 +106,7 @@ async def create_interview(
         interview_id=interview_session.id,  # type: ignore
         agent_id=interviewer.id,  # type: ignore
         interviewer=interviewer,
+        agent_profile=agent_profile,
         memory_store=memory_store,
         broker=broker,
         thinker=thinker,

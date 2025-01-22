@@ -4,6 +4,7 @@ from typing import List
 from uuid import UUID, uuid4
 
 from beanie import Document
+from fastapi import HTTPException
 from pydantic import Field
 
 from app.types.websocket_types import WebsocketFrame
@@ -41,7 +42,9 @@ class Interviewer(Document):
         """Override the save method to create an agent profile along with the interviewer"""
         # First save the interviewer
         await super().save(*args, **kwargs)
+        await self.sync_agent_profile()
 
+    async def sync_agent_profile(self) -> None:
         # Look if agent profile exists using proper query syntax
         agent_profile = await AgentProfile.find_one(
             {"interviewer_id": self.id}  # Use dictionary for query
@@ -56,6 +59,18 @@ class Interviewer(Document):
         else:
             # Create a new agent profile
             await AgentProfile.create_from_interviewer(self)
+
+    @classmethod
+    async def get(cls, *args, **kwargs) -> "Interviewer":  # type: ignore
+        interviewer = await super().get(*args, **kwargs)
+        if interviewer:
+            await interviewer.sync_agent_profile()
+        else:
+            raise HTTPException(
+                status_code=404, detail="Interviewer not found"
+            )
+
+        return interviewer
 
 
 class AgentProfile(Document):
