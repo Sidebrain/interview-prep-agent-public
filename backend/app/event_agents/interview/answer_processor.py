@@ -1,6 +1,6 @@
 import logging
 
-from app.event_agents.interview.question_manager import QuestionManager
+from app.event_agents.questions.manager import QuestionManager
 from app.event_agents.orchestrator.commands import (
     GenerateEvaluationsCommand,
     GeneratePerspectivesCommand,

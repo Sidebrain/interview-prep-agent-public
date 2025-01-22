@@ -5,10 +5,9 @@ from typing import Awaitable, Callable
 
 from app.event_agents.evaluations.manager import EvaluationManager
 from app.event_agents.interview.notifications import NotificationManager
-from app.event_agents.interview.question_manager import QuestionManager
 from app.event_agents.interview.time_manager import TimeManager
 from app.event_agents.perspectives.manager import PerspectiveManager
-from app.event_agents.schemas.mongo_schemas import Interviewer
+from app.event_agents.questions.manager import QuestionManager
 from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import QuestionAndAnswer
 
