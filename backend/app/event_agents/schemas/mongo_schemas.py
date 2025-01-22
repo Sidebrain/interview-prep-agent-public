@@ -85,6 +85,7 @@ class AgentProfile(Document):
     # skills: list[str]
     # tools: Optional[List[str]] = None
     # communication_style: Optional[CommunicationStyle] = None
+    question_bank_structured: str = Field(default="")
 
     class Settings:
         name = CollectionName.AGENT_PROFILES.value

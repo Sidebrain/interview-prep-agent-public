@@ -31,7 +31,7 @@ class EvaluationLogContext:
     questions_count: int
     memory_store_size: Optional[int]
     evaluation_schema_type: str
-    question_samples: Optional[list] = None
+    question_samples: Optional[list[dict[str, str]]] = None
     context_length: Optional[int] = None
     evaluation_type: Optional[str] = None
     frame_id: Optional[str] = None
@@ -65,7 +65,7 @@ class EvaluatorBase(ABC, Generic[T]):
             if isinstance(self.evaluation_schema, str)
             else self.evaluation_schema.model_json_schema()
         )
-        return s
+        return s  # type: ignore
 
     async def evaluate(
         self,
