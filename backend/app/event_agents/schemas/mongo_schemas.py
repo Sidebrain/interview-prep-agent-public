@@ -13,6 +13,7 @@ class CollectionName(str, Enum):
     INTERVIEWERS = "interviewers"
     CANDIDATES = "candidates"
     INTERVIEW_SESSIONS = "interview_sessions"
+    AGENT_PROFILES = "agent_profiles"
 
 
 class BehaviorMode(str, Enum):
@@ -35,6 +36,54 @@ class Interviewer(Document):
 
     class Settings:
         name = CollectionName.INTERVIEWERS.value
+
+    async def save(self, *args, **kwargs) -> None:  # type: ignore
+        """Override the save method to create an agent profile along with the interviewer"""
+        # First save the interviewer
+        await super().save(*args, **kwargs)
+
+        # Look if agent profile exists using proper query syntax
+        agent_profile = await AgentProfile.find_one(
+            {"interviewer_id": self.id}  # Use dictionary for query
+        )
+
+        if agent_profile:
+            # Update the agent profile
+            agent_profile.job_description = self.job_description
+            agent_profile.rating_rubric = self.rating_rubric
+            agent_profile.behavior_mode = self.behavior_mode
+            await agent_profile.save()
+        else:
+            # Create a new agent profile
+            await AgentProfile.create_from_interviewer(self)
+
+
+class AgentProfile(Document):
+    id: UUID = Field(default_factory=uuid4)  # type: ignore
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    # role_name: str
+    job_description: str
+    rating_rubric: str
+    behavior_mode: BehaviorMode = Field(default=BehaviorMode.INTERVIEW)
+    interviewer_id: UUID
+    # skills: list[str]
+    # tools: Optional[List[str]] = None
+    # communication_style: Optional[CommunicationStyle] = None
+
+    class Settings:
+        name = CollectionName.AGENT_PROFILES.value
+
+    @classmethod
+    async def create_from_interviewer(
+        cls, interviewer: Interviewer
+    ) -> "AgentProfile":
+        return await cls(
+            job_description=interviewer.job_description,
+            rating_rubric=interviewer.rating_rubric,
+            behavior_mode=interviewer.behavior_mode,
+            interviewer_id=interviewer.id,
+        ).create()
 
 
 class Candidate(Document):

@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.event_agents.schemas.mongo_schemas import (
+    AgentProfile,
     Candidate,
     Interviewer,
     InterviewSession,
@@ -28,5 +29,6 @@ async def init_db() -> None:
             Interviewer,
             Candidate,
             InterviewSession,
+            AgentProfile,
         ],
     )
