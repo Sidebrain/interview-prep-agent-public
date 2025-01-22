@@ -22,7 +22,7 @@ class RoleBuilder:
 
     def build(self) -> str:
         job_description = self.interviewer.job_description
-
+        return f"You are an expert at evaluating candidates for the role of {job_description}."
 
 class Thinker:
     debug = DEBUG_CONFIG["thinker"]

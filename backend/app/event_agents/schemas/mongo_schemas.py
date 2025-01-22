@@ -15,15 +15,22 @@ class CollectionName(str, Enum):
     INTERVIEW_SESSIONS = "interview_sessions"
 
 
+class BehaviorMode(str, Enum):
+    INTERVIEW = "INTERVIEW"
+    PEER_INTERVIEW = "PEER_INTERVIEW"
+    SERVICE = "SERVICE"
+
+
 class Interviewer(Document):
     id: UUID = Field(default_factory=uuid4)  # type: ignore
+    behavior_mode: BehaviorMode = Field(default=BehaviorMode.INTERVIEW)
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
     job_description: str = Field(default="")
     rating_rubric: str = Field(default="")
     question_bank: str = Field(default="")
     question_bank_structured: str = Field(default="")
-    
+
     memory: List[WebsocketFrame] = Field(default_factory=list)
 
     class Settings:
