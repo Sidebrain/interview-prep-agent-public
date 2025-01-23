@@ -14,6 +14,9 @@ from app.event_agents.interview.event_handlers import (
 from app.event_agents.interview.lifecycle_manager import (
     InterviewLifecyceManager,
 )
+from app.event_agents.questions.generation_strategies.service import (
+    ServiceQuestionGenerationStrategy,
+)
 from app.event_agents.questions.manager import QuestionManager
 from app.event_agents.interview.time_manager import TimeManager
 from app.event_agents.orchestrator.commands import (
@@ -60,6 +63,9 @@ class InterviewManager:
         self.question_manager = QuestionManager(
             interview_context=self.interview_context,
             interviewer=self.interviewer,
+            strategy=ServiceQuestionGenerationStrategy(
+                interview_context=self.interview_context
+            ),
         )
         self.eval_manager = EvaluationManager(
             interview_context=self.interview_context,

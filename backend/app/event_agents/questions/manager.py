@@ -4,10 +4,11 @@ from uuid import uuid4
 
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.interview.notifications import NotificationManager
-from app.event_agents.memory.json_decoders import AgentConfigJSONDecoder
 from app.event_agents.orchestrator.events import AskQuestionEvent
-from app.event_agents.questions.generation_strategies import (
+from app.event_agents.questions.generation_strategies.base import (
     BaseQuestionGenerationStrategy,
+)
+from app.event_agents.questions.generation_strategies.interview import (
     InterviewQuestionGenerationStrategy,
 )
 from app.event_agents.schemas.mongo_schemas import Interviewer
@@ -17,7 +18,6 @@ from app.types.interview_concept_types import (
 )
 
 logger = logging.getLogger(__name__)
-
 
 
 class QuestionManager:
@@ -35,6 +35,7 @@ class QuestionManager:
         self.strategy = strategy or InterviewQuestionGenerationStrategy(
             interview_context=interview_context
         )
+        self.initialize = self.strategy.initialize
 
     def __repr__(self) -> str:
         return json.dumps(
@@ -50,75 +51,11 @@ class QuestionManager:
             indent=2,
         )
 
-    def are_questions_gathered_in_memory(self) -> bool:
-        if self.interviewer.question_bank_structured:
-            return True
-        else:
-            return False
-
-    async def load_questions_from_memory(self) -> bool:
-        try:
-            #! this is a hack to get the questions from the mongo memory
-            #! we need to fix this later
-            # First parse the string into a Python list
-            questions_list = json.loads(
-                self.interviewer.question_bank_structured
-            )
-            # Then create the structure expected by the decoder
-            dct = {"questions": questions_list}
-            # Finally decode with our custom decoder
-            decoded = json.loads(
-                json.dumps(dct),  # Convert dict to JSON string
-                cls=AgentConfigJSONDecoder,
-            )
-            self.questions = decoded["questions"]
-
-            logger.info(
-                "Questions loaded from mongo memory",
-                extra={
-                    "context": {
-                        "#questions": len(self.questions),
-                        "question #1": self.questions[0],
-                    }
-                },
-            )
-            return True
-        except Exception as e:
-            logger.error(
-                "Error loading questions from mongo memory",
-                extra={"context": {"error": str(e)}},
-            )
-            return False
-
-    async def initialize(self) -> None:
-        if self.are_questions_gathered_in_memory():
-            questions_loaded_successfully = (
-                await self.load_questions_from_memory()
-            )
-            await NotificationManager.send_notification(
-                self.interview_context.broker,
-                f"{len(self.questions)} questions loaded from mongo memory",
-            )
-            logger.debug(
-                "Questions loaded from memory",
-                extra={
-                    "context": {
-                        "#questions": len(self.questions),
-                    }
-                },
-            )
-
-            if questions_loaded_successfully:
-                return
-
-        # If questions are not loaded from memory, gather them
-        await self.strategy.build_structured_question_bank()
-
     async def get_next_question(
         self,
     ) -> QuestionAndAnswer | None:
         try:
-            self.current_question = self.questions.pop(0)
+            self.current_question = self.strategy.questions.pop(0)
             logger.info("Next question ready: %s", self)
             return self.current_question
         except IndexError:

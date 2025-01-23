@@ -1,10 +1,9 @@
 from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from beanie import Document
-from fastapi import HTTPException
 from pydantic import Field
 
 from app.types.websocket_types import WebsocketFrame
@@ -61,15 +60,10 @@ class Interviewer(Document):
             await AgentProfile.create_from_interviewer(self)
 
     @classmethod
-    async def get(cls, *args, **kwargs) -> "Interviewer":  # type: ignore
+    async def get(cls, *args, **kwargs) -> Optional["Interviewer"]:  # type: ignore
         interviewer = await super().get(*args, **kwargs)
         if interviewer:
             await interviewer.sync_agent_profile()
-        else:
-            raise HTTPException(
-                status_code=404, detail="Interviewer not found"
-            )
-
         return interviewer
 
 
@@ -86,6 +80,7 @@ class AgentProfile(Document):
     # tools: Optional[List[str]] = None
     # communication_style: Optional[CommunicationStyle] = None
     question_bank_structured: str = Field(default="")
+    question_bank: str = Field(default="")
 
     class Settings:
         name = CollectionName.AGENT_PROFILES.value
