@@ -7,7 +7,6 @@ from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
 
 from app.constants import DEBUG_CONFIG, model
-from app.event_agents.schemas.mongo_schemas import Interviewer
 from app.services.llms.openai_client import openai_async_client
 
 # Create a logger instance
@@ -16,24 +15,16 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 
-class RoleBuilder:
-    def __init__(self, interviewer: Interviewer) -> None:
-        self.interviewer = interviewer
-
-    def build(self) -> str:
-        job_description = self.interviewer.job_description
-        return f"You are an expert at evaluating candidates for the role of {job_description}."
-
 class Thinker:
     debug = DEBUG_CONFIG["thinker"]
 
     def __init__(
-        self, client: AsyncClient = None, role: str | None = None
+        self,
+        client: AsyncClient = None,
     ) -> None:
         if client is None:
             client = openai_async_client
         self.client = client
-        self.role = role
 
     async def generate(
         self,

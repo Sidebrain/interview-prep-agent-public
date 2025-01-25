@@ -14,10 +14,6 @@ from app.event_agents.interview.event_handlers import (
 from app.event_agents.interview.lifecycle_manager import (
     InterviewLifecyceManager,
 )
-from app.event_agents.questions.generation_strategies.service import (
-    ServiceQuestionGenerationStrategy,
-)
-from app.event_agents.questions.manager import QuestionManager
 from app.event_agents.interview.time_manager import TimeManager
 from app.event_agents.orchestrator.commands import (
     GenerateEvaluationsCommand,
@@ -33,6 +29,10 @@ from app.event_agents.orchestrator.events import (
 )
 from app.event_agents.perspectives.manager import PerspectiveManager
 from app.event_agents.perspectives.registry import PerspectiveRegistry
+from app.event_agents.questions.generation_strategies.service import (
+    ServiceQuestionGenerationStrategy,
+)
+from app.event_agents.questions.manager import QuestionManager
 from app.event_agents.types import InterviewContext
 from app.types.websocket_types import WebsocketFrame
 
