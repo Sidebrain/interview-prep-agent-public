@@ -56,7 +56,7 @@ const MessageContainer = ({
     // <ScrollArea className="flex-1">
     <div
       ref={containerRef}
-      className="flex flex-col pt-16 h-full gap-2 overflow-y-auto text-sm no-scrollbar md:w-2/3 w-full items-start p-4 md:p-0"
+      className="flex flex-col pt-16 h-full gap-2 text-sm no-scrollbar md:w-2/3 w-full items-start p-4 md:p-0"
     >
       {frameRenderers.messageBubble(websocketFrames)}
     </div>
