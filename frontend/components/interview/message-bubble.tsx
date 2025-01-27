@@ -2,9 +2,22 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { WebsocketFrame, MediaContent } from "@/types/ScalableWebsocketTypes";
+import {
+  WebsocketFrame,
+  MediaContent,
+} from "@/types/ScalableWebsocketTypes";
 import { format } from "date-fns";
-import { Loader2, Image as ImageIcon, Video, Music, FileText, Link2, Code, Copy, Check } from "lucide-react";
+import {
+  Loader2,
+  Image as ImageIcon,
+  Video,
+  Music,
+  FileText,
+  Link2,
+  Code,
+  Copy,
+  Check,
+} from "lucide-react";
 import Prism from "prismjs";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-javascript";
@@ -21,7 +34,13 @@ interface MessageBubbleProps {
   message: WebsocketFrame;
 }
 
-function CodeBlock({ code, language }: { code: string; language?: string }) {
+function CodeBlock({
+  code,
+  language,
+}: {
+  code: string;
+  language?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const codeRef = useRef<HTMLElement>(null);
 
@@ -37,7 +56,7 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
     setTimeout(() => setCopied(false), 2000);
   }, [code]);
 
-  const finalLanguage = language || 'typescript';
+  const finalLanguage = language || "typescript";
 
   return (
     <div className="rounded-md overflow-hidden my-2 border w-full max-w-2xl">
@@ -65,7 +84,7 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{copied ? 'Copied!' : 'Copy code'}</p>
+            <p>{copied ? "Copied!" : "Copy code"}</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -76,7 +95,7 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
             className={`language-${finalLanguage}`}
             suppressHydrationWarning
           >
-            {code || 'No code provided'}
+            {code || "No code provided"}
           </code>
         </pre>
       </div>
@@ -88,7 +107,7 @@ function MediaPreview({ media }: { media: MediaContent }) {
   const commonClasses = "rounded-md overflow-hidden my-2 border";
 
   switch (media.type) {
-    case 'image':
+    case "image":
       return (
         <div className={cn(commonClasses, "max-w-sm")}>
           <div className="aspect-video relative bg-muted flex items-center justify-center">
@@ -110,7 +129,7 @@ function MediaPreview({ media }: { media: MediaContent }) {
         </div>
       );
 
-    case 'video':
+    case "video":
       return (
         <div className={cn(commonClasses, "max-w-sm")}>
           <div className="aspect-video relative bg-muted flex items-center justify-center">
@@ -132,7 +151,8 @@ function MediaPreview({ media }: { media: MediaContent }) {
               <p className="truncate">{media.title}</p>
               {media.duration && (
                 <p className="text-xs text-muted-foreground">
-                  Duration: {Math.floor(media.duration / 60)}:{String(media.duration % 60).padStart(2, '0')}
+                  Duration: {Math.floor(media.duration / 60)}:
+                  {String(media.duration % 60).padStart(2, "0")}
                 </p>
               )}
             </div>
@@ -140,36 +160,44 @@ function MediaPreview({ media }: { media: MediaContent }) {
         </div>
       );
 
-    case 'audio':
+    case "audio":
       return (
         <div className={cn(commonClasses, "w-full max-w-sm bg-card")}>
           <div className="p-4 flex items-center gap-4">
             <Music className="h-8 w-8 text-muted-foreground shrink-0" />
             <div className="min-w-0 flex-1">
-              {media.title && <p className="truncate font-medium">{media.title}</p>}
+              {media.title && (
+                <p className="truncate font-medium">{media.title}</p>
+              )}
               {media.url ? (
                 <audio controls className="w-full mt-2">
                   <source src={media.url} type={media.mimeType} />
                   Your browser does not support the audio element.
                 </audio>
               ) : (
-                <p className="text-sm text-muted-foreground">Audio preview not available</p>
+                <p className="text-sm text-muted-foreground">
+                  Audio preview not available
+                </p>
               )}
             </div>
           </div>
         </div>
       );
 
-    case 'code':
-      return <CodeBlock code={media.code || ''} language={media.language} />;
+    case "code":
+      return (
+        <CodeBlock code={media.code || ""} language={media.language} />
+      );
 
-    case 'file':
+    case "file":
       return (
         <div className={cn(commonClasses, "w-full max-w-sm bg-card")}>
           <div className="p-4 flex items-center gap-4">
             <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">{media.title || 'Untitled File'}</p>
+              <p className="truncate font-medium">
+                {media.title || "Untitled File"}
+              </p>
               {media.size && (
                 <p className="text-sm text-muted-foreground">
                   {(media.size / 1024 / 1024).toFixed(2)} MB
@@ -180,13 +208,15 @@ function MediaPreview({ media }: { media: MediaContent }) {
         </div>
       );
 
-    case 'link':
+    case "link":
       return (
         <div className={cn(commonClasses, "w-full max-w-sm bg-card")}>
           <div className="p-4 flex items-center gap-4">
             <Link2 className="h-6 w-6 text-muted-foreground shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">{media.title || media.url}</p>
+              <p className="truncate font-medium">
+                {media.title || media.url}
+              </p>
               {media.url && (
                 <a
                   href={media.url}
@@ -212,10 +242,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
   return (
     <div
-      className={cn(
-        "flex",
-        isUser ? "justify-end" : "justify-start"
-      )}
+      className={cn("flex", isUser ? "justify-end" : "justify-start")}
     >
       <div
         className={cn(
@@ -231,8 +258,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             <Loader2 className="h-4 w-4 animate-spin" />
           )}
         </div>
-        <div className="mt-1 prose prose-sm max-w-none">
-          <ReactMarkdown>{message.frame.content || ''}</ReactMarkdown>
+        <div className="mt-1 prose prose-sm max-w-none text-white">
+          <ReactMarkdown>{message.frame.content || ""}</ReactMarkdown>
         </div>
         {message.frame.media && message.frame.media.length > 0 && (
           <div className="space-y-2 mt-2">

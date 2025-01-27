@@ -4,6 +4,7 @@ import clientLogger from "@/app/lib/clientLogger";
 import { FrameList } from "../reducers/frameReducer";
 import { WebsocketFrame } from "@/types/ScalableWebsocketTypes";
 import { frameRenderers } from "../services/frameRenderers";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type MessageContainerProps = FrameList & {
   setMaxTextareaHeight: (height: number) => void;
@@ -52,12 +53,14 @@ const MessageContainer = ({
   }, [websocketFrames]);
 
   return (
+    // <ScrollArea className="flex-1">
     <div
       ref={containerRef}
-      className="flex flex-col grow gap-2 max-h-screen overflow-scroll text-sm no-scrollbar md:w-2/3 w-full items-start p-4 md:p-0"
+      className="flex flex-col pt-16 h-full gap-2 overflow-y-auto text-sm no-scrollbar md:w-2/3 w-full items-start p-4 md:p-0"
     >
-      {frameRenderers.conversation(websocketFrames)}
+      {frameRenderers.messageBubble(websocketFrames)}
     </div>
+    // </ScrollArea>
   );
 };
 

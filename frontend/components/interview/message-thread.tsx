@@ -19,7 +19,7 @@ export function MessageThread({ websocketFrames }: MessageContainerProps) {
 
   return (
     <ScrollArea className="h-[calc(100vh-8rem)] pb-24 pr-80">
-      <div ref={scrollRef} className="container max-w-3xl mx-auto p-4 space-y-4">
+      <div ref={scrollRef} className="container max-w-3xl mx-auto px-6 space-y-4">
         {frameRenderers.messageBubble(websocketFrames)}
       </div>
     </ScrollArea>

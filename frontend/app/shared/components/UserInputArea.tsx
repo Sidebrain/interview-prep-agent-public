@@ -7,18 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { FormEvent, useRef } from "react";
 import clientLogger from "@/app/lib/clientLogger";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 type UserInputProps = {
   maxTextareaHeight: number;
 };
 
 const UserInputArea = ({ maxTextareaHeight }: UserInputProps) => {
-  const { dispatch: dispatchFrame, sendMessage } = useWebsocketContext();
-  const { state: inputValue, dispatch: dispatchInputValue } = useInput();
+  const { dispatch: dispatchFrame, sendMessage } =
+    useWebsocketContext();
+  const { state: inputValue, dispatch: dispatchInputValue } =
+    useInput();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = (e: FormEvent<Element>) => {
     e.preventDefault();
+    if (!inputValue.trim()) return;
     const frame = createHumanInputFrame(inputValue);
     clientLogger.debug("Sending human input frame with content", {
       content: inputValue,
@@ -30,19 +34,28 @@ const UserInputArea = ({ maxTextareaHeight }: UserInputProps) => {
   };
 
   return (
-    <div className="flex bg-gray-50 border-t border-gray-300 p-2 rounded-md mb-2 w-full items-end justify-between">
-      <AudioRecorder />
-      <TextareaResizable
-        maxTextareaHeight={maxTextareaHeight}
-        handleSubmit={handleSubmit}
-        ref={textareaRef}
-      />
-      <Button
-        onClick={handleSubmit}
-        className="p-2 rounded-full aspect-square hover:bg-primary/90 transition-colors"
-      >
-        <Send className="w-4 h-4" />
-      </Button>
+    <div className="container max-w-3xl mx-auto">
+      <div className="flex gap-2 bg-muted">
+        <TextareaResizable
+          maxTextareaHeight={maxTextareaHeight}
+          handleSubmit={handleSubmit}
+          ref={textareaRef}
+        />
+        <div className="flex flex-col gap-2">
+          <TooltipProvider>
+            <AudioRecorder />
+          </TooltipProvider>
+          {/* <Button
+            variant="default"
+            size="icon"
+            onClick={handleSubmit}
+            disabled={!inputValue.trim()}
+          >
+            <Send className="h-4 w-4" />
+            <span className="sr-only">Send message</span>
+          </Button> */}
+        </div>
+      </div>
     </div>
   );
 };

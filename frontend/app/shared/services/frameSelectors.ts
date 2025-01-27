@@ -33,19 +33,29 @@ export const frameSelectors = {
   },
 
   messageBubble: (websocketFrames: WebsocketFrame[]) => {
-    const selectTypes: ConversationAddressTypes = ["content", "thought"];
-    
+    const selectTypes: ConversationAddressTypes = [
+      "content",
+      "thought",
+      "human",
+    ];
+
     // Get unique frameIds
     const uniqueFrameIds = new Set(
       websocketFrames
-        .filter(frame => selectTypes.includes(frame.address as (typeof AddressType)[number]))
-        .map(frame => frame.frameId)
+        .filter((frame) =>
+          selectTypes.includes(
+            frame.address as (typeof AddressType)[number]
+          )
+        )
+        .map((frame) => frame.frameId)
     );
 
     // Return one frame per unique frameId, preferring content over thought
-    return Array.from(uniqueFrameIds).map(frameId => {
-      const frames = websocketFrames.filter(f => f.frameId === frameId);
-      return frames.find(f => f.address === "content") || frames[0];
+    return Array.from(uniqueFrameIds).map((frameId) => {
+      const frames = websocketFrames.filter(
+        (f) => f.frameId === frameId
+      );
+      return frames.find((f) => f.address === "content") || frames[0];
     });
   },
 
