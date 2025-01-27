@@ -8,7 +8,6 @@ from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.interview.time_manager import TimeManager
 from app.event_agents.perspectives.manager import PerspectiveManager
 from app.event_agents.questions.manager import QuestionManager
-from app.event_agents.roles.manager import RoleBuilder
 from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import QuestionAndAnswer
 
@@ -63,11 +62,12 @@ class InterviewLifecyceManager:
             timer_notification_string,
         )
 
-        logger.info("Building role context")
-        await RoleBuilder(self.interview_context.interviewer).build(
-            self.interview_context.thinker
-        )
-        logger.info("Role context built")
+        #! TODO bring this back in later
+        # logger.info("Building role context")
+        # await RoleBuilder(self.interview_context.interviewer).build(
+        #     self.interview_context.thinker
+        # )
+        # logger.info("Role context built")
 
         await self.initialize_evaluation_systems()
         await self.begin_questioning()

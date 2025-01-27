@@ -23,6 +23,32 @@ export const frameSelectors = {
     );
   },
 
+  content: (websocketFrames: WebsocketFrame[]) => {
+    const selectTypes: ConversationAddressTypes = ["content"];
+    return websocketFrames.filter((websocketFrame) =>
+      selectTypes.includes(
+        websocketFrame.address as (typeof AddressType)[number]
+      )
+    );
+  },
+
+  messageBubble: (websocketFrames: WebsocketFrame[]) => {
+    const selectTypes: ConversationAddressTypes = ["content", "thought"];
+    
+    // Get unique frameIds
+    const uniqueFrameIds = new Set(
+      websocketFrames
+        .filter(frame => selectTypes.includes(frame.address as (typeof AddressType)[number]))
+        .map(frame => frame.frameId)
+    );
+
+    // Return one frame per unique frameId, preferring content over thought
+    return Array.from(uniqueFrameIds).map(frameId => {
+      const frames = websocketFrames.filter(f => f.frameId === frameId);
+      return frames.find(f => f.address === "content") || frames[0];
+    });
+  },
+
   perspective: (websocketFrames: WebsocketFrame[]) => {
     const selectTypes: ConversationAddressTypes = ["perspective"];
     return websocketFrames.filter((websocketFrame) =>

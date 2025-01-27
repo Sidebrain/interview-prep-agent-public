@@ -20,8 +20,9 @@ export const frameReducer = (
   switch (action.type) {
     case "ADD_FRAME":
       // temporary check to prevent duplicate frames
+      // Duplicate check now includes address
       if (
-        state.websocketFrames.find((frame) => frame.frameId === action.payload.frameId)
+        state.websocketFrames.find((frame) => frame.frameId === action.payload.frameId && frame.address === action.payload.address)
       ) {
         clientLogger.debug("Duplicate frame received", {
           frameId: action.payload.frameId,

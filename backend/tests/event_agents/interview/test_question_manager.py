@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from app.event_agents.interview.question_manager import (
+from app.event_agents.questions.manager import (
     QuestionManager,
     Questions,
 )

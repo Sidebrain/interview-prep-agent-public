@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { Message, MediaContent } from "@/lib/types";
+import { WebsocketFrameType, MediaContent } from "@/lib/types";
 import { format } from "date-fns";
 import { Loader2, Image as ImageIcon, Video, Music, FileText, Link2, Code, Copy, Check } from "lucide-react";
 import Prism from "prismjs";
@@ -18,7 +18,7 @@ import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface MessageBubbleProps {
-  message: Message;
+  message: WebsocketFrameType;
 }
 
 function CodeBlock({ code, language }: { code: string; language?: string }) {

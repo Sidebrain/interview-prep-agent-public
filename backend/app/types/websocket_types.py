@@ -1,8 +1,9 @@
 from datetime import datetime
+from typing import Literal
 from uuid import uuid4
+
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
-from typing import Literal
 
 RoleType = Literal["assistant", "user"]
 FinishReasonType = Literal[
@@ -13,7 +14,15 @@ FinishReasonType = Literal[
     "function_call",
 ]
 
-AddressType = Literal["content", "artifact", "human", "thought", "evaluation", "perspective"]
+AddressType = Literal[
+    "content",
+    "artifact",
+    "human",
+    "thought",
+    "evaluation",
+    "perspective",
+    "notification",
+]
 FrameType = Literal[
     "completion",
     "streaming",
