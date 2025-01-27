@@ -5,6 +5,7 @@ import EvaluationFrame from "../components/frames/EvaluationFrame";
 import SuggestionFrame from "../components/frames/SuggestionFrame";
 import PerspectiveFrame from "../components/frames/PerspectiveFrame";
 import { MessageBubble } from "@/components/interview/message-bubble";
+import { NotificationItem } from "@/components/interview/notification-panel";
 
 type FrameRenderer<T> = {
   select: (frames: WebsocketFrame[]) => WebsocketFrame[];
@@ -63,6 +64,15 @@ export const frameRenderers = {
     render: (frames) => {
       return frames.map((frame) => (
         <MessageBubble key={frame.frameId} message={frame} />
+      ));
+    }
+  }),
+
+  notification: createRenderer<React.ReactNode>({
+    select: frameSelectors.notification,
+    render: (frames) => {
+      return frames.map((frame) => (
+        <NotificationItem key={frame.frameId} notification={frame} />
       ));
     }
   })

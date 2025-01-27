@@ -5,19 +5,14 @@ import { Mic, Keyboard, Send, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { useVoiceRecognition } from "@/hooks/use-voice-recognition";
-import { useInterviewStore } from "@/lib/stores/interview-store";
-import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { AudioVisualizer } from "./audio-visualizer";
-import { createMessage } from "@/lib/types";
-import { createTimestamp } from "@/app/lib/helperFunctions";
 
 export function InputPanel() {
   const [inputMode, setInputMode] = useState<"voice" | "text">("voice");
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isListening, startListening, stopListening, transcript } = useVoiceRecognition();
-  const addMessage = useInterviewStore((state) => state.addMessage);
 
   const handleModeToggle = () => {
     if (isListening) {
@@ -33,24 +28,13 @@ export function InputPanel() {
     const content = inputMode === "voice" ? transcript : message;
     if (!content.trim()) return;
 
-    addMessage({
-      type: "input",
-      frameId: crypto.randomUUID(),
-      correlationId: crypto.randomUUID(),
-      address: "human",
-      frame: {
-        content,
-        role: "user",
-        title: "User Message"
-      }
-    });
 
     if (inputMode === "voice") {
       stopListening();
     } else {
       setMessage("");
     }
-  }, [addMessage, inputMode, message, transcript, stopListening]);
+  }, [inputMode, message, transcript, stopListening]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {

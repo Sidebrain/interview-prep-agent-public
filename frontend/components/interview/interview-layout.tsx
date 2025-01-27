@@ -13,7 +13,7 @@ export function InterviewLayout() {
       <Header />
       <main className="flex-1 overflow-hidden relative">
         <MessageThread websocketFrames={frameList.websocketFrames} />
-        <NotificationPanel />
+        <NotificationPanel websocketFrames={frameList.websocketFrames} />
         <InputPanel />
       </main>
     </div>

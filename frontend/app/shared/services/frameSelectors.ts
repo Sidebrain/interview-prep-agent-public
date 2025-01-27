@@ -76,6 +76,15 @@ export const frameSelectors = {
     );
   },
 
+  notification: (websocketFrames: WebsocketFrame[]) => {
+    const selectTypes: ConversationAddressTypes = ["notification"];
+    return websocketFrames.filter((websocketFrame) =>
+      selectTypes.includes(
+        websocketFrame.address as (typeof AddressType)[number]
+      )
+    );
+  },
+
   lastThought: (websocketFrames: WebsocketFrame[]) => {
     if (!websocketFrames || websocketFrames.length === 0) {
       return [];

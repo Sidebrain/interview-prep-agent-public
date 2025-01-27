@@ -18,7 +18,7 @@ class NotificationManager:
     async def send_notification(
         broker: Broker,
         notification: str,
-        address: AddressType = "content",
+        address: AddressType = "notification",
     ) -> None:
         try:
             frame = Dispatcher.package_and_transform_to_webframe(

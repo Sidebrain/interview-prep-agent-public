@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { WebsocketFrameType, MediaContent } from "@/lib/types";
+import { WebsocketFrame, MediaContent } from "@/types/ScalableWebsocketTypes";
 import { format } from "date-fns";
 import { Loader2, Image as ImageIcon, Video, Music, FileText, Link2, Code, Copy, Check } from "lucide-react";
 import Prism from "prismjs";
@@ -18,7 +18,7 @@ import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface MessageBubbleProps {
-  message: WebsocketFrameType;
+  message: WebsocketFrame;
 }
 
 function CodeBlock({ code, language }: { code: string; language?: string }) {
@@ -227,7 +227,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           <span className="text-sm font-medium">
             {isUser ? "You" : "AI Assistant"}
           </span>
-          {message.loading && (
+          {message.type === "streaming" && (
             <Loader2 className="h-4 w-4 animate-spin" />
           )}
         </div>

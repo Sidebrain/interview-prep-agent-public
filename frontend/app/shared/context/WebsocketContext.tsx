@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect, useRef } from "react";
 import { WebSocketHookOptions } from "@/types/websocketTypes";
 import { useWebSocket } from "../hooks/useWebSocket";
 
@@ -11,7 +11,16 @@ export const WebsocketProvider: React.FC<{
   children: React.ReactNode;
   options: WebSocketHookOptions;
 }> = ({ children, options }) => {
-  const websocket = useWebSocket(options);
+  // Use ref to maintain stable options reference
+  const optionsRef = useRef(options);
+  
+  // Update ref if options change
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
+
+  // Use stable options reference
+  const websocket = useWebSocket(optionsRef.current);
 
   return (
     <WebsocketContext.Provider value={websocket}>

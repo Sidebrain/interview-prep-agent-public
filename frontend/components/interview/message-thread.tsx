@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { MessageBubble } from "./message-bubble";
-import { useInterviewStore } from "@/lib/stores/interview-store";
 import { ScrollArea } from "../ui/scroll-area";
 import { FrameList } from "@/app/shared/reducers/frameReducer";
 import { frameRenderers } from "@/app/shared/services/frameRenderers";

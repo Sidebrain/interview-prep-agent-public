@@ -34,7 +34,31 @@ export const AddressType = [
   "thought",
   "evaluation",
   "perspective",
+  "notification",
 ] as const;
+
+export const MediaTypeEnum = z.enum(["image", "video", "audio", "code", "file", "link"]);
+export const NotificationTypeEnum = z.enum(["word-usage", "time", "performance", "technical"]).default("word-usage");
+export const SeverityEnum = z.enum(["info", "warning", "error"]).default("info");
+
+// Media-related schemas
+export const MediaContentSchema = z.object({
+  type: MediaTypeEnum,
+  url: z.string().optional(),
+  title: z.string().optional(),
+  mimeType: z.string().optional(),
+  language: z.string().optional(),
+  code: z.string().optional(),
+  thumbnail: z.string().optional(),
+  duration: z.number().optional(),
+  size: z.number().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  aspectRatio: z.number().optional(),
+  previewUrl: z.string().optional(),
+});
+
+export type MediaContent = z.infer<typeof MediaContentSchema>;
 
 // zod types for type validation
 export const CompletionFrameChunkSchema = z.object({
@@ -48,6 +72,9 @@ export const CompletionFrameChunkSchema = z.object({
   title: z.string().nullable(),
   index: z.number(),
   finishReason: z.enum(FinishReasonType),
+  media: z.array(MediaContentSchema).optional(),
+  notificationType: NotificationTypeEnum.optional(),
+  severity: SeverityEnum.optional(),
 });
 
 export const ThoughtSchema = z.object({

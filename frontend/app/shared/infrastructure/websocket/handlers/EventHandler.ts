@@ -18,9 +18,10 @@ export class WebsocketEventHandler {
     this.websocket.onopen = (event: CustomWebSocketEventMap["open"]) => {
       clientLogger.debug("WebSocket opened", {
         readyState: this.websocket?.readyState,
+        url: this.websocket?.url,
+        timestamp: new Date().toISOString()
       });
       callbacks.onOpen();
-
       this.eventEmitter.emit("open", event);
     };
 
@@ -30,6 +31,7 @@ export class WebsocketEventHandler {
         reason: event.reason,
         wasClean: event.wasClean,
         readyState: this.websocket?.readyState,
+        timestamp: new Date().toISOString()
       });
       callbacks.onClose();
       this.eventEmitter.emit("close", event);
