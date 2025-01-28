@@ -76,8 +76,11 @@ class Agent:
         with open("config/artifacts_v2.yaml", "w") as file:
             yaml.dump(self.artifact_dict, file)
 
-    async def save_artifacts_to_mongo(self) -> None:
+    async def save_artifacts_to_mongo_return_interviewer(
+        self,
+    ) -> Interviewer:
         # save the artifacts to the mongo memory
+        # and return the interviewer object
         self.interviewer.question_bank = self.artifact_dict[
             "interview questions"
         ]
@@ -88,6 +91,7 @@ class Agent:
             "job description"
         ]
         await self.interviewer.save()
+        return self.interviewer
 
     def add_artifact_to_dict(self, artifact: str, content: str) -> None:
         self.artifact_dict[artifact] = content
@@ -124,10 +128,30 @@ class Agent:
                 for artifact in artifacts_to_generate
             ]
         )
-        self.save_artifacts_to_yaml()
-        await self.save_artifacts_to_mongo()
         frames, responses = zip(*generated_items)
+
         return frames, responses
+
+    async def generate_save_send_artifacts(self, frame_id: str) -> None:
+        frames, _ = await self.generate_all_artifacts(frame_id)
+        interviewer = (
+            await self.save_artifacts_to_mongo_return_interviewer()
+        )
+        await self.send_onboarding_link(interviewer)
+
+        if self.debug:
+            for frame in frames:
+                logger.debug(frame.model_dump_json(indent=4))
+                logger.debug(f"\n{'-'*30}\n")
+
+        await asyncio.gather(
+            *[
+                self.channel.send_message(
+                    frame.model_dump_json(by_alias=True)
+                )
+                for frame in frames
+            ]
+        )
 
     async def generate_single_artifact(
         self, artifact: str, frame_id: str, debug: bool = True
@@ -205,23 +229,22 @@ class Agent:
             return
         except IndexError:
             logger.error("Popping from empty concept list")
-            (frames, responses) = await self.generate_all_artifacts(
-                frame_id
-            )
-            if self.debug and debug and verbose:
-                for frame in frames:
-                    logger.debug(frame.model_dump_json(indent=4))
-                    logger.debug(f"\n{'-'*30}\n")
-
-            await asyncio.gather(
-                *[
-                    self.channel.send_message(
-                        frame.model_dump_json(by_alias=True)
-                    )
-                    for frame in frames
-                ]
-            )
+            await self.generate_save_send_artifacts(frame_id)
             return
+
+    async def send_onboarding_link(
+        self, interviewer: Interviewer
+    ) -> None:
+        # send the onboarding link
+        frame_to_send = Dispatcher.package_and_transform_to_webframe(
+            f"You are ready to share this interviwer. Here is the link: http://localhost:3000/onboarding/{interviewer.id}",
+            address="content",
+            frame_id=str(uuid4()),
+            title="last message can be sent to the user",
+        )
+        await self.channel.send_message(
+            frame_to_send.model_dump_json(by_alias=True)
+        )
 
 
 class Interview:

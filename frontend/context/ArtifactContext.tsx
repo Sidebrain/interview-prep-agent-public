@@ -44,19 +44,28 @@ const ArtifactContext = createContext<ArtifactContextType>({
   setRegeneratingTitle: () => {},
 });
 
-export const ArtifactProvider = ({ children }: { children: ReactNode }) => {
+export const ArtifactProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const { frameList } = useWebsocketContext();
-  const [artifactObject, setArtifactObject] = useState<ArtifactStateType>({});
+  const [artifactObject, setArtifactObject] =
+    useState<ArtifactStateType>({});
   const [frameId, setFrameId] = useState("");
   const [focus, setFocus] = useState<FocusType>({
     title: "",
     index: null,
   });
-  const [regeneratingTitle, setRegeneratingTitle] = useState<string | null>(null);
+  const [regeneratingTitle, setRegeneratingTitle] = useState<
+    string | null
+  >(null);
 
   const buildArtifactObject = useCallback(() => {
     console.log("buildArtifactObject triggered");
-    const focusFrame = frameList.find((frame) => frame.frameId === frameId);
+    const focusFrame = frameList.find(
+      (frame) => frame.frameId === frameId
+    );
     if (!focusFrame) return;
 
     setArtifactObject({});
@@ -72,7 +81,10 @@ export const ArtifactProvider = ({ children }: { children: ReactNode }) => {
         .filter((frame) => frame.title === title)
         .sort((a, b) => a.createdTs - b.createdTs);
 
-      setArtifactObject((prev) => ({ ...prev, [title]: framesWithThisTitle }));
+      setArtifactObject((prev) => ({
+        ...prev,
+        [title]: framesWithThisTitle,
+      }));
     });
     clientLogger.debug("artifactObject built up: ", artifactObject);
   }, [frameId, frameList]);
@@ -86,14 +98,14 @@ export const ArtifactProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ArtifactContext.Provider
-      value={{ 
-        artifactObject, 
-        frameId, 
-        setFrameId, 
-        focus, 
+      value={{
+        artifactObject,
+        frameId,
+        setFrameId,
+        focus,
         setFocus,
         regeneratingTitle,
-        setRegeneratingTitle
+        setRegeneratingTitle,
       }}
     >
       {children}
@@ -104,7 +116,9 @@ export const ArtifactProvider = ({ children }: { children: ReactNode }) => {
 export const useArtifact = () => {
   const context = useContext(ArtifactContext);
   if (context === undefined) {
-    throw new Error("useArtifact must be used within an ArtifactProvider");
+    throw new Error(
+      "useArtifact must be used within an ArtifactProvider"
+    );
   }
   return context;
 };

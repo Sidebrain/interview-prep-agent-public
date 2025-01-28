@@ -63,7 +63,7 @@ class Dispatcher:
             object="chat.completion",
             model=model,
             role="assistant",
-            content=response,
+            content=response,  # type: ignore
             delta=None,
             title=title,
             index=0,
