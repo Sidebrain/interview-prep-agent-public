@@ -35,7 +35,6 @@ class QuestionManager:
         self.strategy = strategy or InterviewQuestionGenerationStrategy(
             interview_context=interview_context
         )
-        self.initialize = self.strategy.initialize
 
     def __repr__(self) -> str:
         return json.dumps(
@@ -50,6 +49,15 @@ class QuestionManager:
             },
             indent=2,
         )
+
+    async def initialize(self) -> None:
+        try:
+            await self.strategy.initialize()
+        except Exception as e:
+            logger.error(
+                "Error initializing question manager",
+                extra={"context": {"error": str(e)}},
+            )
 
     async def get_next_question(
         self,

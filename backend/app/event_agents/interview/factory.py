@@ -1,9 +1,7 @@
 import logging
-import traceback
 from uuid import UUID
 
 from fastapi import HTTPException, WebSocket
-from pydantic import BaseModel, ValidationError
 
 from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.memory.factory import create_memory_store
@@ -17,48 +15,6 @@ from app.event_agents.types import InterviewContext
 from app.event_agents.websocket_handler import Channel
 
 logger = logging.getLogger(__name__)
-
-
-class InterviewConfig(BaseModel):
-    interview_id: UUID
-    agent_id: UUID
-    max_time_allowed: int | None = None
-
-
-class InterviewCollection(BaseModel):
-    interviews: list[InterviewConfig]
-
-    def find_by_interview_id(
-        self, interview_id: UUID
-    ) -> InterviewConfig | None:
-        return next(
-            (
-                interview
-                for interview in self.interviews
-                if interview.interview_id == interview_id
-            ),
-            None,
-        )
-
-
-def load_all_interviews() -> InterviewCollection:
-    with open("config/available_interviews.json", "r") as f:
-        try:
-            return InterviewCollection.model_validate_json(f.read())
-        except ValidationError as e:
-            logger.error(
-                "Error validating interview config",
-                extra={
-                    "context": {
-                        "error": str(e),
-                        "stacktrace": traceback.format_exc(),
-                    }
-                },
-            )
-            raise HTTPException(
-                status_code=500,
-                detail="Error validating interview config",
-            )
 
 
 async def create_interview(

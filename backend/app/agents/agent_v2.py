@@ -237,7 +237,7 @@ class Agent:
     ) -> None:
         # send the onboarding link
         frame_to_send = Dispatcher.package_and_transform_to_webframe(
-            f"You are ready to share this interviwer. Here is the link: http://localhost:3000/onboarding/{interviewer.id}",
+            f"You are ready to share this interviwer. Here is the link: http://localhost:3000/onboarding/{interviewer.id}",  # type: ignore
             address="content",
             frame_id=str(uuid4()),
             title="last message can be sent to the user",
