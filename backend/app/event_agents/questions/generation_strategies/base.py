@@ -26,7 +26,7 @@ class BaseQuestionGenerationStrategy(ABC):
     async def initialize(self) -> None:
         if self.are_questions_gathered_in_memory():
             questions_loaded_successfully = (
-                await self.load_questions_from_memory()
+                await self.try_load_questions_from_memory()
             )
             await NotificationManager.send_notification(
                 self.interview_context.broker,
@@ -55,33 +55,38 @@ class BaseQuestionGenerationStrategy(ABC):
         else:
             return False
 
-    async def load_questions_from_memory(self) -> bool:
+    def _parse_structured_questions(
+        self, json_str: str
+    ) -> list[QuestionAndAnswer]:
+        """Parse structured questions from JSON string into QuestionAndAnswer objects."""
+        questions_list = json.loads(json_str)
+        decoded = json.loads(
+            json.dumps({"questions": questions_list}),
+            cls=AgentConfigJSONDecoder,
+        )
+        return decoded["questions"]
+
+    async def try_load_questions_from_memory(self) -> bool:
+        """Attempt to load questions from agent profile memory."""
         try:
-            #! this is a hack to get the questions from the mongo memory
-            #! we need to fix this later
-            # First parse the string into a Python list
-            questions_list = json.loads(
-                self.interview_context.agent_profile.question_bank_structured
+            structured_data = self.interview_context.agent_profile.question_bank_structured
+            questions = self._parse_structured_questions(
+                structured_data
             )
-            # Then create the structure expected by the decoder
-            dct = {"questions": questions_list}
-            # Finally decode with our custom decoder
-            decoded = json.loads(
-                json.dumps(dct),  # Convert dict to JSON string
-                cls=AgentConfigJSONDecoder,
-            )
-            self.questions = decoded["questions"]
 
             logger.info(
                 "Questions loaded from mongo agent profile memory",
                 extra={
                     "context": {
-                        "#questions": len(self.questions),
-                        "question #1": self.questions[0],
+                        "#questions": len(questions),
+                        "question #1": questions[0],
                     }
                 },
             )
+
+            self.questions = questions
             return True
+
         except Exception as e:
             logger.error(
                 "Error loading questions from mongo memory",
