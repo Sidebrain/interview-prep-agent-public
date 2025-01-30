@@ -5,6 +5,7 @@ from uuid import uuid4
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.orchestrator.events import AskQuestionEvent
+from app.event_agents.questions.asker import BaseQuestionAskingStrategy
 from app.event_agents.questions.generation_strategies.base import (
     BaseQuestionGenerationStrategy,
 )
@@ -25,16 +26,26 @@ class QuestionManager:
         self,
         interview_context: InterviewContext,
         interviewer: Interviewer,
-        strategy: BaseQuestionGenerationStrategy | None = None,
+        question_asking_strategy: type[BaseQuestionAskingStrategy],
+        question_generation_strategy: BaseQuestionGenerationStrategy
+        | None = None,
     ) -> None:
         self.interview_context = interview_context
         self.questions: list[QuestionAndAnswer] = []
         self.current_question: QuestionAndAnswer | None = None
         self.interviewer = interviewer
-        # defaults to interview question generation strategy
-        self.strategy = strategy or InterviewQuestionGenerationStrategy(
-            interview_context=interview_context
+        self.strategy = (
+            question_generation_strategy
+            or InterviewQuestionGenerationStrategy(
+                interview_context=interview_context
+            )
         )
+        # Store the class for later instantiation
+        self._question_asking_strategy_class = question_asking_strategy
+        # This will hold the instance once initialized
+        self.question_asking_strategy: (
+            BaseQuestionAskingStrategy | None
+        ) = None
 
     def __repr__(self) -> str:
         return json.dumps(
@@ -53,26 +64,26 @@ class QuestionManager:
     async def initialize(self) -> None:
         try:
             self.questions = await self.strategy.initialize()
+            # Create the instance using the stored class
+            self.question_asking_strategy = (
+                self._question_asking_strategy_class(
+                    questions=self.questions
+                )
+            )
         except Exception as e:
             logger.error(
                 "Error initializing question manager",
                 extra={"context": {"error": str(e)}},
             )
 
-    async def get_next_question(
-        self,
-    ) -> QuestionAndAnswer | None:
-        try:
-            self.current_question = self.questions.pop(0)
-            logger.info("Next question ready: %s", self)
-            return self.current_question
-        except IndexError:
-            logger.info("No more questions: %s", self)
-            return None
-
     async def ask_next_question(self) -> None:
         """Request and publish next question."""
-        next_question = await self.get_next_question()
+        if not self.question_asking_strategy:
+            raise ValueError("Question asking strategy not initialized")
+
+        next_question = (
+            await self.question_asking_strategy.get_next_question()
+        )
 
         if next_question is None:
             logger.info("Interview complete: %s", self)
