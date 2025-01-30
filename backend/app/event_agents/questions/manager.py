@@ -9,9 +9,6 @@ from app.event_agents.questions.asker import BaseQuestionAskingStrategy
 from app.event_agents.questions.generation_strategies.base import (
     BaseQuestionGenerationStrategy,
 )
-from app.event_agents.questions.generation_strategies.interview import (
-    InterviewQuestionGenerationStrategy,
-)
 from app.event_agents.schemas.mongo_schemas import Interviewer
 from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import (
@@ -27,22 +24,26 @@ class QuestionManager:
         interview_context: InterviewContext,
         interviewer: Interviewer,
         question_asking_strategy: type[BaseQuestionAskingStrategy],
-        question_generation_strategy: BaseQuestionGenerationStrategy
-        | None = None,
+        question_generation_strategy: type[
+            BaseQuestionGenerationStrategy
+        ],
     ) -> None:
         self.interview_context = interview_context
         self.questions: list[QuestionAndAnswer] = []
         self.current_question: QuestionAndAnswer | None = None
         self.interviewer = interviewer
-        self.strategy = (
+        # store the class for later instantiation
+        self._question_generation_strategy_class = (
             question_generation_strategy
-            or InterviewQuestionGenerationStrategy(
+        )
+        self._question_asking_strategy_class = question_asking_strategy
+
+        # This will hold the instance once initialized
+        self.question_generation_strategy = (
+            question_generation_strategy(
                 interview_context=interview_context
             )
         )
-        # Store the class for later instantiation
-        self._question_asking_strategy_class = question_asking_strategy
-        # This will hold the instance once initialized
         self.question_asking_strategy: (
             BaseQuestionAskingStrategy | None
         ) = None
@@ -63,7 +64,9 @@ class QuestionManager:
 
     async def initialize(self) -> None:
         try:
-            self.questions = await self.strategy.initialize()
+            self.questions = (
+                await self.question_generation_strategy.initialize()
+            )
             # Create the instance using the stored class
             self.question_asking_strategy = (
                 self._question_asking_strategy_class(
@@ -84,6 +87,11 @@ class QuestionManager:
         next_question = (
             await self.question_asking_strategy.get_next_question()
         )
+
+        # this is needed, the answer processor
+        # fires off evaluation and perspective generation commands
+        # on the self.current_question
+        self.current_question = next_question
 
         if next_question is None:
             logger.info("Interview complete: %s", self)

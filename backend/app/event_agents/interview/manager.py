@@ -65,9 +65,7 @@ class InterviewManager:
             interview_context=self.interview_context,
             interviewer=self.interviewer,
             question_asking_strategy=BaseQuestionAskingStrategy,
-            question_generation_strategy=ServiceQuestionGenerationStrategy(
-                interview_context=self.interview_context
-            ),
+            question_generation_strategy=ServiceQuestionGenerationStrategy,
         )
         self.eval_manager = EvaluationManager(
             interview_context=self.interview_context,
