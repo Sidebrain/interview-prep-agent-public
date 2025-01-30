@@ -52,7 +52,7 @@ class QuestionManager:
 
     async def initialize(self) -> None:
         try:
-            await self.strategy.initialize()
+            self.questions = await self.strategy.initialize()
         except Exception as e:
             logger.error(
                 "Error initializing question manager",
@@ -63,7 +63,7 @@ class QuestionManager:
         self,
     ) -> QuestionAndAnswer | None:
         try:
-            self.current_question = self.strategy.questions.pop(0)
+            self.current_question = self.questions.pop(0)
             logger.info("Next question ready: %s", self)
             return self.current_question
         except IndexError:

@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 class BaseQuestionGenerationStrategy(ABC):
     def __init__(self, interview_context: InterviewContext) -> None:
         self.interview_context = interview_context
-        self.questions: list[QuestionAndAnswer] = []
 
     @abstractmethod
     async def prepare_question_context(
@@ -23,31 +22,31 @@ class BaseQuestionGenerationStrategy(ABC):
     ) -> list[dict[str, str]]:
         raise NotImplementedError
 
-    async def initialize(self) -> None:
+    async def initialize(self) -> list[QuestionAndAnswer]:
         if self.are_questions_gathered_in_memory():
             questions_loaded_successfully = (
                 await self.try_load_questions_from_memory()
             )
             await NotificationManager.send_notification(
                 self.interview_context.broker,
-                f"{len(self.questions)} questions loaded from agent profile mongo memory",
+                f"{len(questions_loaded_successfully)} questions loaded from agent profile mongo memory",
             )
             logger.debug(
                 "Questions loaded from memory",
                 extra={
                     "context": {
-                        "#questions": len(self.questions),
+                        "#questions": len(
+                            questions_loaded_successfully
+                        ),
                     }
                 },
             )
 
-            if questions_loaded_successfully:
-                return
+            return questions_loaded_successfully
 
         # If questions are not loaded from memory, gather them
-        await self.prepare_interview()
-        # load the questions from the strategy
-        self.questions = self.questions
+        questions = await self.prepare_interview()
+        return questions
 
     def are_questions_gathered_in_memory(self) -> bool:
         if self.interview_context.agent_profile.question_bank_structured:
@@ -64,9 +63,11 @@ class BaseQuestionGenerationStrategy(ABC):
             json.dumps({"questions": questions_list}),
             cls=AgentConfigJSONDecoder,
         )
-        return decoded["questions"]
+        return decoded["questions"]  # type: ignore
 
-    async def try_load_questions_from_memory(self) -> bool:
+    async def try_load_questions_from_memory(
+        self,
+    ) -> list[QuestionAndAnswer]:
         """Attempt to load questions from agent profile memory."""
         try:
             structured_data = self.interview_context.agent_profile.question_bank_structured
@@ -84,42 +85,43 @@ class BaseQuestionGenerationStrategy(ABC):
                 },
             )
 
-            self.questions = questions
-            return True
+            return questions
 
         except Exception as e:
             logger.error(
                 "Error loading questions from mongo memory",
                 extra={"context": {"error": str(e)}},
             )
-            return False
+            return []
 
-    async def prepare_interview(self) -> None:
+    async def prepare_interview(self) -> list[QuestionAndAnswer]:
         await NotificationManager.send_notification(
             self.interview_context.broker,
             "Interview started. Building question bank...",
         )
-        await self.gather_questions()
-        await self.persist_questions()
+        questions = await self.gather_questions()
+        await self.persist_questions(questions)
 
         await NotificationManager.send_notification(
             self.interview_context.broker,
             "Question bank built. Starting interview timer...",
         )
-        return None
+        return questions
 
-    async def persist_questions(self) -> None:
+    async def persist_questions(
+        self, questions: list[QuestionAndAnswer]
+    ) -> None:
         logger.info(
             "Persisting questions",
             extra={
                 "context": {
-                    "questions_length": len(self.questions),
-                    "question #1": self.questions[0],
+                    "questions_length": len(questions),
+                    "question #1": questions[0],
                 }
             },
         )
         question_bank_structured = json.dumps(
-            self.questions, cls=AgentConfigJSONEncoder
+            questions, cls=AgentConfigJSONEncoder
         )
         self.interview_context.agent_profile.question_bank_structured = question_bank_structured
         await self.interview_context.agent_profile.save()
@@ -151,6 +153,5 @@ class BaseQuestionGenerationStrategy(ABC):
         context = await self.prepare_question_context()
 
         response = await self.extract_structured_questions(context)
-        self.questions = response.questions
 
         return response.questions
