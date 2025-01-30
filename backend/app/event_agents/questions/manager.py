@@ -5,7 +5,7 @@ from uuid import uuid4
 from app.agents.dispatcher import Dispatcher
 from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.orchestrator.events import AskQuestionEvent
-from app.event_agents.questions.asker import BaseQuestionAskingStrategy
+from app.event_agents.questions.asker import AskingStrategy
 from app.event_agents.questions.generation_strategies.base import (
     BaseQuestionGenerationStrategy,
 )
@@ -23,7 +23,7 @@ class QuestionManager:
         self,
         interview_context: InterviewContext,
         interviewer: Interviewer,
-        question_asking_strategy: type[BaseQuestionAskingStrategy],
+        question_asking_strategy: type[AskingStrategy],
         question_generation_strategy: type[
             BaseQuestionGenerationStrategy
         ],
@@ -40,13 +40,15 @@ class QuestionManager:
 
         # This will hold the instance once initialized
         self.question_generation_strategy = (
-            question_generation_strategy(
+            self._question_generation_strategy_class(
                 interview_context=interview_context
             )
         )
-        self.question_asking_strategy: (
-            BaseQuestionAskingStrategy | None
-        ) = None
+        self.question_asking_strategy: AskingStrategy = (
+            self._question_asking_strategy_class(
+                questions=self.questions
+            )
+        )
 
     def __repr__(self) -> str:
         return json.dumps(

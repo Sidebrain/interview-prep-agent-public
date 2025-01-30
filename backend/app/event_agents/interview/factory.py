@@ -6,6 +6,7 @@ from fastapi import HTTPException, WebSocket
 from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.orchestrator import Broker, Thinker
+from app.event_agents.questions.types import ConversationTree
 from app.event_agents.schemas.mongo_schemas import (
     AgentProfile,
     Interviewer,
@@ -58,6 +59,11 @@ async def create_interview(
         entity=interview_session,
     )
 
+    conversation_tree = ConversationTree(
+        max_depth=3,
+        max_breadth=3,
+    )
+
     interview_context = InterviewContext(
         interview_id=interview_session.id,  # type: ignore
         agent_id=interviewer.id,  # type: ignore
@@ -68,6 +74,7 @@ async def create_interview(
         thinker=thinker,
         channel=channel,
         max_time_allowed=max_time_allowed,
+        conversation_tree=conversation_tree,
     )
 
     interview_manager = InterviewManager(

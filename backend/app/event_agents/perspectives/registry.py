@@ -5,10 +5,7 @@ from app.event_agents.perspectives.perspective_base import (
     PerspectiveBase,
 )
 from app.event_agents.perspectives.perspectors import (
-    design_manager_perspective,
-    engineering_manager_perspective,
     product_manager_perspective,
-    sales_manager_perspective,
 )
 from app.event_agents.types import InterviewContext
 
@@ -29,9 +26,9 @@ class PerspectiveRegistry:
     async def add_default_perspectives(self) -> None:
         default_perspectors = {
             "product_manager": product_manager_perspective,
-            "sales_manager": sales_manager_perspective,
-            "engineering_manager": engineering_manager_perspective,
-            "design_manager": design_manager_perspective,
+            # "sales_manager": sales_manager_perspective,
+            # "engineering_manager": engineering_manager_perspective,
+            # "design_manager": design_manager_perspective,
         }
         perspector_initialize_tasks = []
 

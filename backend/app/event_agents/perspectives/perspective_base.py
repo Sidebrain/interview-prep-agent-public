@@ -16,17 +16,19 @@ logger = logging.getLogger(__name__)
 
 
 class PerspectiveBase:
-    def __init__(self, perspective: str) -> None:
-        logger.debug(
-            "Initializing PerspectiveBase",
-            extra={
-                "context": {
-                    "perspective": perspective,
-                    "action": "init",
-                    "component": "PerspectiveBase",
-                }
-            },
-        )
+    def __init__(self, perspective: str, debug: bool = False) -> None:
+        self.debug = debug
+        if self.debug:
+            logger.debug(
+                "Initializing PerspectiveBase",
+                extra={
+                    "context": {
+                        "perspective": perspective,
+                        "action": "init",
+                        "component": "PerspectiveBase",
+                    }
+                },
+            )
         self.perspective = perspective
         self.description = None
 
@@ -36,14 +38,15 @@ class PerspectiveBase:
         interview_context: InterviewContext,
     ) -> WebsocketFrame:
         """Main evaluation pipeline for a perspective's analysis"""
-        logger.debug(
-            "Starting perspective evaluation",
-            extra={
-                "context": {
-                    "perspective": self.perspective,
-                }
-            },
-        )
+        if self.debug:
+            logger.debug(
+                "Starting perspective evaluation",
+                extra={
+                    "context": {
+                        "perspective": self.perspective,
+                    }
+                },
+            )
 
         correlation_id = self._get_correlation_id(
             memory_store=interview_context.memory_store
@@ -56,24 +59,28 @@ class PerspectiveBase:
             custom_user_instruction=instruction,
             memory_store=interview_context.memory_store,
         )
-        logger.debug(
-            "Built evaluation context",
-            extra={"context": {"perspective context": len(context)}},
-        )
+        if self.debug:
+            logger.debug(
+                "Built evaluation context",
+                extra={
+                    "context": {"perspective context": len(context)}
+                },
+            )
         analysis = await self._generate_analysis(
             context, interview_context
         )
 
-        logger.debug(
-            "Generated analysis",
-            extra={
-                "context": {
-                    "analysis": "completed",
-                    "perspective": self.perspective,
-                    "action": "generate_analysis",
-                }
-            },
-        )
+        if self.debug:
+            logger.debug(
+                "Generated analysis",
+                extra={
+                    "context": {
+                        "analysis": "completed",
+                        "perspective": self.perspective,
+                        "action": "generate_analysis",
+                    }
+                },
+            )
 
         return self._package_response(analysis, correlation_id)
 
@@ -156,30 +163,32 @@ class PerspectiveBase:
     def write_perspective_description_to_txt(
         self, description: str
     ) -> None:
-        logger.debug(
-            "Writing perspective description to file",
-            extra={
-                "context": {
-                    "perspective": self.perspective,
-                    "action": "write_description",
-                    "component": "PerspectiveBase",
-                }
-            },
-        )
-        try:
-            with open(f"config/{self.perspective}.txt", "w") as f:
-                f.write(description)
+        if self.debug:
             logger.debug(
-                "Successfully wrote perspective description",
+                "Writing perspective description to file",
                 extra={
                     "context": {
                         "perspective": self.perspective,
                         "action": "write_description",
-                        "status": "success",
                         "component": "PerspectiveBase",
                     }
                 },
             )
+        try:
+            with open(f"config/{self.perspective}.txt", "w") as f:
+                f.write(description)
+            if self.debug:
+                logger.debug(
+                    "Successfully wrote perspective description",
+                    extra={
+                        "context": {
+                            "perspective": self.perspective,
+                            "action": "write_description",
+                            "status": "success",
+                            "component": "PerspectiveBase",
+                        }
+                    },
+                )
         except Exception as e:
             logger.error(
                 "Failed to write perspective description",
@@ -199,15 +208,16 @@ class PerspectiveBase:
         self, interview_context: InterviewContext
     ) -> str | None:
         """Initialize the perspective by generating and saving its description"""
-        logger.debug(
-            "Initializing perspective description",
-            extra={
-                "context": {
-                    "perspective": self.perspective,
-                    "action": "initialize",
-                }
-            },
-        )
+        if self.debug:
+            logger.debug(
+                "Initializing perspective description",
+                extra={
+                    "context": {
+                        "perspective": self.perspective,
+                        "action": "initialize",
+                    }
+                },
+            )
 
         messages = self._create_initialization_messages()
         # description = await self._generate_description(
@@ -304,34 +314,36 @@ class PerspectiveBase:
         address_filter: List[AddressType],
         custom_user_instruction: str,
     ) -> List[dict[str, str]]:
-        logger.debug(
-            "Building context messages",
-            extra={
-                "context": {
-                    "question_count": len(questions),
-                    "address_filter": address_filter,
-                    "action": "build_context",
-                    "component": "PerspectiveBase",
-                }
-            },
-        )
+        if self.debug:
+            logger.debug(
+                "Building context messages",
+                extra={
+                    "context": {
+                        "question_count": len(questions),
+                        "address_filter": address_filter,
+                        "action": "build_context",
+                        "component": "PerspectiveBase",
+                    }
+                },
+            )
 
         messages = memory_store.extract_memory_for_generation(
             address_filter=address_filter,
             custom_user_instruction=custom_user_instruction,
         )
 
-        logger.debug(
-            "Built context messages",
-            extra={
-                "message_count": len(messages),
-                "context": {
-                    "action": "build_context",
-                    "status": "complete",
-                    "component": "PerspectiveBase",
+        if self.debug:
+            logger.debug(
+                "Built context messages",
+                extra={
+                    "message_count": len(messages),
+                    "context": {
+                        "action": "build_context",
+                        "status": "complete",
+                        "component": "PerspectiveBase",
+                    },
                 },
-            },
-        )
+            )
         return messages
 
     def _insert_questions_before_answer(
