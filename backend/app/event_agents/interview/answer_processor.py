@@ -1,9 +1,7 @@
 import logging
 
-from app.event_agents.conversations import (
-    ConversationalTurn,
-    ProbeDirection,
-)
+from app.event_agents.conversations.turn import Turn
+from app.event_agents.conversations.types import ProbeDirection
 from app.event_agents.orchestrator.commands import (
     GenerateEvaluationsCommand,
     GeneratePerspectivesCommand,
@@ -42,7 +40,7 @@ class AnswerProcessor:
     def _add_answer_to_conversation_tree(
         self, event: AddToMemoryEvent
     ) -> None:
-        conv_turn = ConversationalTurn(
+        conv_turn = Turn(
             question=self.question_manager.current_question,
             answer=event.frame,
             parent=self.interview_context.conversation_tree.current_position,

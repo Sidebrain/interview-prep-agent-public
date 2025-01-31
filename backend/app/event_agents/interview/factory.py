@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, WebSocket
 
-from app.event_agents.conversations import ConversationTree
+from app.event_agents.conversations.tree import Tree
 from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.orchestrator import Broker, Thinker
@@ -59,7 +59,7 @@ async def create_interview(
         entity=interview_session,
     )
 
-    conversation_tree = ConversationTree(
+    conversation_tree = Tree(
         max_depth=3,
         max_breadth=3,
     )

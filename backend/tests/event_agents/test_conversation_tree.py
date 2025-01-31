@@ -5,10 +5,10 @@ from uuid import uuid4
 import pytest
 
 from app.agents.dispatcher import Dispatcher
-from app.event_agents.conversations import (
-    ConversationalTurn,
-    ConversationTree,
-    ProbeDirection,
+from app.event_agents.conversations.tree import Tree
+from app.event_agents.conversations.turn import Turn
+from app.event_agents.conversations.types import ProbeDirection
+from app.event_agents.conversations.utils import (
     choose_probe_direction,
     normalize_probabilities,
 )
@@ -60,16 +60,16 @@ def test_choose_probe_direction() -> None:
 
 
 @pytest.fixture
-def conv_tree() -> ConversationTree:
-    return ConversationTree(max_depth=3, max_breadth=3)
+def conv_tree() -> Tree:
+    return Tree(max_depth=3, max_breadth=3)
 
 
 @pytest.fixture
-def make_turn() -> Callable[..., ConversationalTurn]:
+def make_turn() -> Callable[..., Turn]:
     def _make_turn(
         question_text: str | None = None,
         answer_text: str | None = None,
-    ) -> ConversationalTurn:
+    ) -> Turn:
         question = QuestionAndAnswer(
             question=question_text
             or f"Test question {random.randint(1, 1000)}?",
@@ -83,7 +83,7 @@ def make_turn() -> Callable[..., ConversationalTurn]:
             str(uuid4()),
         )
 
-        return ConversationalTurn(
+        return Turn(
             question=question,
             answer=answer,
         )
@@ -92,8 +92,8 @@ def make_turn() -> Callable[..., ConversationalTurn]:
 
 
 def test_add_root(
-    conv_tree: ConversationTree,
-    make_turn: Callable[..., ConversationalTurn],
+    conv_tree: Tree,
+    make_turn: Callable[..., Turn],
 ) -> None:
     assert conv_tree.max_depth == 3
     assert conv_tree.max_breadth == 3

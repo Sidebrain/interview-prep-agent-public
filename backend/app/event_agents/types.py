@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from app.event_agents.conversations import ConversationTree
+from app.event_agents.conversations.tree import Tree
 from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.orchestrator.broker import Broker
 from app.event_agents.orchestrator.thinker import Thinker
@@ -22,5 +22,5 @@ class InterviewContext:
     thinker: Thinker
     channel: Channel
     agent_profile: AgentProfile
-    conversation_tree: ConversationTree
+    conversation_tree: Tree
     max_time_allowed: int
