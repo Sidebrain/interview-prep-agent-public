@@ -1,5 +1,9 @@
 import logging
 
+from app.event_agents.conversations import (
+    ConversationalTurn,
+    ProbeDirection,
+)
 from app.event_agents.orchestrator.commands import (
     GenerateEvaluationsCommand,
     GeneratePerspectivesCommand,
@@ -8,10 +12,6 @@ from app.event_agents.orchestrator.events import (
     AddToMemoryEvent,
 )
 from app.event_agents.questions.manager import QuestionManager
-from app.event_agents.questions.types import (
-    ConversationalTurn,
-    ProbeDirection,
-)
 from app.event_agents.types import InterviewContext
 
 logger = logging.getLogger(__name__)

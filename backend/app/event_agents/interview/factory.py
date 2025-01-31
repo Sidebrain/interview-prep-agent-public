@@ -3,10 +3,10 @@ from uuid import UUID
 
 from fastapi import HTTPException, WebSocket
 
+from app.event_agents.conversations import ConversationTree
 from app.event_agents.interview.manager import InterviewManager
 from app.event_agents.memory.factory import create_memory_store
 from app.event_agents.orchestrator import Broker, Thinker
-from app.event_agents.questions.types import ConversationTree
 from app.event_agents.schemas.mongo_schemas import (
     AgentProfile,
     Interviewer,

@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from app.event_agents.conversations import ConversationTree
 from app.event_agents.memory.protocols import MemoryStore
 from app.event_agents.orchestrator.broker import Broker
 from app.event_agents.orchestrator.thinker import Thinker
-from app.event_agents.questions.types import ConversationTree
 from app.event_agents.schemas.mongo_schemas import (
     AgentProfile,
     Interviewer,

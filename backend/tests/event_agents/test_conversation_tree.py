@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 
 from app.agents.dispatcher import Dispatcher
-from app.event_agents.questions.types import (
+from app.event_agents.conversations import (
     ConversationalTurn,
     ConversationTree,
     ProbeDirection,
