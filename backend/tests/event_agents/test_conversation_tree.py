@@ -1,12 +1,18 @@
 import random
+from typing import Callable
+from uuid import uuid4
 
 import pytest
 
+from app.agents.dispatcher import Dispatcher
 from app.event_agents.questions.types import (
+    ConversationalTurn,
+    ConversationTree,
     ProbeDirection,
     choose_probe_direction,
     normalize_probabilities,
 )
+from app.types.interview_concept_types import QuestionAndAnswer
 
 
 def test_normalize_probabilities() -> None:
@@ -51,3 +57,120 @@ def test_choose_probe_direction() -> None:
 
     # With 2:1 ratio, expect roughly 66% DEEPER
     assert 630 <= deeper_count <= 730  # Allow for some variance
+
+
+@pytest.fixture
+def conv_tree() -> ConversationTree:
+    return ConversationTree(max_depth=3, max_breadth=3)
+
+
+@pytest.fixture
+def make_turn() -> Callable[..., ConversationalTurn]:
+    def _make_turn(
+        question_text: str | None = None,
+        answer_text: str | None = None,
+    ) -> ConversationalTurn:
+        question = QuestionAndAnswer(
+            question=question_text
+            or f"Test question {random.randint(1, 1000)}?",
+            sample_answer=f"Sample answer {random.randint(1, 1000)}",
+            options=f"option{random.randint(1, 100)}, option{random.randint(1, 100)}",
+        )
+
+        answer = Dispatcher.package_and_transform_to_webframe(
+            answer_text or f"Test answer {random.randint(1, 1000)}",  # type: ignore
+            "content",
+            str(uuid4()),
+        )
+
+        return ConversationalTurn(
+            question=question,
+            answer=answer,
+        )
+
+    return _make_turn
+
+
+def test_add_root(
+    conv_tree: ConversationTree,
+    make_turn: Callable[..., ConversationalTurn],
+) -> None:
+    assert conv_tree.max_depth == 3
+    assert conv_tree.max_breadth == 3
+    assert conv_tree.current_depth == 0
+    assert conv_tree.current_breadth == 0
+    assert conv_tree.current_position is None
+
+    turn_1 = make_turn(
+        question_text="What is the capital of France?",
+        answer_text="it is surely paris",
+    )
+
+    conv_tree.add_turn(
+        turn_1,
+        direction=ProbeDirection.DEEPER,
+    )
+    assert conv_tree.current_depth == 0
+    assert conv_tree.current_breadth == 0
+    assert conv_tree.current_position is not None
+    assert conv_tree.current_position.question == turn_1.question
+    assert conv_tree.current_position.answer == turn_1.answer
+
+    current_position = conv_tree.current_position
+    assert current_position.children == []
+
+    assert conv_tree.move_up() is False
+    assert conv_tree.move_to_child(0) is False
+    assert conv_tree.move_to(current_position) is True
+
+    assert current_position.get_full_historic_context() == [
+        {
+            "role": "assistant",
+            "content": turn_1.question.question,
+        },
+        {
+            "role": "user",
+            "content": turn_1.answer.frame.content,
+        },
+    ]
+
+    turn_2 = make_turn(
+        question_text="what is the tastiest food in the world?",
+        answer_text="biryani, hands down",
+    )
+
+    conv_tree.add_turn(
+        turn_2,
+        direction=ProbeDirection.DEEPER,
+    )
+
+    assert conv_tree.current_depth == 1
+    assert conv_tree.current_breadth == 0
+    assert conv_tree.current_position is not None
+    assert conv_tree.current_position.parent == turn_1
+    assert conv_tree.current_position.question == turn_2.question
+    assert conv_tree.current_position.answer == turn_2.answer
+
+    assert conv_tree.move_up() is True
+    assert conv_tree.move_to_child(0) is True
+    assert conv_tree.move_to(turn_1) is True
+    assert conv_tree.move_to_child(0) is True
+
+    assert conv_tree.current_position.get_full_historic_context() == [
+        {
+            "role": "assistant",
+            "content": turn_1.question.question,
+        },
+        {
+            "role": "user",
+            "content": turn_1.answer.frame.content,
+        },
+        {
+            "role": "assistant",
+            "content": turn_2.question.question,
+        },
+        {
+            "role": "user",
+            "content": turn_2.answer.frame.content,
+        },
+    ]

@@ -1,6 +1,5 @@
 import random
 from enum import Enum
-from pprint import pprint
 from typing import Optional
 
 from pydantic import BaseModel
@@ -117,6 +116,49 @@ class ConversationalTurn(BaseModel):
             for child in self.parent.children
             if child.depth == self.depth
         ]
+
+    def get_full_historic_context(self) -> list[dict[str, str]]:
+        """Get the full context of this turn."""
+        context: list[dict[str, str]] = []
+        parent = self.get_parent()
+        if parent:
+            context = parent.get_full_historic_context()
+        context.extend(self.get_context())
+        return context
+
+    def get_parent(self) -> Optional["ConversationalTurn"]:
+        if not self.parent:
+            return None
+        return self.parent
+
+    def get_context(self) -> list[dict[str, str]]:
+        """Get the context of this turn."""
+        context: list[dict[str, str]] = []
+        answer_content = self.answer.frame.content or None
+        question_content = (
+            self.question.question if self.question else None
+        )
+
+        if not answer_content and not question_content:
+            return []
+
+        if question_content:
+            context.append(
+                {
+                    "role": "assistant",
+                    "content": question_content,
+                }
+            )
+
+        if answer_content:
+            context.append(
+                {
+                    "role": "user",
+                    "content": answer_content,
+                }
+            )
+
+        return context
 
     def grow_conversation(
         self,
@@ -277,10 +319,26 @@ class ConversationTree(BaseModel):
                 new_turn, self, direction
             )
 
+        if success:
+            self.current_position = (
+                new_turn  # Update current position to the new turn
+            )
+
         print("\033[93m" + "#" * 100 + "\033[0m")
-        pprint(self.model_dump_json(indent=4))
-        pprint(success, indent=2)
+        # Replace model_dump_json with a simpler debug print
+        print(
+            {
+                "current_depth": self.current_depth,
+                "current_breadth": self.current_breadth,
+                "has_root": self.root is not None,
+                "current_position_depth": self.current_position.depth
+                if self.current_position
+                else None,
+            }
+        )
+        print(success)
         print("\033[93m" + "#" * 100 + "\033[0m")
+
         # Print tree structure after addition
         if success:
             self._print_tree()
