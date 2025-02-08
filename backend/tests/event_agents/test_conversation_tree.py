@@ -174,3 +174,91 @@ def test_add_root(
             "content": turn_2.answer.frame.content,
         },
     ]
+
+
+def test_add_root_with_broader_probe(
+    conv_tree: Tree,
+    make_turn: Callable[..., Turn],
+) -> None:
+    # Add initial root turn
+    turn_1 = make_turn(
+        question_text="What is your favorite season?",
+        answer_text="Summer is my favorite",
+    )
+    conv_tree.add_turn(turn_1, direction=ProbeDirection.DEEPER)
+
+    # Add a broader turn
+    turn_2 = make_turn(
+        question_text="What other activities do you enjoy?",
+        answer_text="I enjoy hiking and swimming",
+    )
+    conv_tree.add_turn(turn_2, direction=ProbeDirection.BROADER)
+
+    # Verify tree structure
+    assert conv_tree.current_depth == 0
+    assert conv_tree.current_breadth == 1
+    assert conv_tree.current_position is not None
+    assert (
+        conv_tree.current_position.parent is None
+    )  # Should be at root level
+    assert conv_tree.current_position.question == turn_2.question
+    assert conv_tree.current_position.answer == turn_2.answer
+
+    # Test navigation
+    assert conv_tree.move_to(turn_1) is True
+    assert conv_tree.current_position.question == turn_1.question
+
+    # Verify context includes both turns but maintains independence
+    assert turn_2.get_full_historic_context() == [
+        {
+            "role": "assistant",
+            "content": turn_2.question.question,
+        },
+        {
+            "role": "user",
+            "content": turn_2.answer.frame.content,
+        },
+    ]
+
+
+def test_mixed_probe_directions(
+    conv_tree: Tree,
+    make_turn: Callable[..., Turn],
+) -> None:
+    # Create a more complex tree with mixed directions
+    turn_1 = make_turn(
+        question_text="What's your main hobby?",
+        answer_text="Reading books",
+    )
+    conv_tree.add_turn(turn_1, direction=ProbeDirection.DEEPER)
+
+    turn_2 = make_turn(
+        question_text="What genre do you prefer?",
+        answer_text="Science fiction",
+    )
+    conv_tree.add_turn(turn_2, direction=ProbeDirection.DEEPER)
+
+    turn_3 = make_turn(
+        question_text="Do you have other hobbies?",
+        answer_text="Yes, gardening",
+    )
+    conv_tree.add_turn(turn_3, direction=ProbeDirection.BROADER)
+
+    # Verify tree structure
+    assert conv_tree.current_depth == 1
+    assert conv_tree.current_breadth == 1
+
+    # Test navigation between branches
+    assert conv_tree.move_to(turn_1) is True
+    assert conv_tree.move_to_child(0) is True
+    assert conv_tree.current_position.question == turn_2.question
+
+    assert conv_tree.move_to(turn_3) is True
+    assert conv_tree.current_position.question == turn_3.question
+
+    # Verify independent contexts
+    deeper_context = turn_2.get_full_historic_context()
+    assert len(deeper_context) == 4  # Should include turn_1 and turn_2
+
+    broader_context = turn_3.get_full_historic_context()
+    assert len(broader_context) == 4  # Should only include turn_3

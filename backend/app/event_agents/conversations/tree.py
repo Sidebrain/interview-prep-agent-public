@@ -1,9 +1,12 @@
+import logging
 from typing import Optional
 
 from pydantic import BaseModel
 
 from app.event_agents.conversations.turn import Turn
 from app.event_agents.conversations.types import ProbeDirection
+
+logger = logging.getLogger(__name__)
 
 
 class Tree(BaseModel):
@@ -49,12 +52,14 @@ class Tree(BaseModel):
         if not self.current_position:
             return False
 
-        new_turn.parent = self.current_position
-
         if direction == ProbeDirection.DEEPER:
+            # Add child to current position
+            new_turn.parent = self.current_position
             depth = self.current_position.depth + 1
             breadth = self.current_position.breadth
-        else:
+        elif direction == ProbeDirection.BROADER:
+            # Add child to parent of current position, since it is a sibling
+            new_turn.parent = self.current_position.parent
             depth = self.current_position.depth
             breadth = self.current_position.breadth + 1
 
@@ -176,19 +181,20 @@ class Tree(BaseModel):
         """Add a new turn to the conversation."""
         success = self.grow_conversation(new_turn, direction)
 
-        print("\033[93m" + "#" * 100 + "\033[0m")
-        print(
-            {
-                "current_depth": self.current_depth,
-                "current_breadth": self.current_breadth,
-                "has_root": self.root is not None,
-                "current_position_depth": self.current_position.depth
-                if self.current_position
-                else None,
-            }
+        logger.debug(
+            "Turn addition status: success=%s",
+            success,
+            extra={
+                "context": {
+                    "current_depth": self.current_depth,
+                    "current_breadth": self.current_breadth,
+                    "has_root": self.root is not None,
+                    "current_position_depth": self.current_position.depth
+                    if self.current_position
+                    else None,
+                }
+            },
         )
-        print(success)
-        print("\033[93m" + "#" * 100 + "\033[0m")
 
         if success:
             self._print_tree()
