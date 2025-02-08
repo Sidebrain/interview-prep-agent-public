@@ -20,8 +20,8 @@ class InterviewLifecyceManager:
         interview_context: InterviewContext,
         question_manager: QuestionManager,
         time_manager: TimeManager,
-        evaluation_manager: EvaluationManager,
-        perspective_manager: PerspectiveManager,
+        evaluation_manager: EvaluationManager | None,
+        perspective_manager: PerspectiveManager | None,
         setup_subscribers: Callable[[], Awaitable[None]],
         setup_command_subscribers: Callable[[], Awaitable[None]],
     ) -> None:

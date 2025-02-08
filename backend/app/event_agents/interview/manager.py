@@ -72,6 +72,7 @@ class InterviewManager:
             evaluator_registry=EvaluatorRegistry(
                 interview_context=self.interview_context
             ),
+            debug=False,
         )
         self.perspective_manager = PerspectiveManager(
             interview_context=self.interview_context,

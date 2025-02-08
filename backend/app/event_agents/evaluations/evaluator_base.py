@@ -126,6 +126,7 @@ class EvaluatorBase(ABC, Generic[T]):
         evaluation = await self.ask_thinker_for_evaluation(
             messages=context_messages,
             thinker=thinker,
+            debug=debug,
         )
 
         evaluation_frame = Dispatcher.package_and_transform_to_webframe(
@@ -205,6 +206,7 @@ class EvaluatorBase(ABC, Generic[T]):
         self,
         messages: List[dict[str, str]],
         thinker: "Thinker",
+        debug: bool,
     ) -> BaseModel | str:
         """
         Ask questions to the thinker.
@@ -217,13 +219,15 @@ class EvaluatorSimple(EvaluatorBase[str]):
         self,
         messages: List[dict[str, str]],
         thinker: "Thinker",
+        debug: bool,
     ) -> str:
         response = await thinker.generate(messages=messages)
         content = response.choices[0].message.content or "No content"
-        logger.info(
-            "Simple evaluation response",
-            extra={"context": {"content": content}},
-        )
+        if debug:
+            logger.info(
+                "Simple evaluation response",
+                extra={"context": {"content": content}},
+            )
         return content
 
 
@@ -236,6 +240,7 @@ class EvaluatorStructured(EvaluatorBase[type[BaseModel]]):
         self,
         messages: List[dict[str, str]],
         thinker: "Thinker",
+        debug: bool,
     ) -> BaseModel:
         structured_evaluation_response: BaseModel = (
             await thinker.extract_structured_response(
@@ -243,15 +248,16 @@ class EvaluatorStructured(EvaluatorBase[type[BaseModel]]):
                 pydantic_structure_to_extract=self.evaluation_schema,
             )
         )
-        logger.info(
-            "Structured evaluation response",
-            extra={
-                "context": {
-                    "type": type(
-                        structured_evaluation_response
-                    ).__name__,
-                    "response": structured_evaluation_response.model_dump(),
-                }
-            },
-        )
+        if debug:
+            logger.info(
+                "Structured evaluation response",
+                extra={
+                    "context": {
+                        "type": type(
+                            structured_evaluation_response
+                        ).__name__,
+                        "response": structured_evaluation_response.model_dump(),
+                    }
+                },
+            )
         return structured_evaluation_response

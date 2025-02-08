@@ -60,8 +60,8 @@ async def create_interview(
     )
 
     conversation_tree = Tree(
-        max_depth=3,
-        max_breadth=3,
+        max_depth=4,
+        max_breadth=6,
     )
 
     interview_context = InterviewContext(

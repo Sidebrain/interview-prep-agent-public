@@ -27,9 +27,11 @@ class EvaluationManager:
         self,
         interview_context: InterviewContext,
         evaluator_registry: "EvaluatorRegistry",
+        debug: bool = False,
     ) -> None:
         self.interview_context = interview_context
         self.evaluator_registry = evaluator_registry
+        self.debug = debug
 
     async def handle_evaluation_command(
         self, event: GenerateEvaluationsCommand
@@ -81,7 +83,7 @@ class EvaluationManager:
         evaluation = await evaluator.evaluate(
             questions,
             self.interview_context,
-            debug=True,
+            debug=self.debug,
         )
         await self.interview_context.memory_store.add(evaluation)
         return evaluation

@@ -1,7 +1,7 @@
 import logging
 
 from app.event_agents.conversations.turn import Turn
-from app.event_agents.conversations.types import ProbeDirection
+from app.event_agents.conversations.utils import choose_probe_direction
 from app.event_agents.orchestrator.commands import (
     GenerateEvaluationsCommand,
     GeneratePerspectivesCommand,
@@ -38,16 +38,20 @@ class AnswerProcessor:
             raise
 
     def _add_answer_to_conversation_tree(
-        self, event: AddToMemoryEvent
+        self,
+        event: AddToMemoryEvent,
     ) -> None:
         conv_turn = Turn(
             question=self.question_manager.current_question,
             answer=event.frame,
             parent=self.interview_context.conversation_tree.current_position,
         )
+        direction = choose_probe_direction(
+            depth_probability=0.5, breadth_probability=0.5
+        )
         self.interview_context.conversation_tree.add_turn(
             new_turn=conv_turn,
-            direction=ProbeDirection.DEEPER,
+            direction=direction,
         )
 
     async def _add_answer_to_memory(

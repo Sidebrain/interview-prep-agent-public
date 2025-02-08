@@ -18,6 +18,7 @@ class Tree(BaseModel):
     current_depth: int = 0
     current_breadth: int = 0
     current_position: Optional[Turn] = None
+    debug: bool = False
 
     def __init__(self, **data) -> None:  # type: ignore
         super().__init__(**data)
@@ -59,7 +60,11 @@ class Tree(BaseModel):
             breadth = self.current_position.breadth
         elif direction == ProbeDirection.BROADER:
             # Add child to parent of current position, since it is a sibling
-            new_turn.parent = self.current_position.parent
+            new_turn.parent = (
+                self.current_position.parent
+                if self.current_position.parent
+                else self.current_position
+            )
             depth = self.current_position.depth
             breadth = self.current_position.breadth + 1
 
@@ -153,8 +158,21 @@ class Tree(BaseModel):
             node = self.root
             print("\nConversation Tree Structure:")
 
+        # Debug logging
+        if self.debug:
+            logger.debug(
+                f"Processing node - Depth:{node.depth}, Breadth:{node.breadth}, "
+                f"Children count: {len(node.children)}"
+            )
+
         # Print current node
-        marker = "└── " if prefix else ""
+        marker = (
+            "└── "
+            if prefix
+            and node.parent
+            and node.breadth == node.parent.breadth
+            else ""
+        )
         current_marker = "* " if node == self.current_position else "  "
         question_text = (
             node.question.question if node.question else "No question"
@@ -163,14 +181,26 @@ class Tree(BaseModel):
             f"{prefix}{marker}{current_marker}[D:{node.depth},B:{node.breadth}] {question_text[:50]}..."
         )
 
-        # Print children
-        for i, child in enumerate(node.children):
-            is_last = i == len(node.children) - 1
-            new_prefix = prefix + (
-                "    "
-                if prefix.endswith("└── ") or not prefix
-                else "│   "
-            )
+        # Process all children in breadth order
+        sorted_children = sorted(node.children, key=lambda x: x.breadth)
+        for child in sorted_children:
+            if self.debug:
+                logger.debug(
+                    f"Processing child - Depth:{child.depth}, Breadth:{child.breadth}"
+                )
+
+            # Only add new prefix for deeper nodes (same breadth)
+            if child.breadth == node.breadth:
+                new_prefix = prefix + (
+                    "    "
+                    if prefix.endswith("└── ") or not prefix
+                    else "│   "
+                )
+            else:
+                new_prefix = (
+                    prefix  # Keep same prefix for broader nodes
+                )
+
             self._print_tree(child, level + 1, new_prefix)
 
     def add_turn(
