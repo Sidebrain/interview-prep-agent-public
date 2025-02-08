@@ -121,6 +121,7 @@ class Agent:
             "job description",
             "interview questions",
             "rating rubric in table format",
+            "job simulation exercise",
         ]
         generated_items = await asyncio.gather(
             *[
