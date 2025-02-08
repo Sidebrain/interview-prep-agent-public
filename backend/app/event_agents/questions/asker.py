@@ -41,10 +41,9 @@ class DynamicQuestionAskingStrategy(BaseQuestionAskingStrategy):
 
 class Prober:
     def __init__(
-        self, parent_question: QuestionAndAnswer, max_depth: int = 3
+        self, parent_question: QuestionAndAnswer
     ) -> None:
         self.parent_question = parent_question
-        self.max_depth = max_depth
 
     def get_next_question(
         self, question: QuestionAndAnswer

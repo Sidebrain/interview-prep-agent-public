@@ -13,6 +13,12 @@ from app.event_agents.websocket_handler import Channel
 
 
 @dataclass(frozen=True)
+class InterviewAbilities:
+    evaluations_enabled: bool = False
+    perspectives_enabled: bool = False
+
+
+@dataclass(frozen=True)
 class InterviewContext:
     interview_id: UUID
     agent_id: UUID
@@ -23,4 +29,5 @@ class InterviewContext:
     channel: Channel
     agent_profile: AgentProfile
     conversation_tree: Tree
+    interview_abilities: InterviewAbilities
     max_time_allowed: int

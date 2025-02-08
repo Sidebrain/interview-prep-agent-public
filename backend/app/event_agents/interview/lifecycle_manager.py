@@ -95,17 +95,29 @@ class InterviewLifecyceManager:
 
     async def initialize_evaluation_systems(self) -> None:
         """Initialize evaluation and perspective systems."""
-        await self.evaluation_manager.evaluator_registry.initialize()
-        await NotificationManager.send_notification(
-            self.interview_context.broker,
-            "Evaluator registry initialized.",
-        )
+        if self.interview_context.interview_abilities.evaluations_enabled:
+            if self.evaluation_manager is None:
+                raise ValueError(
+                    "Evaluation manager is not initialized"
+                )
+            await (
+                self.evaluation_manager.evaluator_registry.initialize()
+            )
+            await NotificationManager.send_notification(
+                self.interview_context.broker,
+                "Evaluator registry initialized.",
+            )
 
-        await self.perspective_manager.perspective_registry.initialize()
-        await NotificationManager.send_notification(
-            self.interview_context.broker,
-            "Perspective registry initialized.",
-        )
+        if self.interview_context.interview_abilities.perspectives_enabled:
+            if self.perspective_manager is None:
+                raise ValueError(
+                    "Perspective manager is not initialized"
+                )
+            await self.perspective_manager.perspective_registry.initialize()
+            await NotificationManager.send_notification(
+                self.interview_context.broker,
+                "Perspective registry initialized.",
+            )
 
     async def begin_questioning(self) -> None:
         """Start the question-asking process."""

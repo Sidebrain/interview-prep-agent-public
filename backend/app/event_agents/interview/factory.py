@@ -12,7 +12,7 @@ from app.event_agents.schemas.mongo_schemas import (
     Interviewer,
     InterviewSession,
 )
-from app.event_agents.types import InterviewContext
+from app.event_agents.types import InterviewAbilities, InterviewContext
 from app.event_agents.websocket_handler import Channel
 
 logger = logging.getLogger(__name__)
@@ -64,8 +64,14 @@ async def create_interview(
         max_breadth=6,
     )
 
+    interview_abilities = InterviewAbilities(
+        evaluations_enabled=True,
+        perspectives_enabled=False,
+    )
+
     interview_context = InterviewContext(
         interview_id=interview_session.id,  # type: ignore
+        interview_abilities=interview_abilities,
         agent_id=interviewer.id,  # type: ignore
         interviewer=interviewer,
         agent_profile=agent_profile,

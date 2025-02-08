@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from app.event_agents.conversations.turn import Turn
 from app.event_agents.conversations.utils import choose_probe_direction
@@ -64,20 +65,34 @@ class AnswerProcessor:
         try:
             if self.question_manager.current_question is None:
                 return
-            generate_evaluations_command = GenerateEvaluationsCommand(
-                questions=[self.question_manager.current_question]
-            )
-            await self.interview_context.broker.publish(
-                generate_evaluations_command
-            )
-            generate_perspectives_command = GeneratePerspectivesCommand(
-                questions=[self.question_manager.current_question]
-            )
-            await self.interview_context.broker.publish(
-                generate_perspectives_command
-            )
+            # check if evaluations are enabled
+            if self.interview_context.interview_abilities.evaluations_enabled:
+                generate_evaluations_command = (
+                    GenerateEvaluationsCommand(
+                        questions=[
+                            self.question_manager.current_question
+                        ]
+                    )
+                )
+                await self.interview_context.broker.publish(
+                    generate_evaluations_command
+                )
+
+            # check if perspectives are enabled
+            if self.interview_context.interview_abilities.perspectives_enabled:
+                generate_perspectives_command = (
+                    GeneratePerspectivesCommand(
+                        questions=[
+                            self.question_manager.current_question
+                        ]
+                    )
+                )
+                await self.interview_context.broker.publish(
+                    generate_perspectives_command
+                )
         except Exception as e:
             logger.error(
                 f"Error in issue_appropriate_command: {str(e)}"
+                f"traceback: {traceback.format_exc()}"
             )
             raise
