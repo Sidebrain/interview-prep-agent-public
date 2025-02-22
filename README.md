@@ -1,9 +1,47 @@
 # Project README
 
 ## Detailed Git Log
-*Last updated: 2025-02-17 14:25:33*
+*Last updated: 2025-02-22 12:48:01*
 
-### Commit: 295f94c
+### Commit: 29b487d
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Sat Feb 22 12:46:38 2025 +0530
+
+> feat: enhance shell script infrastructure
+
+• Add MongoDB Docker setup script for local development
+• Create utility for copying Python files to clipboard
+• Add README auto-generation script with git history, this will run
+inpre-commit hook
+• Set executable permissions on shell scripts
+
+The changes streamline development workflows by adding convenient
+utilities for local database setup, code sharing, and documentation
+management.
+
+
+---
+
+### Commit: 8ae1674
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Sat Feb 22 12:44:55 2025 +0530
+
+> feat: add AI interview cost calculator with Streamlit UI
+
+Add a sophisticated cost calculator for AI-driven interviews with an interactive Streamlit interface. Features include:
+
+- Token-based cost modeling for questions, answers, and evaluations
+- Configurable parameters for fine-tuning simulation scenarios
+- Interactive visualizations with Altair for cost analysis
+- Support for accumulative context modes in evaluation and question generation
+- Detailed cost breakdowns and metrics
+
+The calculator helps estimate and analyze costs for AI interview systems while providing intuitive controls for experimentation.
+
+
+---
+
+### Commit: 1d9c9ac
 **Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
 **Date:** Sat Feb 8 22:49:40 2025 +0530
 
@@ -29,6 +67,8 @@ Technical changes:
 - Modified LifecycleManager to respect ability settings
 - Enhanced error messages with full stack traces
 - Removed unused max_depth parameter from Prober class
+
+Updated README
 
 
 ---
