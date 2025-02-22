@@ -8,6 +8,7 @@ from app.event_agents.interview.notifications import NotificationManager
 from app.event_agents.interview.time_manager import TimeManager
 from app.event_agents.perspectives.manager import PerspectiveManager
 from app.event_agents.questions.manager import QuestionManager
+from app.event_agents.roles.manager import RoleBuilder, RoleContext
 from app.event_agents.types import InterviewContext
 from app.types.interview_concept_types import QuestionAndAnswer
 
@@ -62,17 +63,33 @@ class InterviewLifecyceManager:
             timer_notification_string,
         )
 
-        #! TODO bring this back in later
-        # logger.info("Building role context")
-        # await RoleBuilder(self.interview_context.interviewer).build(
-        #     self.interview_context.thinker
-        # )
-        # logger.info("Role context built")
+        _ = await self.build_role_context()
 
         await self.initialize_evaluation_systems()
         await self.begin_questioning()
 
         return self.question_manager.questions
+
+    async def build_role_context(self) -> RoleContext:
+        await NotificationManager.send_notification(
+            self.interview_context.broker,
+            "Building role context",
+        )
+        logger.info("Building role context")
+        interviewer = self.interview_context.interviewer
+        thinker = self.interview_context.thinker
+
+        role_context = await RoleBuilder(
+            interviewer,
+            thinker,
+        ).build()
+
+        await NotificationManager.send_notification(
+            self.interview_context.broker,
+            "Role context built",
+        )
+        logger.info("Role context built")
+        return role_context
 
     async def start_interview_timer(self) -> str:
         """Start the interview timer and notify the user."""

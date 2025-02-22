@@ -48,7 +48,7 @@ class ConnectionManager:
         # Create new connection
         interview_manager = await create_interview(
             websocket=websocket,
-            interview_session_id=interview_session.id,
+            interview_session_id=interview_session.id,  # type: ignore
         )
 
         # Initialize agent

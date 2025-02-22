@@ -1,9 +1,7 @@
 import logging
-from dataclasses import dataclass
-
-from pydantic import BaseModel, Field
 
 from app.event_agents.orchestrator.thinker import Thinker
+from app.event_agents.roles.types import RoleContext, StructuredRole
 from app.event_agents.schemas.mongo_schemas import (
     Interviewer,
 )
@@ -12,54 +10,31 @@ from app.event_agents.schemas.mongo_schemas import (
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class RoleContext:
-    system_prompt: str
-    role_name: str
-
-
-class StructuredRole(BaseModel):
-    role_name: str = Field(
-        description="The name of the role, eg Career Counselor, HR Manager, etc"
-    )
-    responsibilities: list[str] = Field(
-        description="A list of responsibilities that the role requires"
-    )
-    qualifications: list[str] = Field(
-        description="A list of qualifications that the role requires"
-    )
-    expertise: list[str] = Field(
-        description="A list of expertise that the role requires"
-    )
-    personality: list[str] = Field(
-        description="A list of personality traits that the role requires"
-    )
-    technical_skills: list[str] = Field(
-        description="A list of technical skills that the role requires"
-    )
-    soft_skills: list[str] = Field(
-        description="A list of soft skills that the role requires"
-    )
-
 
 class RoleBuilder:
-    def __init__(self, interviewer: Interviewer) -> None:
+    def __init__(
+        self,
+        interviewer: Interviewer,
+        thinker: Thinker,
+    ) -> None:
         self.interviewer = interviewer
         self.system_prompt = None
+        self.thinker = thinker
 
-    async def build(self, thinker: Thinker) -> RoleContext:
-        structured_role = await self._analyze_job_description(thinker)
+    async def build(self) -> RoleContext:
+        structured_role = await self._analyze_job_description()
         prompt_instructions = self._create_prompt_instructions(
             structured_role
         )
         system_prompt = await self._generate_system_prompt(
-            thinker, prompt_instructions
+            prompt_instructions
         )
 
         role_context = RoleContext(
             system_prompt=system_prompt,
             role_name=structured_role.role_name,
         )
+        self.thinker.role_context = role_context
         logger.info(
             "Role context generated",
             extra={
@@ -71,17 +46,17 @@ class RoleBuilder:
         )
         return role_context
 
-    async def _analyze_job_description(
-        self, thinker: Thinker
-    ) -> StructuredRole:
-        structured_role = await thinker.extract_structured_response(
-            StructuredRole,
-            messages=[
-                {
-                    "role": "user",
-                    "content": self.interviewer.job_description,
-                },
-            ],
+    async def _analyze_job_description(self) -> StructuredRole:
+        structured_role = (
+            await self.thinker.extract_structured_response(
+                StructuredRole,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": self.interviewer.job_description,
+                    },
+                ],
+            )
         )
         if not structured_role:
             logger.error("No structured role found")
@@ -116,10 +91,8 @@ class RoleBuilder:
         Make the prompt action-oriented and focused on service delivery, maintaining a professional and authentic voice throughout.
         """
 
-    async def _generate_system_prompt(
-        self, thinker: Thinker, instructions: str
-    ) -> str:
-        response = await thinker.generate(
+    async def _generate_system_prompt(self, instructions: str) -> str:
+        response = await self.thinker.generate(
             messages=[
                 {"role": "user", "content": instructions},
             ],
