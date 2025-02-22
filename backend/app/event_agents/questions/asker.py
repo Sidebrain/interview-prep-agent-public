@@ -16,9 +16,6 @@ class AskingStrategy(ABC):
 
 
 class BaseQuestionAskingStrategy(AskingStrategy):
-    def __init__(self, questions: list[QuestionAndAnswer]) -> None:
-        self.questions = questions
-
     async def get_next_question(
         self,
     ) -> QuestionAndAnswer | None:
@@ -32,17 +29,12 @@ class BaseQuestionAskingStrategy(AskingStrategy):
 
 
 class DynamicQuestionAskingStrategy(BaseQuestionAskingStrategy):
-    def __init__(self, questions: list[QuestionAndAnswer]) -> None:
-        super().__init__(questions)
-
     async def get_next_question(self) -> QuestionAndAnswer | None:
         return await super().get_next_question()
 
 
 class Prober:
-    def __init__(
-        self, parent_question: QuestionAndAnswer
-    ) -> None:
+    def __init__(self, parent_question: QuestionAndAnswer) -> None:
         self.parent_question = parent_question
 
     def get_next_question(
