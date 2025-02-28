@@ -1,7 +1,17 @@
 # Project README
 
 ## Detailed Git Log
-*Last updated: 2025-02-22 22:29:17*
+*Last updated: 2025-03-01 00:35:30*
+
+### Commit: 982a366
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Sat Feb 22 22:29:17 2025 +0530
+
+> refactor: removed unecessary init methods in abstract implementaion of asking strategy
+
+
+
+---
 
 ### Commit: 7c1ee5e
 **Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
