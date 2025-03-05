@@ -1,7 +1,22 @@
 # Project README
 
 ## Detailed Git Log
-*Last updated: 2025-03-01 00:35:30*
+*Last updated: 2025-03-05 11:07:59*
+
+### Commit: 282f230
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Sat Mar 1 00:35:30 2025 +0530
+
+> refactor(logging): streamline JSON logging with improved formatting and structure
+
+- Split JSON formatting logic into dedicated formatter classes
+- Add colored console output for better readability
+- Implement proper JSON array file handling with clean spacing
+- Simplify value sanitization for complex objects
+- Improve logging configuration with cleaner handler setup
+
+
+---
 
 ### Commit: 982a366
 **Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
