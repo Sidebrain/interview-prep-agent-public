@@ -1,7 +1,17 @@
 # Project README
 
 ## Detailed Git Log
-*Last updated: 2025-03-05 11:07:59*
+*Last updated: 2025-03-06 13:30:33*
+
+### Commit: 0baa3d6
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Wed Mar 5 11:07:59 2025 +0530
+
+> feat: moved from pip to uv using migrate
+
+
+
+---
 
 ### Commit: 282f230
 **Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>

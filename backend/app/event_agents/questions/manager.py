@@ -44,11 +44,7 @@ class QuestionManager:
                 interview_context=interview_context
             )
         )
-        self.question_asking_strategy: AskingStrategy = (
-            self._question_asking_strategy_class(
-                questions=self.questions
-            )
-        )
+        self.question_asking_strategy: AskingStrategy | None = None
 
     def __repr__(self) -> str:
         return json.dumps(
@@ -72,7 +68,8 @@ class QuestionManager:
             # Create the instance using the stored class
             self.question_asking_strategy = (
                 self._question_asking_strategy_class(
-                    questions=self.questions
+                    questions=self.questions,
+                    interview_context=self.interview_context,
                 )
             )
         except Exception as e:

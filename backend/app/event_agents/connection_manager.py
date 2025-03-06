@@ -63,6 +63,7 @@ class ConnectionManager:
                 "context": {
                     "token": interview_session_id,
                     "interview_id": str(interview_manager.interview_id),
+                    "active_connections": len(self.active_connections),
                 }
             },
         )

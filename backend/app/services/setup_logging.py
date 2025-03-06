@@ -76,7 +76,11 @@ class JsonArrayFileHandler(logging.FileHandler):
     """A file handler that maintains a JSON array format with clear spacing for readability"""
 
     def __init__(
-        self, filename, mode="a", encoding=None, delay=False
+        self,
+        filename: str,
+        mode: str = "a",
+        encoding: str | None = None,
+        delay: bool = False,
     ) -> None:
         super().__init__(filename, mode, encoding, delay)
         # Initialize file with array opening bracket if empty
@@ -89,7 +93,7 @@ class JsonArrayFileHandler(logging.FileHandler):
             )  # Move before final bracket
             self.stream.write(",\n\n")  # Add extra newline for spacing
 
-    def emit(self, record) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         """Emit a record with proper JSON array formatting and spacing"""
         msg = self.format(record)
         self.stream.write(msg)
