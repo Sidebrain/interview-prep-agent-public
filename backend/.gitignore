@@ -173,3 +173,4 @@ docs/ai_*
 
 # config
 config/*.txt
+.env*

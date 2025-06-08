@@ -14,7 +14,7 @@ class YAMLConfigProvider:
     def get_system_prompt(self) -> List[Dict[str, str]]:
         if self.config_path is None:
             return []
-        with open(self.config_path, "r") as file:
+        with open(self.config_path, "r", encoding="utf-8") as file:
             config = yaml.safe_load(file)
             return [
                 {

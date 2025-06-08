@@ -1,25 +1,51 @@
-version: '1'
 services:
   backend:
     build: 
       context: ./backend 
       dockerfile: Dockerfile
+    image: ai-interviewer-backend:latest
+    container_name: ai-interviewer-backend
     ports:
-      - "8000:8000"
+      - "8080:8080"
     env_file:
       - ./backend/.env
+    volumes:
+      - ./backend/secrets/firebase-admin-key.json:/app/secrets/firebase-admin-key.json:ro
+    depends_on:
+      - mongo
     networks:
       - app-network
+
   frontend:
     build: 
       context: ./frontend
       dockerfile: Dockerfile
+    image: ai-interviewer-frontend:latest
+    container_name: ai-interviewer-frontend
     ports:
       - "3000:3000"
     env_file:
       - ./frontend/.env.docker
+    depends_on:
+      - backend
     networks:
       - app-network
+
+  mongo:
+    image: mongo:6.0
+    container_name: ai-interviewer-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=ai_interviewer
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+volumes:
+  mongo_data:
+
 networks:
   app-network:
     driver: bridge
