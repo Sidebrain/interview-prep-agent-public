@@ -173,3 +173,8 @@ docs/ai_*
 
 # config
 config/*.txt
+
+.env.local
+
+# Add interview data to gitignore
+config/interviews/

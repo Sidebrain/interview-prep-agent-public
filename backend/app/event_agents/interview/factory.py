@@ -65,7 +65,7 @@ async def create_interview(
     )
 
     interview_abilities = InterviewAbilities(
-        evaluations_enabled=False,
+        evaluations_enabled=True,
         perspectives_enabled=False,
     )
 

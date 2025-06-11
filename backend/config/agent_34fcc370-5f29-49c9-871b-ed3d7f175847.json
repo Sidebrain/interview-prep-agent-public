@@ -1,0 +1,97 @@
+{
+    "evaluators": {
+        "Rubric Evaluator": {
+            "properties": {
+                "product_vision_and_strategy": {
+                    "description": "Ability to define and communicate a clear product vision that aligns with business objectives and market needs.",
+                    "title": "Product Vision And Strategy",
+                    "type": "string"
+                },
+                "requirements_gathering": {
+                    "description": "Skilled in gathering and prioritizing product requirements through effective user research and stakeholder engagement.",
+                    "title": "Requirements Gathering",
+                    "type": "string"
+                },
+                "cross-functional_collaboration": {
+                    "description": "Ability to work effectively with engineering, design, and marketing teams to ensure successful product launches.",
+                    "title": "Cross-Functional Collaboration",
+                    "type": "string"
+                },
+                "product_lifecycle_management": {
+                    "description": "Overseeing product development from conception to launch, ensuring all strategic goals are met.",
+                    "title": "Product Lifecycle Management",
+                    "type": "string"
+                },
+                "technical_understanding_of_ai": {
+                    "description": "Possesses a solid understanding of AI technologies and their application in product development.",
+                    "title": "Technical Understanding Of Ai",
+                    "type": "string"
+                },
+                "analytical_skills": {
+                    "description": "Ability to analyze complex data and use insights to drive product decisions effectively.",
+                    "title": "Analytical Skills",
+                    "type": "string"
+                },
+                "communication_skills": {
+                    "description": "Excellent verbal and written communication skills, fostering a team-oriented mindset.",
+                    "title": "Communication Skills",
+                    "type": "string"
+                },
+                "problem-solving_abilities": {
+                    "description": "Proactive in identifying problems and devising customer-focused solutions.",
+                    "title": "Problem-Solving Abilities",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "product_vision_and_strategy",
+                "requirements_gathering",
+                "cross-functional_collaboration",
+                "product_lifecycle_management",
+                "technical_understanding_of_ai",
+                "analytical_skills",
+                "communication_skills",
+                "problem-solving_abilities"
+            ],
+            "title": "DynamicEvaluationModel",
+            "type": "object"
+        },
+        "Relevance Evaluator": "what questions would you ask the user to check if the answer is relevant to the question?",
+        "Exaggeration Evaluator": "what questions would you ask the user to check if they are exaggerating?",
+        "Structured Thinking Evaluator": {
+            "properties": {
+                "sample_framework": {
+                    "description": "a sample framework given the question ",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Sample Framework",
+                    "type": "array"
+                },
+                "user_framework": {
+                    "description": "the implicit framework the user has used in their answer to the question",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "User Framework",
+                    "type": "array"
+                },
+                "evaluation": {
+                    "description": "the evaluation of the user's framework against the sample framework",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Evaluation",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "sample_framework",
+                "user_framework",
+                "evaluation"
+            ],
+            "title": "StructuredThinkingSchema",
+            "type": "object"
+        }
+    }
+}

@@ -1,7 +1,29 @@
 # Project README
 
 ## Detailed Git Log
-*Last updated: 2025-03-06 13:30:33*
+*Last updated: 2025-06-11 14:30:14*
+
+### Commit: 3f107e9
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Thu Mar 6 13:30:33 2025 +0530
+
+> feat: enhance interview flow with dynamic questions and turn management
+
+Implement dynamic question generation and improve conversation management:
+
+- Add TurnBuilder class to manage interview turn state and context
+- Switch to DynamicQuestionAskingStrategy for more natural conversations
+- Add active connection tracking to ConnectionManager
+- Update Turn model with required question field
+- Enable more hiring requirements concepts
+- Add Python 3.12 version specification
+
+This change improves the interview experience by generating contextual
+follow-up questions and providing better state management for each turn
+in the conversation.
+
+
+---
 
 ### Commit: 0baa3d6
 **Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
