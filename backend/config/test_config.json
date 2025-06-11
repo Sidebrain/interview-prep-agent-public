@@ -1,0 +1,146 @@
+{
+    "questions": [
+        {
+            "question": "Can you describe a project where you used PHP? What challenges did you face, and how did you overcome them?",
+            "sample_answer": "In a recent project, I developed a content management system using PHP. One challenge was integrating third-party APIs for data retrieval; the documentation was sparse. I tackled this by reaching out to community forums for support and experimenting with different integration techniques until I found a viable solution.",
+            "options": "Experience in PHP, ability to troubleshoot and learn from challenges"
+        },
+        {
+            "question": "What PHP frameworks are you familiar with, and how have you applied them in your past projects?",
+            "sample_answer": "I have experience with Laravel and CodeIgniter. In one project, I used Laravel to build an e-commerce site because of its elegant syntax and robust features, which allowed for rapid development and easy integration with payment gateways.",
+            "options": "Knowledge of PHP frameworks like Laravel, CodeIgniter, evidence of application in projects"
+        },
+        {
+            "question": "How comfortable are you with HTML5, CSS, Bootstrap, JavaScript, and jQuery? Can you give an example of a project where you utilized these technologies together?",
+            "sample_answer": "I'm very comfortable with those technologies. For instance, in a project for a local business, I created a responsive website using Bootstrap for layout, jQuery for interactivity, and CSS3 for styling. This ensured a user-friendly experience across devices.",
+            "options": "Proficiency in front-end technologies, project experience"
+        },
+        {
+            "question": "What experience do you have with Git? Can you explain the basic concepts of version control and why it’s important in collaboration?",
+            "sample_answer": "I've used Git extensively for version control in collaborative projects. Key concepts include commits, branches, and merges. Version control is crucial as it allows multiple developers to work simultaneously without overwriting each other’s code, facilitating better collaboration and project history tracking.",
+            "options": "Familiarity with Git, understanding of version control principles"
+        },
+        {
+            "question": "Have you worked with SQL databases before? Can you describe a scenario where you had to write a complex SQL query?",
+            "sample_answer": "Yes, I've worked with MySQL databases. In one project, I needed to retrieve user data based on multiple conditions, which required a complex JOIN query. I structured the query carefully to ensure optimal performance and accurate results, which improved the app's response time.",
+            "options": "Experience with SQL, ability to write complex queries"
+        },
+        {
+            "question": "Can you walk us through your process for debugging an application? What tools or techniques do you find most effective?",
+            "sample_answer": "My debugging process starts with reproducing the issue, then I check the logs for errors, and use tools like Xdebug to step through the code. I also utilize unit tests to isolate problems. This structured approach helps me identify and fix issues efficiently.",
+            "options": "Structured debugging approach, familiarity with tools"
+        },
+        {
+            "question": "Describe a time when you encountered a significant problem while working on a web application. What was the issue, and how did you resolve it?",
+            "sample_answer": "I once faced a critical performance issue in an application where page load times were excessively long due to inefficient queries. I profiled the queries and optimized them by adding indexes and restructuring queries, which reduced the load time significantly.",
+            "options": "Problem-solving skills, ability to tackle web application issues"
+        },
+        {
+            "question": "How do you prioritize your tasks when working on multiple projects simultaneously? Can you provide an example?",
+            "sample_answer": "I use a prioritization matrix to evaluate tasks based on urgency and importance. For example, while working on two different web applications, I identified deadline-driven tasks and focused on those first, while allocating time for less urgent tasks later in the week.",
+            "options": "Task prioritization skills, effective time management"
+        },
+        {
+            "question": "How do you handle constructive feedback from your peers or supervisors? Can you share an experience where feedback helped you improve?",
+            "sample_answer": "I view constructive feedback as an opportunity for growth. Once, I received feedback on my code readability. I took that to heart and began to actively seek ways to improve my code structure and documentation, and it helped me write cleaner code in future projects.",
+            "options": "Openness to feedback, continuous improvement mentality"
+        },
+        {
+            "question": "This role may require working on optimizing existing processes. How do you adapt to changes in project requirements or priorities?",
+            "sample_answer": "I adapt by maintaining flexibility and a proactive attitude. For instance, during a project, priority changes required us to focus on a different feature set. I quickly replanned my tasks and communicated with my team to realign our goals effectively.",
+            "options": "Adaptability to change, proactive communication"
+        },
+        {
+            "question": "Since this is an on-site position, what do you value most in a workplace environment? How do you believe the environment impacts your productivity?",
+            "sample_answer": "I value a collaborative and open environment where ideas can be shared freely. I believe that a supportive atmosphere encourages creativity and problem-solving, which directly impacts productivity and job satisfaction.",
+            "options": "Understanding workplace dynamics, valuing collaboration"
+        },
+        {
+            "question": "What interests you about working on an event aggregation platform specifically, and how do you see your skills contributing to this type of project?",
+            "sample_answer": "I'm excited about the idea of connecting people with events that match their interests. My skills in PHP and my experience with APIs will enable me to create seamless integrations and ensure the platform is user-friendly and efficient.",
+            "options": "Interest in event aggregation, relevant skills"
+        },
+        {
+            "question": "What are you looking to learn and achieve in your first year as a PHP Developer with us, and how do you envision your professional growth?",
+            "sample_answer": "In my first year, I hope to deepen my expertise in PHP and explore other areas like DevOps. I envision growing into a role where I can lead projects and mentor junior developers, contributing to the overall team success.",
+            "options": "Goals for growth, eagerness to learn"
+        }
+    ],
+    "evaluators": {
+        "Rubric Evaluator": {
+            "properties": {
+                "technical_skills": {
+                    "description": "Highly proficient in PHP, HTML5, CSS, Bootstrap, JavaScript, jQuery, and SQL. Strong experience with PHP frameworks and version control (Git).",
+                    "title": "Technical Skills",
+                    "type": "string"
+                },
+                "problem-solving_skills": {
+                    "description": "Demonstrates exceptional problem-solving abilities with effective debugging and optimization skills.",
+                    "title": "Problem-Solving Skills",
+                    "type": "string"
+                },
+                "collaboration_&_teamwork": {
+                    "description": "Very effective in the team environment; actively supports team members and fosters collaboration.",
+                    "title": "Collaboration & Teamwork",
+                    "type": "string"
+                },
+                "acceptance_of_feedback": {
+                    "description": "Open and enthusiastic about receiving constructive criticism and makes improvements accordingly.",
+                    "title": "Acceptance Of Feedback",
+                    "type": "string"
+                },
+                "organizational_skills": {
+                    "description": "Highly organized; successfully manages multiple projects simultaneously with excellent time management.",
+                    "title": "Organizational Skills",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "technical_skills",
+                "problem-solving_skills",
+                "collaboration_&_teamwork",
+                "acceptance_of_feedback",
+                "organizational_skills"
+            ],
+            "title": "DynamicEvaluationModel",
+            "type": "object"
+        },
+        "Relevance Evaluator": "check the relevance of the answer to the question",
+        "Exaggeration Evaluator": "check the exaggeration of the answer",
+        "Structured Thinking Evaluator": {
+            "properties": {
+                "sample_framework": {
+                    "description": "a sample framework given the question ",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Sample Framework",
+                    "type": "array"
+                },
+                "user_framework": {
+                    "description": "the implicit framework the user has used in their answer to the question",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "User Framework",
+                    "type": "array"
+                },
+                "evaluation": {
+                    "description": "the evaluation of the user's framework against the sample framework",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Evaluation",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "sample_framework",
+                "user_framework",
+                "evaluation"
+            ],
+            "title": "StructuredThinkingSchema",
+            "type": "object"
+        }
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "frame_id": "69e89316-0809-4137-8a3c-c7f8d74507f3",
+    "correlation_id": "4b89b791-fc48-4d1d-97f1-8059d1e6f08d",
+    "type": "completion",
+    "address": "content",
+    "frame": {
+        "id": "bda77349-2443-40ef-99d8-bf07e13907e1",
+        "object": "chat.completion",
+        "model": "gpt-4o-mini-2024-07-18",
+        "role": "assistant",
+        "content": "Can you describe a project where you successfully conducted market research? What methodologies did you use, and what was the outcome of your findings?",
+        "delta": null,
+        "created_ts": 1736056217,
+        "title": null,
+        "index": 0,
+        "finish_reason": "stop"
+    }
+}

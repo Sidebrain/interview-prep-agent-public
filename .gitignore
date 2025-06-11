@@ -10,4 +10,9 @@ documentation/*
 
 # VSCode
 **/.VSCode*
-shell_scripts
+
+# Custom
+commit_details.txt
+git_log.md
+artifacts_v2.yaml
+config/*.json

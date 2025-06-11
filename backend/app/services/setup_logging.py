@@ -1,11 +1,62 @@
 import json
 import logging
 import logging.config
-
-from pydantic import BaseModel
+from typing import Any
 
 
 class JsonFormatter(logging.Formatter):
+    """Base JSON formatter that handles complex objects and provides clean output"""
+
+    def format(self, record: logging.LogRecord) -> str:
+        log_data = {
+            "timestamp": self.formatTime(record),
+            "logger": record.name,
+            "level": record.levelname,
+            "file": record.filename,
+            "line": record.lineno,
+            "message": record.msg,
+        }
+
+        # Add context if available
+        if hasattr(record, "context"):
+            log_data["context"] = self._sanitize_value(record.context)
+
+        # Add extra data if available
+        if hasattr(record, "extra"):
+            log_data["extra"] = record.extra
+
+        # Add exception info if available
+        if record.exc_info:
+            log_data["exception"] = self.formatException(
+                record.exc_info
+            )
+
+        return json.dumps(log_data, indent=2, default=str)
+
+    def _sanitize_value(self, value: Any) -> Any:
+        """Sanitize values for JSON serialization"""
+        if isinstance(value, dict):
+            return {
+                k: self._sanitize_value(v) for k, v in value.items()
+            }
+        if isinstance(value, (list, tuple)):
+            return [self._sanitize_value(v) for v in value]
+        if hasattr(value, "model_dump"):  # Pydantic v2 model
+            return value.model_dump()
+        if hasattr(
+            value, "dict"
+        ):  # Pydantic v1 model (backwards compatibility)
+            return value.dict()
+        try:
+            json.dumps(value)
+            return value
+        except Exception:
+            return str(value)
+
+
+class ColoredConsoleFormatter(JsonFormatter):
+    """Adds color to console output"""
+
     COLORS = {
         "DEBUG": "\x1b[38;20m",  # grey
         "INFO": "\x1b[32;20m",  # green
@@ -16,104 +67,76 @@ class JsonFormatter(logging.Formatter):
     RESET = "\x1b[0m"
 
     def format(self, record: logging.LogRecord) -> str:
+        formatted_json = super().format(record)
         color = self.COLORS.get(record.levelname, self.COLORS["DEBUG"])
-        log_data = {
-            "timestamp": self.formatTime(record),
-            "logger": record.name,
-            "level": record.levelname,
-            "file": record.filename,
-            "line": record.lineno,
-            "message": record.msg,
-        }
+        return f"{color}{formatted_json}{self.RESET}"
 
-        # Add extra context if available
-        if hasattr(record, "context"):
-            try:
-                if isinstance(record.context, dict):
-                    sanitized_context = {}
-                    for key, value in record.context.items():
-                        if isinstance(value, BaseModel):
-                            sanitized_context[key] = value.model_dump(
-                                by_alias=True
-                            )
-                        else:
-                            try:
-                                json.dumps(value)
-                                sanitized_context[key] = value
-                            except Exception:
-                                sanitized_context[key] = str(value)
-                    log_data["context"] = sanitized_context
-                else:
-                    log_data["context"] = str(record.context)
-            except Exception:
-                log_data["context"] = str(record.context)
 
-        # Add extra
-        if hasattr(record, "extra"):
-            log_data["extra"] = record.extra
+class JsonArrayFileHandler(logging.FileHandler):
+    """A file handler that maintains a JSON array format with clear spacing for readability"""
 
-        # Handle exceptions
-        if record.exc_info:
-            log_data["exception"] = self.formatException(
-                record.exc_info
-            )
+    def __init__(
+        self,
+        filename: str,
+        mode: str = "a",
+        encoding: str | None = None,
+        delay: bool = False,
+    ) -> None:
+        super().__init__(filename, mode, encoding, delay)
+        # Initialize file with array opening bracket if empty
+        if mode == "w" or (mode == "a" and self.stream.tell() == 0):
+            self.stream.write("[\n")
+        elif mode == "a":
+            # If appending and file not empty, add comma after last entry
+            self.stream.seek(
+                self.stream.tell() - 2, 0
+            )  # Move before final bracket
+            self.stream.write(",\n\n")  # Add extra newline for spacing
 
-        # Add color to console output, but not to file output
-        if getattr(
-            record, "colored", True
-        ):  # Default to colored output
-            return f"{color}{json.dumps(log_data, indent=2, default=str)}{self.RESET}"
-        return json.dumps(log_data, indent=2, default=str)
+    def emit(self, record: logging.LogRecord) -> None:
+        """Emit a record with proper JSON array formatting and spacing"""
+        msg = self.format(record)
+        self.stream.write(msg)
+        self.stream.write(",\n\n")  # Add extra newline for spacing
+        self.flush()
+
+    def close(self) -> None:
+        """Ensure proper JSON array closing on shutdown"""
+        if not self.stream.closed:
+            self.stream.seek(
+                self.stream.tell() - 3, 0
+            )  # Move before last comma and newlines
+            self.stream.write("\n]\n")  # Add final newline
+        super().close()
 
 
 def setup_logging(debug: bool = False) -> None:
-    logging_config = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "json": {
-                "()": JsonFormatter,
-            },
-        },
-        "handlers": {
-            "console": {
-                "level": "DEBUG" if debug else "INFO",
-                "formatter": "json",
-                "class": "logging.StreamHandler",
-                "stream": "ext://sys.stdout",
-            },
-            "file": {
-                "level": "DEBUG",
-                "formatter": "json",
-                "class": "logging.FileHandler",
-                "filename": "logs/app.log",
-                "mode": "a",
-            },
-        },
-        "loggers": {
-            "": {
-                "handlers": ["console"],  # updated handler name
-                "level": "WARNING",
-                "propagate": True,
-            },
-            "app": {
-                "handlers": ["console", "file"],  # both handlers
-                "level": "DEBUG" if debug else "INFO",
-                "propagate": False,
-            },
-            "urllib3": {
-                "level": "WARNING",
-            },
-            "asyncio": {
-                "level": "WARNING",
-            },
-            "websockets": {
-                "level": "WARNING",
-            },
-            "httpx": {
-                "level": "WARNING",
-            },
-        },
-    }
+    """Configure application logging with console and file outputs"""
+    # Create formatters
+    console_formatter = ColoredConsoleFormatter()
+    file_formatter = JsonFormatter()
 
-    logging.config.dictConfig(logging_config)
+    # Create and configure handlers
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(console_formatter)
+    console_handler.setLevel(logging.DEBUG if debug else logging.INFO)
+
+    file_handler = JsonArrayFileHandler("logs/app.log", mode="a")
+    file_handler.setFormatter(file_formatter)
+    file_handler.setLevel(logging.DEBUG)
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.WARNING)
+    root_logger.addHandler(console_handler)
+
+    # Configure app logger
+    app_logger = logging.getLogger("app")
+    app_logger.setLevel(logging.DEBUG if debug else logging.INFO)
+    app_logger.propagate = False
+    app_logger.addHandler(console_handler)
+    app_logger.addHandler(file_handler)
+
+    # Configure third-party loggers
+    for logger_name in ["urllib3", "asyncio", "websockets", "httpx"]:
+        logging.getLogger(logger_name).setLevel(logging.WARNING)

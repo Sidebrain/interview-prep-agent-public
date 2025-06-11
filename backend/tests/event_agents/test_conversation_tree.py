@@ -187,6 +187,8 @@ def test_add_root_with_broader_probe(
     )
     conv_tree.add_turn(turn_1, direction=ProbeDirection.DEEPER)
 
+    assert conv_tree.root == turn_1
+
     # Add a broader turn
     turn_2 = make_turn(
         question_text="What other activities do you enjoy?",
@@ -199,7 +201,7 @@ def test_add_root_with_broader_probe(
     assert conv_tree.current_breadth == 1
     assert conv_tree.current_position is not None
     assert (
-        conv_tree.current_position.parent is None
+        conv_tree.current_position.parent is not None
     )  # Should be at root level
     assert conv_tree.current_position.question == turn_2.question
     assert conv_tree.current_position.answer == turn_2.answer

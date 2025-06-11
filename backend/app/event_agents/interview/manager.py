@@ -29,7 +29,9 @@ from app.event_agents.orchestrator.events import (
 )
 from app.event_agents.perspectives.manager import PerspectiveManager
 from app.event_agents.perspectives.registry import PerspectiveRegistry
-from app.event_agents.questions.asker import BaseQuestionAskingStrategy
+from app.event_agents.questions.asker import (
+    DynamicQuestionAskingStrategy,
+)
 from app.event_agents.questions.generation_strategies.service import (
     ServiceQuestionGenerationStrategy,
 )
@@ -64,7 +66,7 @@ class InterviewManager:
         self.question_manager = QuestionManager(
             interview_context=self.interview_context,
             interviewer=self.interviewer,
-            question_asking_strategy=BaseQuestionAskingStrategy,
+            question_asking_strategy=DynamicQuestionAskingStrategy,
             question_generation_strategy=ServiceQuestionGenerationStrategy,
         )
         self.eval_manager = EvaluationManager(

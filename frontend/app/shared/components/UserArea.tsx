@@ -9,12 +9,16 @@ const UserArea = () => {
   const [maxTextareaHeight, setMaxTextareaHeight] = useState(0);
 
   return (
-    <div className="flex flex-col gap-2 items-center md:w-2/3 ">
-      <MessageContainer
-        websocketFrames={frameList.websocketFrames}
-        setMaxTextareaHeight={setMaxTextareaHeight}
-      />
-      <UserInputArea maxTextareaHeight={maxTextareaHeight} />
+    <div className="flex flex-col md:w-2/3 h-full">
+      <div className="flex-1 overflow-y-auto">
+        <MessageContainer
+          websocketFrames={frameList.websocketFrames}
+          setMaxTextareaHeight={setMaxTextareaHeight}
+        />
+      </div>
+      <div className="flex-shrink-0">
+        <UserInputArea maxTextareaHeight={maxTextareaHeight} />
+      </div>
     </div>
   );
 };

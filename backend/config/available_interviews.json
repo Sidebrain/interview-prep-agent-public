@@ -1,0 +1,9 @@
+{
+  "interviews": [
+    {
+      "interview_id": "123e4567-e89b-12d3-a456-426614174000",
+      "agent_id": "b4c83e2f-de31-403f-9801-95254c7f84af",
+      "max_time_allowed": 600
+    }
+  ]
+}

@@ -9,10 +9,12 @@ from app.types.websocket_types import WebsocketFrame
 class Turn(BaseModel):
     """A single turn in a conversation, representing one exchange."""
 
-    question: Optional[QuestionAndAnswer] = None
+    question: QuestionAndAnswer
     answer: WebsocketFrame
     parent: Optional["Turn"] = None
     children: list["Turn"] = []
+    # evaluations: list[WebsocketFrame] = []
+    # perspectives: list[WebsocketFrame] = []
     _depth: int = 0
     _breadth: int = 0
 
