@@ -1,7 +1,52 @@
 # Project README
 
 ## Detailed Git Log
-*Last updated: 2025-06-11 15:28:31*
+*Last updated: 2025-06-11 16:26:25*
+
+### Commit: fd7fd6f
+**Author:** anudeep22003 <anudeep.yegireddi@gmail.com>
+**Date:** Wed Jun 11 16:19:10 2025 +0100
+
+> feat: added a README context that Satyajit should take and integrate into the README writeup.
+
+
+
+---
+
+### Commit: d58f8a3
+**Author:** anudeep22003 <anudeep.yegireddi@gmail.com>
+**Date:** Wed Jun 11 15:28:31 2025 +0100
+
+> Merge branch 'resume' into docs/readme-refactor
+
+
+
+---
+
+### Commit: 9713a68
+**Author:** anudeep22003 <anudeep.yegireddi@gmail.com>
+**Date:** Wed Jun 11 14:30:14 2025 +0100
+
+> feat(ai): Introduce advanced interview evaluation and ranking
+
+This update significantly enhances our AI Interviewer's capabilities, transforming it into a more powerful and insightful tool for assessing candidates. We've introduced two major features: real-time interview evaluation and a tool for ranking multiple candidates.
+
+For our non-technical team members, this means our AI can now:
+- **Score interviews as they happen:** The AI actively listens to the conversation and scores the candidate's responses against a predefined set of criteria, providing instant feedback on their performance.
+- **Rank candidates:** After all interviews for a role are complete, the AI can now compare every candidate and produce a ranked list, helping us quickly identify the top performers.
+
+This release represents a major step forward in our AI's sophistication, enabling a more robust and data-driven approach to hiring.
+
+*** Key Technical Changes: ***
+
+- **Enabled Real-time Evaluations:** The previously developed evaluation system is now activated within the live interview process, providing on-the-fly analysis of a candidate's performance.
+- **New AI-Powered Ranking System:** A new, self-contained module allows for the ranking of multiple completed interview transcripts. It uses an AI model to perform pairwise comparisons, sorting candidates based on defined criteria.
+- **Major Documentation Overhaul:** The backend `README.md` has been completely rewritten to detail the new event-driven architecture, design patterns, and core features, providing a clear guide to the system's design.
+- **Improved Configuration Management:** We've transitioned from a single YAML artifact file to a more structured, modular set of JSON configuration files. This improves maintainability and makes it easier to define agent behaviors and test cases.
+- **Enhanced Testing:** Comprehensive tests have been added for the new ranking system and the core conversation tree structure, ensuring these new features are robust and reliable.
+
+
+---
 
 ### Commit: c1f8007
 **Author:** satyajit-patel <satyajitpatel770001@gmail.com>
@@ -9,6 +54,90 @@
 
 > refactor the readme file
 
+
+
+---
+
+### Commit: 3f107e9
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Thu Mar 6 13:30:33 2025 +0530
+
+> feat: enhance interview flow with dynamic questions and turn management
+
+Implement dynamic question generation and improve conversation management:
+
+- Add TurnBuilder class to manage interview turn state and context
+- Switch to DynamicQuestionAskingStrategy for more natural conversations
+- Add active connection tracking to ConnectionManager
+- Update Turn model with required question field
+- Enable more hiring requirements concepts
+- Add Python 3.12 version specification
+
+This change improves the interview experience by generating contextual
+follow-up questions and providing better state management for each turn
+in the conversation.
+
+
+---
+
+### Commit: 0baa3d6
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Wed Mar 5 11:07:59 2025 +0530
+
+> feat: moved from pip to uv using migrate
+
+
+
+---
+
+### Commit: 282f230
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Sat Mar 1 00:35:30 2025 +0530
+
+> refactor(logging): streamline JSON logging with improved formatting and structure
+
+- Split JSON formatting logic into dedicated formatter classes
+- Add colored console output for better readability
+- Implement proper JSON array file handling with clean spacing
+- Simplify value sanitization for complex objects
+- Improve logging configuration with cleaner handler setup
+
+
+---
+
+### Commit: 982a366
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Sat Feb 22 22:29:17 2025 +0530
+
+> refactor: removed unecessary init methods in abstract implementaion of asking strategy
+
+
+
+---
+
+### Commit: 7c1ee5e
+**Author:** Anudeep Yegireddi <anudeep.yegireddi@gmail.com>
+**Date:** Sat Feb 22 18:00:10 2025 +0530
+
+> feat(roles): Integrate role context into interview lifecycle
+
+Adds role context generation and integration with the interview system. The role
+builder now analyzes job descriptions to create structured role definitions and
+system prompts that guide agent behavior.
+
+Key changes:
+- Role context is built during interview initialization
+- Thinker can now boost messages with role-specific system prompts
+- Moved role types to dedicated module for better organization
+
+Areas for future work:
+- Role context persistence is not implemented yet
+- Need to add different behavior modes beyond service delivery
+- Question generation does not directly incorporate role context
+- Consider caching role analysis results for performance
+- May want to add role-specific evaluation criteria
+
+Breaking changes: None
 
 
 ---

@@ -10,9 +10,9 @@ set -e  # Exit immediately if a command exits with a non-zero status
 
   # Use a custom format for each commit
   git log --pretty=format:"### Commit: %h%n**Author:** %an <%ae>%n**Date:** %ad%n%n> %s%n%n%b%n%n---%n"
-} > README.md
+} > COMMIT_HISTORY.md
 
 # Stage the updated README.md so it’s included in your commit
-git add README.md
+git add COMMIT_HISTORY.md
 
 exit 0
