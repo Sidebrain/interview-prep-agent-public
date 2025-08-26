@@ -5,7 +5,7 @@ Unlike traditional "black‑box" recruiting agents—whose prompts and scoring r
 
 ## 🎥 Product Demo
 
-Watch Audition in action: [Product Demo Video](https://www.youtube.com/watch?v=4IE0Qx-t8xI)
+<video src='https://www.youtube.com/watch?v=4IE0Qx-t8xI' width=180/>
 
 ---
 
