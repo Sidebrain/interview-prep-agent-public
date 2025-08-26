@@ -5,7 +5,17 @@ Unlike traditional "black‑box" recruiting agents—whose prompts and scoring r
 
 ## 🎥 Product Demo
 
-<video src='https://www.youtube.com/watch?v=4IE0Qx-t8xI' width=180/>
+<div align="center">
+  <iframe 
+    width="560" 
+    height="315" 
+    src="https://www.youtube.com/embed/4IE0Qx-t8xI" 
+    title="Audition Product Demo" 
+    frameborder="0" 
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+    allowfullscreen>
+  </iframe>
+</div>
 
 ---
 
