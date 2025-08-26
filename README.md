@@ -3,11 +3,16 @@
 **Audition** is a fully‑configurable, AI‑driven recruiting platform whose fundamental premise is that *every company should be able to build its own recruiter, not inherit somebody else's*.
 Unlike traditional "black‑box" recruiting agents—whose prompts and scoring rubrics are hard‑wired by the vendor—Audition exposes the entire talent‑evaluation pipeline so you can design, observe, and tweak it to fit **any** role in **any** industry.
 
+## 🎥 Product Demo
+
+Watch Audition in action: [Product Demo Video](https://www.youtube.com/watch?v=4IE0Qx-t8xI)
+
 ---
 
 ## Table of Contents
 
 - [Audition](#audition)
+  - [🎥 Product Demo](#-product-demo)
   - [Table of Contents](#table-of-contents)
   - [Key Ideas](#key-ideas)
   - [Feature Highlights](#feature-highlights)
@@ -21,8 +26,6 @@ Unlike traditional "black‑box" recruiting agents—whose prompts and scoring r
     - [Frontend](#frontend)
     - [Backend](#backend)
   - [Visual Architecture Diagrams](#visual-architecture-diagrams)
-    - [Backend Interface](#backend-interface)
-    - [Frontend Interface](#frontend-interface)
     - [Detailed Sequence Flow](#detailed-sequence-flow)
     - [Use Case Overview](#use-case-overview)
     - [High-Level System Flow](#high-level-system-flow)
@@ -257,16 +260,6 @@ Unlike traditional "black‑box" recruiting agents—whose prompts and scoring r
 ---
 
 ## Visual Architecture Diagrams
-
-### Backend Interface
-<div align="center">
-  <img src="./public/backend-page.png" alt="Backend Interface" width="700"/>
-</div>
-
-### Frontend Interface
-<div align="center">
-  <img src="./public/frontend-page.png" alt="Frontend Interface" width="700"/>
-</div>
 
 ### Detailed Sequence Flow
 <div align="center">
